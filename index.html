@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motif - Procedural Music Synthesis</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff88;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #444;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background: #1a1a1a;
+            border-left: 3px solid #00ff88;
+            min-height: 20px;
+        }
+        input {
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            margin: 0 10px;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MOTIF</h1>
+        <p>Procedural Music Synthesis from MIDI Structure</p>
+        
+        <div class="controls">
+            <input type="text" id="songInput" placeholder="Enter song name..." />
+            <button id="generateBtn">Generate</button>
+            <button id="playBtn" disabled>Play</button>
+            <button id="stopBtn" disabled>Stop</button>
+        </div>
+        
+        <div id="status">Ready. Enter a song name to begin synthesis.</div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
