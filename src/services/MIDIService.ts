@@ -5,6 +5,25 @@ interface MIDISearchResult {
   pageUrl: string;
   midiUrl: string;
   confidence: number;
+  parsed?: ParsedMIDIInfo;
+}
+
+interface ParsedMIDIInfo {
+  durationSec: number;
+  tempoBpm: number;
+  timeSig?: { num: number; den: number };
+  tracks: TrackInfo[];
+  noteCount: number;
+  issues: string[];
+}
+
+interface TrackInfo {
+  id: number;
+  name?: string;
+  program?: number;
+  noteCount: number;
+  channel?: number;
+  register: 'low' | 'mid' | 'high';
 }
 
 interface MIDISearchResponse {
@@ -50,6 +69,21 @@ export class MIDIService {
     }
   }
 
+  async parseMIDI(url: string): Promise<ParsedMIDIInfo | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/midi/parse?u=${encodeURIComponent(url)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Parse failed: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('MIDI parse error:', error);
+      return null;
+    }
+  }
+
   async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseUrl}/health`);
@@ -58,4 +92,5 @@ export class MIDIService {
       return false;
     }
   }
+}
 }

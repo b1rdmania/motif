@@ -42,6 +42,13 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        button.primary {
+            background: #00ff88;
+            color: #000;
+        }
+        button.primary:hover {
+            background: #00cc6a;
+        }
         #status {
             margin: 20px 0;
             padding: 10px;
@@ -57,6 +64,74 @@
             margin: 0 10px;
             font-family: inherit;
         }
+        
+        .results-section {
+            margin: 30px 0;
+            display: none;
+        }
+        .results-section.visible {
+            display: block;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .results-table th,
+        .results-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        .results-table th {
+            background: #222;
+            color: #00ff88;
+        }
+        .results-table tr:hover {
+            background: #1a1a1a;
+        }
+        .results-table tr.selected {
+            background: #2a2a2a;
+        }
+        
+        .confidence-bar {
+            width: 60px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa44, #00ff88);
+            transition: width 0.2s;
+        }
+        
+        .player-section {
+            margin: 30px 0;
+            display: none;
+        }
+        .player-section.visible {
+            display: block;
+        }
+        
+        .player-controls {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .player-info {
+            background: #1a1a1a;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 3px solid #555;
+        }
+        
+        .issues {
+            color: #ffaa44;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -66,12 +141,54 @@
         
         <div class="controls">
             <input type="text" id="songInput" placeholder="Enter song name..." />
-            <button id="generateBtn">Generate</button>
-            <button id="playBtn" disabled>Play</button>
-            <button id="stopBtn" disabled>Stop</button>
+            <button id="searchBtn">Search</button>
         </div>
         
-        <div id="status">Ready. Enter a song name to begin synthesis.</div>
+        <div id="status">Ready. Enter a song name to search for MIDI files.</div>
+        
+        <div id="resultsSection" class="results-section">
+            <h3>Search Results</h3>
+            <table id="resultsTable" class="results-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Source</th>
+                        <th>Confidence</th>
+                        <th>Duration</th>
+                        <th>Tracks</th>
+                        <th>Issues</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="playerSection" class="player-section">
+            <div id="selectedInfo" class="player-info">
+                <h4 id="selectedTitle">No MIDI selected</h4>
+                <p id="selectedMeta">Select a MIDI file from search results to enable playback</p>
+            </div>
+            
+            <div class="player-controls">
+                <div>
+                    <h4>MIDI Preview</h4>
+                    <p>Plays original MIDI as-is</p>
+                    <button id="previewBtn" disabled>Play Original</button>
+                    <button id="previewStopBtn" disabled>Stop</button>
+                </div>
+                
+                <div>
+                    <h4>Motif Generation</h4>
+                    <p>Procedural synthesis from structure</p>
+                    <button id="motifBtn" disabled>Generate & Play</button>
+                    <button id="motifStopBtn" disabled>Stop</button>
+                </div>
+            </div>
+            
+            <button id="nextResultBtn" disabled>Try Next Result</button>
+        </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

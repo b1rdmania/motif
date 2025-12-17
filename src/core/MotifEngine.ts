@@ -27,6 +27,22 @@ export class MotifEngine {
     this.roleMapper = new RoleMapper();
   }
 
+  async generateFromMIDI(events: NoteEvent[]): Promise<void> {
+    // Process events directly (bypass search/fetch)
+    const features = this.midiProcessor.extractFeatures(events);
+    const roleAssignments = this.roleMapper.assignRoles(features, events);
+    
+    this.currentFeatures = features;
+    
+    // Initialize audio context and synthesis engine
+    if (!this.audioContext) {
+      this.audioContext = new AudioContext();
+    }
+    
+    this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
+    this.synthesisEngine.setupLayers(roleAssignments);
+  }
+
   async generateFromSong(songName: string): Promise<void> {
     let events: NoteEvent[];
     
