@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd server && npm run dev",
+    "dev:all": "npm run dev:backend & npm run dev",
     "build": "tsc && vite build",
+    "build:backend": "cd server && npm run build",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
@@ -19,7 +22,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
-    "midi-parser-js": "^4.0.4"
+    "@tonejs/midi": "^2.0.28"
   },
   "keywords": [
     "web-audio",

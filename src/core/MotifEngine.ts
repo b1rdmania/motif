@@ -1,5 +1,7 @@
 import type { NoteEvent, StructuralFeatures, MotifConfig, SynthLayer } from '../types';
 import { MIDIProcessor } from '../midi/MIDIProcessor';
+import { MIDIParser } from '../midi/MIDIParser';
+import { MIDIService } from '../services/MIDIService';
 import { RoleMapper } from './RoleMapper';
 import { SynthesisEngine } from '../synthesis/SynthesisEngine';
 
@@ -7,6 +9,7 @@ export class MotifEngine {
   private audioContext: AudioContext | null = null;
   private config: MotifConfig;
   private midiProcessor: MIDIProcessor;
+  private midiService: MIDIService;
   private roleMapper: RoleMapper;
   private synthesisEngine: SynthesisEngine | null = null;
   private currentFeatures: StructuralFeatures | null = null;
@@ -20,15 +23,43 @@ export class MotifEngine {
     };
     
     this.midiProcessor = new MIDIProcessor();
+    this.midiService = new MIDIService();
     this.roleMapper = new RoleMapper();
   }
 
   async generateFromSong(songName: string): Promise<void> {
-    // For now, generate synthetic structure based on song name
-    // TODO: Implement MIDI search and fetching
-    const mockEvents = this.generateSyntheticMIDI(songName);
-    const features = this.midiProcessor.extractFeatures(mockEvents);
-    const roleAssignments = this.roleMapper.assignRoles(features, mockEvents);
+    let events: NoteEvent[];
+    
+    // Try to find real MIDI first
+    try {
+      console.log(`Searching for MIDI: ${songName}`);
+      const searchResults = await this.midiService.search(songName);
+      
+      if (searchResults.length > 0) {
+        // Try to fetch the best result
+        const bestResult = searchResults[0];
+        console.log(`Attempting to fetch: ${bestResult.title} (${bestResult.confidence})`);
+        
+        const midiBuffer = await this.midiService.fetchMIDI(bestResult.midiUrl);
+        
+        if (midiBuffer) {
+          // Parse real MIDI
+          events = MIDIParser.parseMIDI(midiBuffer);
+          console.log(`Successfully parsed MIDI with ${events.length} events`);
+        } else {
+          throw new Error('Failed to fetch MIDI');
+        }
+      } else {
+        throw new Error('No MIDI results found');
+      }
+    } catch (error) {
+      console.warn(`MIDI search/fetch failed: ${error}. Falling back to synthetic.`);
+      events = this.generateSyntheticMIDI(songName);
+    }
+
+    // Process events into structure
+    const features = this.midiProcessor.extractFeatures(events);
+    const roleAssignments = this.roleMapper.assignRoles(features, events);
     
     this.currentFeatures = features;
     
