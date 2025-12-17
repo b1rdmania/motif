@@ -1,14 +1,16 @@
-import type { RoleAssignment, MotifConfig, SynthLayer, Role } from '../types';
+import type { RoleAssignment, MotifConfig, SynthLayer, Role, NoteEvent, ChordEvent } from '../types';
 
 export class SynthesisEngine {
   private audioContext: AudioContext;
   private config: MotifConfig;
   private masterGain: GainNode;
   private layers: Map<Role, SynthLayer> = new Map();
+  private roleAssignments: Map<Role, RoleAssignment> = new Map();
   private isPlaying = false;
   private schedulerIntervalId: number | null = null;
   private currentTime = 0;
   private startTime = 0;
+  private nextEventIndex = new Map<Role, number>();
 
   constructor(audioContext: AudioContext, config: MotifConfig) {
     this.audioContext = audioContext;
@@ -22,10 +24,15 @@ export class SynthesisEngine {
     // Clean up existing layers
     this.cleanupLayers();
     
+    // Store role assignments and create layers
     for (const assignment of assignments) {
       const layer = this.createSynthLayer(assignment.role);
       this.layers.set(assignment.role, layer);
+      this.roleAssignments.set(assignment.role, assignment);
+      this.nextEventIndex.set(assignment.role, 0);
     }
+    
+    console.log('Setup layers for roles:', Array.from(this.roleAssignments.keys()));
   }
 
   start(): void {
@@ -35,13 +42,17 @@ export class SynthesisEngine {
     this.startTime = this.audioContext.currentTime;
     this.currentTime = 0;
     
-    // Start continuous layers (drone, texture)
-    this.startContinuousLayers();
+    // Reset event indices
+    for (const role of this.roleAssignments.keys()) {
+      this.nextEventIndex.set(role, 0);
+    }
     
-    // Start scheduler for rhythmic layers
+    // Start scheduler to play actual MIDI events
     this.schedulerIntervalId = window.setInterval(() => {
       this.scheduleEvents();
     }, this.config.scheduleInterval);
+    
+    console.log('Started synthesis with', this.roleAssignments.size, 'roles');
   }
 
   stop(): void {
@@ -106,65 +117,63 @@ export class SynthesisEngine {
     }
   }
 
-  private startContinuousLayers(): void {
-    const droneLayer = this.layers.get('drone');
-    if (droneLayer) {
-      this.startDrone(droneLayer);
-    }
-    
-    const textureLayer = this.layers.get('texture');
-    if (textureLayer) {
-      this.startTexture(textureLayer);
-    }
+  private midiToFrequency(midiNote: number): number {
+    return 440 * Math.pow(2, (midiNote - 69) / 12);
   }
 
-  private startDrone(layer: SynthLayer): void {
-    const osc1 = this.audioContext.createOscillator();
-    const osc2 = this.audioContext.createOscillator();
+  private scheduleNote(role: Role, pitch: number, duration: number, velocity: number, when: number): void {
+    const layer = this.layers.get(role);
+    if (!layer) return;
     
-    osc1.frequency.value = 110; // A2
-    osc2.frequency.value = 110.5; // Slight detune
-    osc1.type = 'sawtooth';
-    osc2.type = 'sawtooth';
-    
-    osc1.connect(layer.filterNode);
-    osc2.connect(layer.filterNode);
-    
-    osc1.start();
-    osc2.start();
-    
-    layer.oscillators.push(osc1, osc2);
-  }
-
-  private startTexture(layer: SynthLayer): void {
-    // Create evolving texture with multiple oscillators
-    for (let i = 0; i < 4; i++) {
-      setTimeout(() => {
-        if (!this.isPlaying) return;
-        this.addTextureOscillator(layer);
-      }, i * 2000);
-    }
-  }
-
-  private addTextureOscillator(layer: SynthLayer): void {
     const osc = this.audioContext.createOscillator();
     const envelope = this.audioContext.createGain();
     
-    osc.frequency.value = 220 + Math.random() * 880; // Random frequency
-    osc.type = 'triangle';
+    // Convert MIDI pitch to frequency
+    const frequency = this.midiToFrequency(pitch);
+    osc.frequency.value = frequency;
+    
+    // Choose oscillator type based on role
+    switch (role) {
+      case 'bass':
+        osc.type = 'square';
+        break;
+      case 'drone':
+        osc.type = 'sawtooth';
+        break;
+      case 'ostinato':
+        osc.type = 'triangle';
+        break;
+      case 'texture':
+      case 'accents':
+        osc.type = 'sine';
+        break;
+    }
     
     osc.connect(envelope);
     envelope.connect(layer.filterNode);
     
-    // Slow attack and decay
-    envelope.gain.setValueAtTime(0, this.audioContext.currentTime);
-    envelope.gain.linearRampToValueAtTime(0.1, this.audioContext.currentTime + 4);
-    envelope.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 8);
+    // Envelope based on velocity and duration
+    const gainValue = velocity * 0.5; // Scale velocity
+    const attackTime = Math.min(0.05, duration * 0.1);
+    const releaseTime = Math.min(0.1, duration * 0.3);
     
-    osc.start();
-    osc.stop(this.audioContext.currentTime + 8);
+    envelope.gain.setValueAtTime(0, when);
+    envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
+    envelope.gain.linearRampToValueAtTime(gainValue * 0.7, when + duration - releaseTime);
+    envelope.gain.exponentialRampToValueAtTime(0.001, when + duration);
     
-    layer.oscillators.push(osc);
+    osc.start(when);
+    osc.stop(when + duration);
+    
+    // Clean up after note ends
+    setTimeout(() => {
+      try {
+        osc.disconnect();
+        envelope.disconnect();
+      } catch (e) {
+        // Already disconnected
+      }
+    }, (duration + 0.1) * 1000);
   }
 
   private scheduleEvents(): void {
@@ -173,53 +182,105 @@ export class SynthesisEngine {
     const currentTime = this.audioContext.currentTime;
     const scheduleUntil = currentTime + this.config.lookaheadTime;
     
-    // Schedule bass hits
-    this.scheduleBassHits(scheduleUntil);
-    
-    // Schedule ostinato patterns
-    this.scheduleOstinato(scheduleUntil);
-    
-    this.currentTime = (currentTime - this.startTime) % 32; // Loop every 32 seconds
-  }
-
-  private scheduleBassHits(scheduleUntil: number): void {
-    const bassLayer = this.layers.get('bass');
-    if (!bassLayer) return;
-    
-    const beatInterval = 60 / 120; // 120 BPM
-    const nextBeat = Math.ceil(this.currentTime / beatInterval) * beatInterval;
-    const scheduleTime = this.startTime + nextBeat;
-    
-    if (scheduleTime <= scheduleUntil && nextBeat % 1 < 0.1) { // On downbeat
-      this.triggerBassHit(bassLayer, scheduleTime);
+    // Schedule events for each role
+    for (const [role, assignment] of this.roleAssignments) {
+      this.scheduleRoleEvents(role, assignment, scheduleUntil);
     }
   }
 
-  private triggerBassHit(layer: SynthLayer, when: number): void {
-    const osc = this.audioContext.createOscillator();
-    const envelope = this.audioContext.createGain();
+  private scheduleRoleEvents(role: Role, assignment: RoleAssignment, scheduleUntil: number): void {
+    const events = assignment.events;
+    const chords = assignment.chords;
     
-    osc.frequency.value = 55; // A1
-    osc.type = 'square';
+    if (!events.length && !chords.length) return;
     
-    osc.connect(envelope);
-    envelope.connect(layer.filterNode);
+    let eventIndex = this.nextEventIndex.get(role) || 0;
     
-    envelope.gain.setValueAtTime(0, when);
-    envelope.gain.linearRampToValueAtTime(0.8, when + 0.01);
-    envelope.gain.exponentialRampToValueAtTime(0.001, when + 0.5);
-    
-    osc.start(when);
-    osc.stop(when + 0.5);
+    // For roles that support polyphony (drone, texture), prefer chords
+    if ((role === 'drone' || role === 'texture') && chords.length > 0) {
+      this.scheduleChordEvents(role, chords, scheduleUntil);
+    } else {
+      this.scheduleSingleEvents(role, events, scheduleUntil);
+    }
   }
 
-  private scheduleOstinato(scheduleUntil: number): void {
-    // Simple ostinato pattern - implementation would be more sophisticated
-    const ostinatoLayer = this.layers.get('ostinato');
-    if (!ostinatoLayer) return;
+  private scheduleChordEvents(role: Role, chords: ChordEvent[], scheduleUntil: number): void {
+    let chordIndex = this.nextEventIndex.get(role) || 0;
     
-    // Implementation for rhythmic patterns would go here
+    while (chordIndex < chords.length) {
+      const chord = chords[chordIndex];
+      const eventTime = this.startTime + chord.time;
+      
+      // Stop if we're past the lookahead window
+      if (eventTime > scheduleUntil) break;
+      
+      // Schedule if the chord hasn't been played yet
+      if (eventTime >= this.audioContext.currentTime) {
+        this.scheduleChord(
+          role,
+          chord.pitches,
+          Math.max(0.05, chord.duration),
+          chord.velocity,
+          eventTime
+        );
+      }
+      
+      chordIndex++;
+    }
+    
+    // Update the next event index
+    this.nextEventIndex.set(role, chordIndex);
+    
+    // Loop if we've reached the end
+    if (chordIndex >= chords.length) {
+      this.nextEventIndex.set(role, 0);
+      // Reset start time for looping
+      if (Array.from(this.nextEventIndex.values()).every(idx => idx === 0)) {
+        this.startTime = this.audioContext.currentTime;
+      }
+    }
   }
+
+  private scheduleSingleEvents(role: Role, events: NoteEvent[], scheduleUntil: number): void {
+    let eventIndex = this.nextEventIndex.get(role) || 0;
+    
+    while (eventIndex < events.length) {
+      const event = events[eventIndex];
+      const eventTime = this.startTime + event.time;
+      
+      // Stop if we're past the lookahead window
+      if (eventTime > scheduleUntil) break;
+      
+      // Schedule if the event hasn't been played yet
+      if (eventTime >= this.audioContext.currentTime) {
+        this.scheduleNote(
+          role,
+          event.pitch,
+          Math.max(0.05, event.duration), // Minimum duration
+          event.velocity,
+          eventTime
+        );
+      }
+      
+      eventIndex++;
+    }
+    
+    // Update the next event index
+    this.nextEventIndex.set(role, eventIndex);
+    
+    // Loop if we've reached the end
+    if (eventIndex >= events.length) {
+      this.nextEventIndex.set(role, 0);
+      // Reset start time for looping
+      if (Array.from(this.nextEventIndex.values()).every(idx => idx === 0)) {
+        this.startTime = this.audioContext.currentTime;
+      }
+    }
+  }
+
+
+
+
 
   private fadeOutAllLayers(): void {
     const fadeTime = this.config.fadeTime;
@@ -232,6 +293,69 @@ export class SynthesisEngine {
     setTimeout(() => {
       this.cleanupLayers();
     }, fadeTime * 1000 + 100);
+  }
+
+  private scheduleChord(role: Role, pitches: number[], duration: number, velocity: number, when: number): void {
+    const layer = this.layers.get(role);
+    if (!layer) return;
+    
+    // Create oscillator for each pitch in the chord
+    for (const pitch of pitches) {
+      const osc = this.audioContext.createOscillator();
+      const envelope = this.audioContext.createGain();
+      
+      // Convert MIDI pitch to frequency
+      const frequency = this.midiToFrequency(pitch);
+      osc.frequency.value = frequency;
+      
+      // Choose oscillator type based on role
+      switch (role) {
+        case 'bass':
+          osc.type = 'square';
+          break;
+        case 'drone':
+          osc.type = 'sawtooth';
+          break;
+        case 'ostinato':
+          osc.type = 'triangle';
+          break;
+        case 'texture':
+          osc.type = 'sine';
+          break;
+        case 'melody':
+          osc.type = 'triangle';
+          break;
+        case 'accents':
+          osc.type = 'sine';
+          break;
+      }
+      
+      osc.connect(envelope);
+      envelope.connect(layer.filterNode);
+      
+      // Envelope based on velocity and duration, scaled for chords
+      const gainValue = (velocity * 0.3) / Math.max(pitches.length * 0.5, 1); // Scale down for chords
+      const attackTime = Math.min(0.05, duration * 0.1);
+      const releaseTime = Math.min(0.1, duration * 0.3);
+      
+      envelope.gain.setValueAtTime(0, when);
+      envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
+      envelope.gain.linearRampToValueAtTime(gainValue * 0.7, when + duration - releaseTime);
+      envelope.gain.exponentialRampToValueAtTime(0.001, when + duration);
+      
+      osc.start(when);
+      osc.stop(when + duration);
+      
+      // Clean up after note ends
+      setTimeout(() => {
+        try {
+          osc.disconnect();
+          envelope.disconnect();
+        } catch (e) {
+          // Already disconnected
+        }
+      }, (duration + 0.1) * 1000);
+    }
   }
 
   private cleanupLayers(): void {

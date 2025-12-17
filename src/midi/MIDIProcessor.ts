@@ -16,7 +16,8 @@ export class MIDIProcessor {
       totalDuration,
       noteDensity,
       registerDistribution,
-      trackRoles: new Map()
+      trackRoles: new Map(),
+      trackFeatures: new Map()
     };
   }
 
@@ -76,7 +77,8 @@ export class MIDIProcessor {
       totalDuration: 30,
       noteDensity: [4, 4, 4, 4, 4, 4, 4, 4],
       registerDistribution: { low: 0.3, mid: 0.5, high: 0.2 },
-      trackRoles: new Map()
+      trackRoles: new Map(),
+      trackFeatures: new Map()
     };
   }
 }
