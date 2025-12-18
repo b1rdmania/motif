@@ -2,6 +2,7 @@ import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { MotifEngine } from './core/MotifEngine';
+import { unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
 
 type SearchResult = {
@@ -42,9 +43,18 @@ async function main(): Promise<void> {
   const motifVol = qs<HTMLInputElement>('motifVol');
 
   const midiService = new MIDIService();
-  const audioContext = new AudioContext();
-  const previewPlayer = new SoundfontMIDIPlayer(audioContext);
   const motifEngine = new MotifEngine();
+
+  // Lazily created for iOS compatibility
+  let previewPlayer: SoundfontMIDIPlayer | null = null;
+
+  async function ensurePlayer(): Promise<SoundfontMIDIPlayer> {
+    if (!previewPlayer) {
+      const audioContext = await unlockAudio();
+      previewPlayer = new SoundfontMIDIPlayer(audioContext);
+    }
+    return previewPlayer;
+  }
 
   let results: SearchResult[] = [];
   let selectedIndex = 0;
@@ -60,7 +70,7 @@ async function main(): Promise<void> {
   }
 
   function stopEverything(): void {
-    previewPlayer.stop();
+    previewPlayer?.stop();
     motifEngine.stop();
     previewPlayBtn.disabled = currentEvents === null;
     previewStopBtn.disabled = true;
@@ -83,8 +93,9 @@ async function main(): Promise<void> {
       const events = MIDIParser.parseMIDI(midiBuffer);
       currentEvents = events;
 
-      await previewPlayer.load(events);
-      previewPlayer.setVolume(clamp01(parseFloat(previewVol.value)));
+      const player = await ensurePlayer();
+      await player.load(events);
+      player.setVolume(clamp01(parseFloat(previewVol.value)));
 
       setStatus(`Ready: ${r.title}`);
       previewPlayBtn.disabled = false;
@@ -143,7 +154,7 @@ async function main(): Promise<void> {
 
   previewVol.addEventListener('input', (e) => {
     const v = clamp01(parseFloat((e.target as HTMLInputElement).value));
-    previewPlayer.setVolume(v);
+    previewPlayer?.setVolume(v);
   });
 
   motifVol.addEventListener('input', (e) => {
@@ -156,7 +167,8 @@ async function main(): Promise<void> {
     try {
       motifEngine.stop();
       isMotifPlaying = false;
-      await previewPlayer.play();
+      const player = await ensurePlayer();
+      await player.play();
       previewPlayBtn.disabled = true;
       previewStopBtn.disabled = false;
       motifStopBtn.disabled = true;
@@ -167,7 +179,7 @@ async function main(): Promise<void> {
   });
 
   previewStopBtn.addEventListener('click', () => {
-    previewPlayer.stop();
+    previewPlayer?.stop();
     previewPlayBtn.disabled = currentEvents === null;
     previewStopBtn.disabled = true;
     setStatus('Preview stopped.');
@@ -177,7 +189,7 @@ async function main(): Promise<void> {
     if (!currentEvents) return;
     try {
       // Stop preview and generate variation
-      previewPlayer.stop();
+      previewPlayer?.stop();
       previewPlayBtn.disabled = false;
       previewStopBtn.disabled = true;
 
@@ -212,7 +224,7 @@ async function main(): Promise<void> {
 
   if (volume) {
     previewVol.value = String(clamp01(parseFloat(volume)));
-    previewPlayer.setVolume(parseFloat(previewVol.value));
+    // Volume will be applied when player is created in loadIndex
   }
   if (motifVolume) {
     motifVol.value = String(clamp01(parseFloat(motifVolume)));
@@ -239,4 +251,5 @@ async function main(): Promise<void> {
 }
 
 void main();
+
 

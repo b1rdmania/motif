@@ -2,15 +2,15 @@ import { MotifEngine } from './core/MotifEngine';
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
+import { getAudioContext, isAudioReady, unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
 
 class MotifApp {
   private motifEngine: MotifEngine;
   private midiService: MIDIService;
-  private audioContext: AudioContext;
 
-  // Preview player
-  private soundfontPlayer: SoundfontMIDIPlayer;
+  // Preview player (lazily created for iOS compatibility)
+  private soundfontPlayer: SoundfontMIDIPlayer | null = null;
   
   private searchBtn!: HTMLButtonElement;
   private songInput!: HTMLInputElement;
@@ -39,6 +39,11 @@ class MotifApp {
   private motifDuration!: HTMLElement;
   private motifProgressInterval: number | null = null;
 
+  // iOS audio unlock UI (Motif only)
+  private iosAudioBanner!: HTMLElement;
+  private enableAudioBtn!: HTMLButtonElement;
+  private iosAudioState!: HTMLElement;
+
   private nextResultBtn!: HTMLButtonElement;
 
   // Embed snippet UI
@@ -52,16 +57,24 @@ class MotifApp {
   private currentMIDI: { events: NoteEvent[], metadata: any } | null = null;
 
   constructor() {
-    // Create AudioContext lazily on first use for iOS compatibility
-    this.audioContext = new AudioContext();
     this.motifEngine = new MotifEngine();
     this.midiService = new MIDIService();
-
-    // Initialize preview player
-    this.soundfontPlayer = new SoundfontMIDIPlayer(this.audioContext);
+    // soundfontPlayer created lazily on first play for iOS compatibility
 
     this.initializeUI();
     this.setupEventListeners();
+  }
+
+  /**
+   * Ensure audio is unlocked and soundfontPlayer is ready.
+   * Must be called from a user gesture context.
+   */
+  private async ensureAudioReady(): Promise<SoundfontMIDIPlayer> {
+    const audioContext = await unlockAudio();
+    if (!this.soundfontPlayer) {
+      this.soundfontPlayer = new SoundfontMIDIPlayer(audioContext);
+    }
+    return this.soundfontPlayer;
   }
 
   private initializeUI(): void {
@@ -93,6 +106,11 @@ class MotifApp {
 
     this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
 
+    // iOS audio unlock UI (Motif)
+    this.iosAudioBanner = document.getElementById('iosAudioBanner')!;
+    this.enableAudioBtn = document.getElementById('enableAudioBtn') as HTMLButtonElement;
+    this.iosAudioState = document.getElementById('iosAudioState')!;
+
     // Optional embed UI (only present on main page)
     this.embedSection = document.getElementById('embedSection');
     this.embedCodeEl = document.getElementById('embedCode');
@@ -114,7 +132,7 @@ class MotifApp {
     this.soundfontStopBtn.addEventListener('click', () => this.handleSoundfontStop());
     this.soundfontVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
-      this.soundfontPlayer.setVolume(volume);
+      this.soundfontPlayer?.setVolume(volume);
     });
 
     // Motif
@@ -136,6 +154,70 @@ class MotifApp {
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
+
+    // iOS audio unlock CTA — must be a user gesture
+    const enable = () => void this.handleEnableAudio();
+    this.enableAudioBtn.addEventListener('click', enable);
+    this.enableAudioBtn.addEventListener('touchend', enable, { passive: true });
+  }
+
+  private isIOSLike(): boolean {
+    const ua = navigator.userAgent || '';
+    const iOS = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS13Plus = /Macintosh/.test(ua) && (navigator as any).maxTouchPoints > 1;
+    return iOS || iPadOS13Plus;
+  }
+
+  private updateIOSAudioBanner(): void {
+    // Only show this UX on iOS-like browsers, and only until audio is running.
+    if (!this.isIOSLike()) {
+      this.iosAudioBanner.style.display = 'none';
+      return;
+    }
+
+    const ready = isAudioReady();
+    this.iosAudioBanner.style.display = ready ? 'none' : 'block';
+
+    // Optional tiny state readout (helps support debugging)
+    const ctx = (() => {
+      try { return getAudioContext(); } catch { return null; }
+    })();
+    if (!ready && ctx) {
+      this.iosAudioState.style.display = 'block';
+      this.iosAudioState.textContent = `Audio: ${ctx.state} @ ${ctx.sampleRate}Hz`;
+    } else {
+      this.iosAudioState.style.display = 'none';
+      this.iosAudioState.textContent = '';
+    }
+  }
+
+  private async handleEnableAudio(): Promise<void> {
+    // Must run in a user gesture context.
+    try {
+      this.enableAudioBtn.disabled = true;
+      this.iosAudioState.style.display = 'block';
+      this.iosAudioState.textContent = 'Audio: enabling…';
+
+      await unlockAudio();
+
+      // Update banner state
+      const ctx = getAudioContext();
+      if (ctx.state !== 'running') {
+        this.enableAudioBtn.disabled = false;
+        this.iosAudioState.textContent = 'Audio still locked. Tap Enable Audio again.';
+        return;
+      }
+
+      this.iosAudioState.textContent = `Audio: running @ ${ctx.sampleRate}Hz`;
+      // Hide after a short beat to reduce flicker
+      window.setTimeout(() => this.updateIOSAudioBanner(), 250);
+    } catch {
+      this.enableAudioBtn.disabled = false;
+      this.iosAudioState.style.display = 'block';
+      this.iosAudioState.textContent = 'Audio enable failed. Tap again, or disable Silent Mode.';
+    } finally {
+      this.enableAudioBtn.disabled = false;
+    }
   }
 
   private async handleSearch(): Promise<void> {
@@ -171,6 +253,7 @@ class MotifApp {
 
       this.displayResults();
       this.updateStatus(`Found ${results.length} MIDI files. Select one to play.`);
+      this.updateIOSAudioBanner();
 
     } catch (error) {
       this.updateStatus(`Search error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -245,8 +328,9 @@ class MotifApp {
 
       this.currentMIDI = { events, metadata: { ...metadata, duration: actualDuration } };
 
-      // Load into preview player
-      await this.soundfontPlayer.load(events);
+      // Load into preview player (ensure audio unlocked on iOS)
+      const player = await this.ensureAudioReady();
+      await player.load(events);
 
       // Update UI
       this.selectedTitle.textContent = result.title;
@@ -259,6 +343,7 @@ class MotifApp {
       `;
 
       this.updateEmbedSnippet(result.title);
+      this.updateIOSAudioBanner();
       
       this.playerSection.classList.add('visible');
       this.enablePlayerControls();
@@ -273,17 +358,20 @@ class MotifApp {
   private async handleSoundfontPlay(): Promise<void> {
     if (!this.currentMIDI) return;
     try {
-      await this.soundfontPlayer.play();
+      // Ensure audio is unlocked (user gesture context)
+      const player = await this.ensureAudioReady();
+      await player.play();
       this.soundfontPlayBtn.disabled = true;
       this.soundfontStopBtn.disabled = false;
       this.updateStatus('Previewing MIDI...');
     } catch (error) {
       this.updateStatus(`Preview error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+    this.updateIOSAudioBanner();
   }
 
   private handleSoundfontStop(): void {
-    this.soundfontPlayer.stop();
+    this.soundfontPlayer?.stop();
     this.soundfontPlayBtn.disabled = false;
     this.soundfontStopBtn.disabled = true;
     this.updateStatus('Preview stopped.');
@@ -298,6 +386,10 @@ class MotifApp {
     }
 
     try {
+      // Best-effort: ensure iOS audio is unlocked from this user gesture.
+      await unlockAudio();
+      this.updateIOSAudioBanner();
+
       this.updateStatus('Generating Motif synthesis...');
       this.motifBtn.disabled = true;
 
