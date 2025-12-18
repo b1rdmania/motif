@@ -142,6 +142,9 @@ class MotifApp {
     const songName = this.songInput.value.trim();
     if (!songName) return;
 
+    // Stop any playing Motif audio
+    this.handleMotifStop();
+
     this.updateStatus('Searching for MIDI files...');
     this.searchBtn.disabled = true;
     this.hideResults();
@@ -207,10 +210,13 @@ class MotifApp {
 
   public async selectResult(index: number): Promise<void> {
     if (index < 0 || index >= this.searchResults.length) return;
-    
+
+    // Stop any playing Motif audio
+    this.handleMotifStop();
+
     this.selectedResultIndex = index;
     const result = this.searchResults[index];
-    
+
     // Update selection highlighting
     const rows = this.resultsBody.querySelectorAll('tr');
     rows.forEach((row, i) => {
