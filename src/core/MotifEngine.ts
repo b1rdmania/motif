@@ -4,6 +4,7 @@ import { MIDIParser } from '../midi/MIDIParser';
 import { MIDIService } from '../services/MIDIService';
 import { RoleMapper } from './RoleMapper';
 import { SynthesisEngine } from '../synthesis/SynthesisEngine';
+import { unlockAudio } from '../utils/audioUnlock';
 
 export class MotifEngine {
   private audioContext: AudioContext | null = null;
@@ -27,9 +28,9 @@ export class MotifEngine {
   }
 
   async generateFromMIDI(events: NoteEvent[], transformMode: 'passthrough' | 'procedural' = 'passthrough'): Promise<void> {
-    // Initialize audio context and synthesis engine
+    // Initialize audio context using shared unlock (iOS compatibility)
     if (!this.audioContext) {
-      this.audioContext = new AudioContext();
+      this.audioContext = await unlockAudio();
     }
 
     this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
@@ -101,11 +102,11 @@ export class MotifEngine {
     const features = this.midiProcessor.extractFeatures(events);
     const roleAssignments = this.roleMapper.assignRoles(features, events);
 
-    // Initialize audio context and synthesis engine
+    // Initialize audio context using shared unlock (iOS compatibility)
     if (!this.audioContext) {
-      this.audioContext = new AudioContext();
+      this.audioContext = await unlockAudio();
     }
-    
+
     this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
     this.synthesisEngine.setupLayers(roleAssignments);
   }
