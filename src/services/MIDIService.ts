@@ -34,8 +34,9 @@ interface MIDISearchResponse {
 export class MIDIService {
   private baseUrl: string;
 
-  constructor(baseUrl = 'http://localhost:3001') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    // Use environment variable or fallback to localhost for development
+    this.baseUrl = baseUrl || import.meta.env.VITE_API_URL || 'http://localhost:3001';
   }
 
   async search(query: string): Promise<MIDISearchResult[]> {
