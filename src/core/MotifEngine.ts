@@ -1,4 +1,4 @@
-import type { NoteEvent, StructuralFeatures, MotifConfig } from '../types';
+import type { NoteEvent, MotifConfig } from '../types';
 import { MIDIProcessor } from '../midi/MIDIProcessor';
 import { MIDIParser } from '../midi/MIDIParser';
 import { MIDIService } from '../services/MIDIService';
@@ -12,7 +12,6 @@ export class MotifEngine {
   private midiService: MIDIService;
   private roleMapper: RoleMapper;
   private synthesisEngine: SynthesisEngine | null = null;
-  private currentFeatures: StructuralFeatures | null = null;
 
   constructor() {
     this.config = {
@@ -27,20 +26,45 @@ export class MotifEngine {
     this.roleMapper = new RoleMapper();
   }
 
-  async generateFromMIDI(events: NoteEvent[]): Promise<void> {
-    // Process events directly (bypass search/fetch)
-    const features = this.midiProcessor.extractFeatures(events);
-    const roleAssignments = this.roleMapper.assignRoles(features, events);
-    
-    this.currentFeatures = features;
-    
+  async generateFromMIDI(events: NoteEvent[], transformMode: 'passthrough' | 'procedural' = 'passthrough'): Promise<void> {
     // Initialize audio context and synthesis engine
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
     }
-    
+
     this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
-    this.synthesisEngine.setupLayers(roleAssignments);
+
+    if (transformMode === 'passthrough') {
+      // Direct playback mode - play MIDI as-is without transformations
+      // Create a single "melody" role assignment with all original events
+      const passthroughAssignment = [{
+        role: 'melody' as const,
+        sourceTrack: 0,
+        events: events,
+        chords: [], // No chord processing
+        confidence: 1.0,
+        features: {
+          medianPitch: 60,
+          pitchRange: 48,
+          noteDensity: 1.0,
+          polyphonyRatio: 0.5,
+          averageDuration: 0.5,
+          repetitionScore: 0.5,
+          isMonophonic: false,
+          hasPhraseContinuity: true,
+          register: 'mid' as const
+        }
+      }];
+
+      this.synthesisEngine.setupLayers(passthroughAssignment);
+      console.log('Motif: Passthrough mode - playing original MIDI patterns');
+    } else {
+      // Procedural mode - transform the MIDI with role mapping
+      const features = this.midiProcessor.extractFeatures(events);
+      const roleAssignments = this.roleMapper.assignRoles(features, events);
+      this.synthesisEngine.setupLayers(roleAssignments);
+      console.log('Motif: Procedural mode - transforming MIDI with role mapping');
+    }
   }
 
   async generateFromSong(songName: string): Promise<void> {
@@ -76,9 +100,7 @@ export class MotifEngine {
     // Process events into structure
     const features = this.midiProcessor.extractFeatures(events);
     const roleAssignments = this.roleMapper.assignRoles(features, events);
-    
-    this.currentFeatures = features;
-    
+
     // Initialize audio context and synthesis engine
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
@@ -89,7 +111,7 @@ export class MotifEngine {
   }
 
   async play(): Promise<void> {
-    if (!this.audioContext || !this.synthesisEngine || !this.currentFeatures) {
+    if (!this.audioContext || !this.synthesisEngine) {
       throw new Error('No audio generated yet');
     }
 

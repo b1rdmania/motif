@@ -19,12 +19,18 @@ export class ToneJSMIDIPlayer {
   async load(events: NoteEvent[]): Promise<void> {
     this.events = [...events].sort((a, b) => a.time - b.time);
 
-    // Initialize Tone.js sampler with piano samples if not already loaded
+    // Always ensure we have a fresh sampler (may have been disposed on stop)
     if (!this.sampler) {
       console.log('Loading Tone.js piano sampler...');
+      await this.createSampler();
+    }
 
-      // Use Tone.js built-in piano samples
-      this.sampler = new Tone.Sampler({
+    console.log(`Loaded ${this.events.length} MIDI events for Tone.js playback`);
+  }
+
+  private async createSampler(): Promise<void> {
+    // Create new sampler instance
+    this.sampler = new Tone.Sampler({
         urls: {
           A0: "A0.mp3",
           C1: "C1.mp3",
@@ -58,14 +64,12 @@ export class ToneJSMIDIPlayer {
           C8: "C8.mp3"
         },
         release: 1,
+        volume: 6, // +6dB boost for better default volume
         baseUrl: "https://tonejs.github.io/audio/salamander/"
       }).toDestination();
 
       await Tone.loaded();
       console.log('Tone.js sampler loaded');
-    }
-
-    console.log(`Loaded ${this.events.length} MIDI events for Tone.js playback`);
   }
 
   async play(): Promise<void> {
@@ -73,8 +77,11 @@ export class ToneJSMIDIPlayer {
     if (this.events.length === 0) {
       throw new Error('No MIDI events loaded');
     }
+
+    // Recreate sampler if it was disposed
     if (!this.sampler) {
-      throw new Error('Sampler not loaded');
+      console.log('Recreating sampler after stop...');
+      await this.createSampler();
     }
 
     // Start Tone.js audio context
@@ -86,6 +93,10 @@ export class ToneJSMIDIPlayer {
 
     // Schedule all events (skip drum channel)
     let drumNotesSkipped = 0;
+    if (!this.sampler) {
+      throw new Error('Sampler not initialized');
+    }
+
     for (const event of this.events) {
       // Skip drum channel (channel 9 in 0-indexed, or channel 10 in MIDI spec)
       if (event.channel === 9) {
@@ -95,7 +106,8 @@ export class ToneJSMIDIPlayer {
 
       const noteName = this.midiNoteToName(event.pitch);
       const when = this.startTime + event.time;
-      const velocity = event.velocity / 127;
+      // Boost velocity for better volume (normalize and scale up)
+      const velocity = Math.min(1.5, (event.velocity / 127) * 1.8);
 
       // Schedule note with Tone.js
       const eventId = this.sampler.triggerAttackRelease(
@@ -124,7 +136,11 @@ export class ToneJSMIDIPlayer {
   }
 
   stop(): void {
-    if (!this.isPlaying) return;
+    console.log('ToneJSMIDIPlayer.stop() called, isPlaying:', this.isPlaying);
+    if (!this.isPlaying) {
+      console.log('Already stopped, returning');
+      return;
+    }
 
     this.isPlaying = false;
 
@@ -134,15 +150,33 @@ export class ToneJSMIDIPlayer {
       this.autoStopTimeout = null;
     }
 
-    // Release all notes
+    // CRITICAL: Dispose and recreate the sampler to cancel all scheduled notes
+    // Tone.js doesn't provide a way to cancel scheduled triggerAttackRelease calls
+    // So we need to destroy and recreate the instrument
     if (this.sampler) {
-      this.sampler.releaseAll();
+      try {
+        this.sampler.releaseAll();
+        this.sampler.disconnect();
+        this.sampler.dispose();
+        console.log('Tone.js: Disposed sampler to cancel scheduled events');
+        this.sampler = null;
+      } catch (e) {
+        console.error('Error disposing sampler:', e);
+      }
+    }
+
+    // Stop and clear the transport
+    try {
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+    } catch (e) {
+      // Transport might not be running
     }
 
     // Clear scheduled events
     this.scheduledEvents = [];
 
-    console.log('Tone.js MIDI playback stopped');
+    console.log('Tone.js MIDI playback stopped - sampler disposed');
   }
 
   private midiNoteToName(midiNote: number): string {
@@ -168,7 +202,10 @@ export class ToneJSMIDIPlayer {
 
   setVolume(volume: number): void {
     if (this.sampler) {
-      this.sampler.volume.value = Tone.gainToDb(Math.max(0.01, Math.min(1, volume)));
+      // Convert 0-1 volume to dB with extra headroom
+      // At volume=0.8, this gives us ~4dB (instead of -2dB)
+      const dbValue = Tone.gainToDb(Math.max(0.01, Math.min(2, volume * 1.5)));
+      this.sampler.volume.value = dbValue;
     }
   }
 }

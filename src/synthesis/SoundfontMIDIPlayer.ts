@@ -71,16 +71,21 @@ export class SoundfontMIDIPlayer {
   }
 
   stop(): void {
-    if (!this.isPlaying) return;
+    console.log('SoundfontMIDIPlayer.stop() called, isPlaying:', this.isPlaying);
+    if (!this.isPlaying) {
+      console.log('Already stopped, returning');
+      return;
+    }
 
     this.isPlaying = false;
-    
+
     if (this.schedulerIntervalId) {
       clearInterval(this.schedulerIntervalId);
       this.schedulerIntervalId = null;
     }
 
-    // Stop all scheduled notes
+    // Stop all scheduled notes immediately
+    const now = this.audioContext.currentTime;
     for (const scheduledNote of this.scheduledNotes) {
       try {
         scheduledNote.noteOff();
@@ -90,15 +95,17 @@ export class SoundfontMIDIPlayer {
     }
     this.scheduledNotes = [];
 
-    // Fade out master gain
-    this.masterGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.1);
-    
+    // Fade out master gain quickly
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    this.masterGain.gain.linearRampToValueAtTime(0, now + 0.05);
+
     // Reset volume after fade
     setTimeout(() => {
       if (!this.isPlaying) {
         this.masterGain.gain.value = 1.0;
       }
-    }, 150);
+    }, 100);
 
     console.log('Soundfont MIDI playback stopped');
   }
@@ -138,6 +145,11 @@ export class SoundfontMIDIPlayer {
 
   private scheduleNote(event: NoteEvent, when: number): void {
     if (!this.instrument) return;
+
+    // Skip drum channel (channel 9 in 0-indexed, or channel 10 in MIDI spec)
+    if (event.channel === 9) {
+      return;
+    }
 
     try {
       // Convert MIDI note number to note name (for soundfont-player)

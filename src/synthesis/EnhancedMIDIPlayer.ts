@@ -31,7 +31,7 @@ export class EnhancedMIDIPlayer {
     this.masterFilter.Q.value = 1;
 
     this.masterGain = audioContext.createGain();
-    this.masterGain.gain.value = 0.6; // Good default volume
+    this.masterGain.gain.value = 0.8; // Good default volume
 
     this.masterFilter.connect(this.masterGain);
     this.masterGain.connect(audioContext.destination);
@@ -68,7 +68,11 @@ export class EnhancedMIDIPlayer {
   }
 
   stop(): void {
-    if (!this.isPlaying) return;
+    console.log('EnhancedMIDIPlayer.stop() called, isPlaying:', this.isPlaying);
+    if (!this.isPlaying) {
+      console.log('Already stopped, returning');
+      return;
+    }
 
     this.isPlaying = false;
 
@@ -77,11 +81,12 @@ export class EnhancedMIDIPlayer {
       this.schedulerIntervalId = null;
     }
 
-    // Stop all scheduled notes
+    // Stop all scheduled notes immediately
+    const now = this.audioContext.currentTime;
     for (const scheduledNote of this.scheduledNotes) {
       try {
         for (const osc of scheduledNote.oscillators) {
-          osc.stop();
+          osc.stop(now);
           osc.disconnect();
         }
         scheduledNote.gainNode.disconnect();
@@ -92,14 +97,16 @@ export class EnhancedMIDIPlayer {
     this.scheduledNotes = [];
 
     // Fade out master gain
-    this.masterGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.1);
+    this.masterGain.gain.cancelScheduledValues(now);
+    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    this.masterGain.gain.linearRampToValueAtTime(0, now + 0.05);
 
     // Reset volume after fade
     setTimeout(() => {
       if (!this.isPlaying) {
-        this.masterGain.gain.value = 0.6;
+        this.masterGain.gain.value = 0.8;
       }
-    }, 150);
+    }, 100);
 
     console.log('Enhanced MIDI playback stopped');
   }
@@ -138,6 +145,11 @@ export class EnhancedMIDIPlayer {
   }
 
   private scheduleNote(event: NoteEvent, when: number): void {
+    // Skip drum channel (channel 9 in 0-indexed, or channel 10 in MIDI spec)
+    if (event.channel === 9) {
+      return;
+    }
+
     try {
       const gainNode = this.audioContext.createGain();
       const filter = this.audioContext.createBiquadFilter();

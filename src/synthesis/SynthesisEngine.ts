@@ -116,6 +116,12 @@ export class SynthesisEngine {
         filter.type = 'peaking';
         filter.frequency.value = 1000;
         break;
+      case 'melody':
+        // Passthrough mode - balanced sound for all notes
+        gain.gain.value = 0.35;
+        filter.type = 'lowpass';
+        filter.frequency.value = 4000; // Brighter sound for full range
+        break;
     }
   }
 
@@ -145,6 +151,9 @@ export class SynthesisEngine {
       case 'ostinato':
         osc.type = 'triangle';
         break;
+      case 'melody':
+        osc.type = 'triangle';
+        break;
       case 'texture':
       case 'accents':
         osc.type = 'sine';
@@ -154,18 +163,18 @@ export class SynthesisEngine {
     osc.connect(envelope);
     envelope.connect(layer.filterNode);
     
-    // Envelope based on velocity and duration
+    // Envelope based on velocity and duration with minimum times to prevent clicks
     const gainValue = velocity * 0.5; // Scale velocity
-    const attackTime = Math.min(0.05, duration * 0.1);
-    const releaseTime = Math.min(0.1, duration * 0.3);
-    
+    const attackTime = Math.max(0.005, Math.min(0.05, duration * 0.1)); // Min 5ms attack
+    const releaseTime = Math.max(0.01, Math.min(0.1, duration * 0.3)); // Min 10ms release
+
     envelope.gain.setValueAtTime(0, when);
     envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
-    envelope.gain.linearRampToValueAtTime(gainValue * 0.7, when + duration - releaseTime);
-    envelope.gain.exponentialRampToValueAtTime(0.001, when + duration);
-    
+    envelope.gain.setValueAtTime(gainValue, when + Math.max(attackTime, duration - releaseTime));
+    envelope.gain.exponentialRampToValueAtTime(0.001, when + duration + releaseTime);
+
     osc.start(when);
-    osc.stop(when + duration);
+    osc.stop(when + duration + releaseTime + 0.01); // Stop after envelope completes
     
     // Clean up after note ends
     setTimeout(() => {
@@ -175,7 +184,7 @@ export class SynthesisEngine {
       } catch (e) {
         // Already disconnected
       }
-    }, (duration + 0.1) * 1000);
+    }, (duration + releaseTime + 0.1) * 1000);
   }
 
   private scheduleEvents(): void {
@@ -333,19 +342,19 @@ export class SynthesisEngine {
       osc.connect(envelope);
       envelope.connect(layer.filterNode);
       
-      // Envelope based on velocity and duration, scaled for chords
+      // Envelope based on velocity and duration, scaled for chords with minimum times to prevent clicks
       const gainValue = (velocity * 0.3) / Math.max(pitches.length * 0.5, 1); // Scale down for chords
-      const attackTime = Math.min(0.05, duration * 0.1);
-      const releaseTime = Math.min(0.1, duration * 0.3);
-      
+      const attackTime = Math.max(0.005, Math.min(0.05, duration * 0.1)); // Min 5ms attack
+      const releaseTime = Math.max(0.01, Math.min(0.1, duration * 0.3)); // Min 10ms release
+
       envelope.gain.setValueAtTime(0, when);
       envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
-      envelope.gain.linearRampToValueAtTime(gainValue * 0.7, when + duration - releaseTime);
-      envelope.gain.exponentialRampToValueAtTime(0.001, when + duration);
-      
+      envelope.gain.setValueAtTime(gainValue, when + Math.max(attackTime, duration - releaseTime));
+      envelope.gain.exponentialRampToValueAtTime(0.001, when + duration + releaseTime);
+
       osc.start(when);
-      osc.stop(when + duration);
-      
+      osc.stop(when + duration + releaseTime + 0.01); // Stop after envelope completes
+
       // Clean up after note ends
       setTimeout(() => {
         try {
@@ -354,7 +363,7 @@ export class SynthesisEngine {
         } catch (e) {
           // Already disconnected
         }
-      }, (duration + 0.1) * 1000);
+      }, (duration + releaseTime + 0.1) * 1000);
     }
   }
 

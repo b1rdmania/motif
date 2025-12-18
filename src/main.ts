@@ -6,17 +6,6 @@ import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { ToneJSMIDIPlayer } from './synthesis/ToneJSMIDIPlayer';
 import type { NoteEvent } from './types';
 
-type MIDIPlayerType = 'tonejs' | 'soundfont' | 'custom';
-
-interface MIDIPlayer {
-  load(events: NoteEvent[]): void | Promise<void>;
-  play(): void | Promise<void>;
-  stop(): void;
-  setVolume(volume: number): void;
-  getDuration(): number;
-  getProgress(): number;
-}
-
 class MotifApp {
   private motifEngine: MotifEngine;
   private midiService: MIDIService;
@@ -26,8 +15,6 @@ class MotifApp {
   private toneJSPlayer: ToneJSMIDIPlayer;
   private soundfontPlayer: SoundfontMIDIPlayer;
   private customPlayer: EnhancedMIDIPlayer;
-  private currentPlayer: MIDIPlayer;
-  private currentPlayerType: MIDIPlayerType = 'tonejs';
   
   private searchBtn!: HTMLButtonElement;
   private songInput!: HTMLInputElement;
@@ -40,21 +27,34 @@ class MotifApp {
   private selectedTitle!: HTMLElement;
   private selectedMeta!: HTMLElement;
   
-  private previewBtn!: HTMLButtonElement;
-  private previewStopBtn!: HTMLButtonElement;
+  // Tone.js player controls
+  private tonejsPlayBtn!: HTMLButtonElement;
+  private tonejsStopBtn!: HTMLButtonElement;
+  private tonejsVolumeSlider!: HTMLInputElement;
+
+  // Soundfont player controls
+  private soundfontPlayBtn!: HTMLButtonElement;
+  private soundfontStopBtn!: HTMLButtonElement;
+  private soundfontVolumeSlider!: HTMLInputElement;
+
+  // Custom player controls
+  private customPlayBtn!: HTMLButtonElement;
+  private customStopBtn!: HTMLButtonElement;
+  private customVolumeSlider!: HTMLInputElement;
+
+  // Motif controls
   private motifBtn!: HTMLButtonElement;
   private motifStopBtn!: HTMLButtonElement;
-  private nextResultBtn!: HTMLButtonElement;
-
-  private previewVolumeSlider!: HTMLInputElement;
   private motifVolumeSlider!: HTMLInputElement;
-  private engineSelect!: HTMLSelectElement;
+
+  private nextResultBtn!: HTMLButtonElement;
   
   private searchResults: any[] = [];
   private selectedResultIndex = 0;
   private currentMIDI: { events: NoteEvent[], metadata: any } | null = null;
 
   constructor() {
+    // Create AudioContext lazily on first use for iOS compatibility
     this.audioContext = new AudioContext();
     this.motifEngine = new MotifEngine();
     this.midiService = new MIDIService();
@@ -63,7 +63,6 @@ class MotifApp {
     this.toneJSPlayer = new ToneJSMIDIPlayer();
     this.soundfontPlayer = new SoundfontMIDIPlayer(this.audioContext);
     this.customPlayer = new EnhancedMIDIPlayer(this.audioContext);
-    this.currentPlayer = this.toneJSPlayer; // Default to Tone.js
 
     this.initializeUI();
     this.setupEventListeners();
@@ -81,15 +80,27 @@ class MotifApp {
     this.selectedTitle = document.getElementById('selectedTitle')!;
     this.selectedMeta = document.getElementById('selectedMeta')!;
     
-    this.previewBtn = document.getElementById('previewBtn') as HTMLButtonElement;
-    this.previewStopBtn = document.getElementById('previewStopBtn') as HTMLButtonElement;
+    // Tone.js controls
+    this.tonejsPlayBtn = document.getElementById('tonejsPlayBtn') as HTMLButtonElement;
+    this.tonejsStopBtn = document.getElementById('tonejsStopBtn') as HTMLButtonElement;
+    this.tonejsVolumeSlider = document.getElementById('tonejsVolume') as HTMLInputElement;
+
+    // Soundfont controls
+    this.soundfontPlayBtn = document.getElementById('soundfontPlayBtn') as HTMLButtonElement;
+    this.soundfontStopBtn = document.getElementById('soundfontStopBtn') as HTMLButtonElement;
+    this.soundfontVolumeSlider = document.getElementById('soundfontVolume') as HTMLInputElement;
+
+    // Custom controls
+    this.customPlayBtn = document.getElementById('customPlayBtn') as HTMLButtonElement;
+    this.customStopBtn = document.getElementById('customStopBtn') as HTMLButtonElement;
+    this.customVolumeSlider = document.getElementById('customVolume') as HTMLInputElement;
+
+    // Motif controls
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
     this.motifStopBtn = document.getElementById('motifStopBtn') as HTMLButtonElement;
-    this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
-
-    this.previewVolumeSlider = document.getElementById('previewVolume') as HTMLInputElement;
     this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
-    this.engineSelect = document.getElementById('engineSelect') as HTMLSelectElement;
+
+    this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
   }
 
   private setupEventListeners(): void {
@@ -101,27 +112,39 @@ class MotifApp {
       }
     });
     
-    this.previewBtn.addEventListener('click', () => this.handlePreview());
-    this.previewStopBtn.addEventListener('click', () => this.handlePreviewStop());
-    this.motifBtn.addEventListener('click', () => this.handleMotif());
-    this.motifStopBtn.addEventListener('click', () => this.handleMotifStop());
-    this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
-
-    // Volume control event listeners
-    this.previewVolumeSlider.addEventListener('input', (e) => {
+    // Tone.js player
+    this.tonejsPlayBtn.addEventListener('click', () => this.handleTonejsPlay());
+    this.tonejsStopBtn.addEventListener('click', () => this.handleTonejsStop());
+    this.tonejsVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
-      this.currentPlayer.setVolume(volume);
+      this.toneJSPlayer.setVolume(volume);
     });
 
+    // Soundfont player
+    this.soundfontPlayBtn.addEventListener('click', () => this.handleSoundfontPlay());
+    this.soundfontStopBtn.addEventListener('click', () => this.handleSoundfontStop());
+    this.soundfontVolumeSlider.addEventListener('input', (e) => {
+      const volume = parseFloat((e.target as HTMLInputElement).value);
+      this.soundfontPlayer.setVolume(volume);
+    });
+
+    // Custom player
+    this.customPlayBtn.addEventListener('click', () => this.handleCustomPlay());
+    this.customStopBtn.addEventListener('click', () => this.handleCustomStop());
+    this.customVolumeSlider.addEventListener('input', (e) => {
+      const volume = parseFloat((e.target as HTMLInputElement).value);
+      this.customPlayer.setVolume(volume);
+    });
+
+    // Motif
+    this.motifBtn.addEventListener('click', () => this.handleMotif());
+    this.motifStopBtn.addEventListener('click', () => this.handleMotifStop());
     this.motifVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
       this.motifEngine.setVolume(volume);
     });
 
-    // Engine selector event listener
-    this.engineSelect.addEventListener('change', (e) => {
-      this.handleEngineChange((e.target as HTMLSelectElement).value as MIDIPlayerType);
-    });
+    this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
   }
 
   private async handleSearch(): Promise<void> {
@@ -181,7 +204,6 @@ class MotifApp {
         </td>
         <td>${result.parsed ? Math.round(result.parsed.durationSec) + 's' : '?'}</td>
         <td>${result.parsed ? result.parsed.tracks.length : '?'}</td>
-        <td class="issues">${result.parsed?.issues.join(', ') || ''}</td>
         <td><button onclick="window.app.selectResult(${index})">Select</button></td>
       `;
       
@@ -230,8 +252,12 @@ class MotifApp {
 
       this.currentMIDI = { events, metadata: { ...metadata, duration: actualDuration } };
 
-      // Load into current player
-      await this.currentPlayer.load(events);
+      // Load into all players
+      await Promise.all([
+        this.toneJSPlayer.load(events),
+        this.soundfontPlayer.load(events),
+        this.customPlayer.load(events)
+      ]);
       
       // Update UI
       this.selectedTitle.textContent = result.title;
@@ -252,85 +278,93 @@ class MotifApp {
     }
   }
 
-  private async handlePreview(): Promise<void> {
+  // Tone.js player handlers
+  private async handleTonejsPlay(): Promise<void> {
     if (!this.currentMIDI) return;
-
     try {
-      // Stop Motif if it's playing
-      this.motifEngine.stop();
-      this.motifBtn.disabled = false;
-      this.motifStopBtn.disabled = true;
-
-      await this.currentPlayer.play();
-      this.previewBtn.disabled = true;
-      this.previewStopBtn.disabled = false;
-      this.updateStatus(`Playing original MIDI (${this.currentPlayerType})...`);
+      await this.toneJSPlayer.play();
+      this.tonejsPlayBtn.disabled = true;
+      this.tonejsStopBtn.disabled = false;
+      this.updateStatus('Playing Tone.js piano...');
     } catch (error) {
-      this.updateStatus(`Preview error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.updateStatus(`Tone.js error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private handlePreviewStop(): void {
-    this.currentPlayer.stop();
-    this.previewBtn.disabled = false;
-    this.previewStopBtn.disabled = true;
-    this.updateStatus('Preview stopped.');
+  private handleTonejsStop(): void {
+    console.log('Tone.js stop button clicked');
+    this.toneJSPlayer.stop();
+    this.tonejsPlayBtn.disabled = false;
+    this.tonejsStopBtn.disabled = true;
+    this.updateStatus('Tone.js stopped.');
   }
 
-  private async handleEngineChange(engineType: MIDIPlayerType): Promise<void> {
-    // Stop current player
-    this.currentPlayer.stop();
-
-    // Switch to new player
-    this.currentPlayerType = engineType;
-    switch (engineType) {
-      case 'tonejs':
-        this.currentPlayer = this.toneJSPlayer;
-        break;
-      case 'soundfont':
-        this.currentPlayer = this.soundfontPlayer;
-        break;
-      case 'custom':
-        this.currentPlayer = this.customPlayer;
-        break;
-    }
-
-    // Reload MIDI into new player if we have one loaded
-    if (this.currentMIDI) {
-      try {
-        this.updateStatus(`Switching to ${engineType} engine...`);
-        await this.currentPlayer.load(this.currentMIDI.events);
-
-        // Apply current volume setting
-        const volume = parseFloat(this.previewVolumeSlider.value);
-        this.currentPlayer.setVolume(volume);
-
-        this.updateStatus(`Switched to ${engineType} engine. Ready to play.`);
-      } catch (error) {
-        this.updateStatus(`Engine switch error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    }
-  }
-
-  private async handleMotif(): Promise<void> {
+  // Soundfont player handlers
+  private async handleSoundfontPlay(): Promise<void> {
     if (!this.currentMIDI) return;
+    try {
+      await this.soundfontPlayer.play();
+      this.soundfontPlayBtn.disabled = true;
+      this.soundfontStopBtn.disabled = false;
+      this.updateStatus('Playing Soundfont piano...');
+    } catch (error) {
+      this.updateStatus(`Soundfont error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private handleSoundfontStop(): void {
+    console.log('Soundfont stop button clicked');
+    this.soundfontPlayer.stop();
+    this.soundfontPlayBtn.disabled = false;
+    this.soundfontStopBtn.disabled = true;
+    this.updateStatus('Soundfont stopped.');
+  }
+
+  // Custom player handlers
+  private async handleCustomPlay(): Promise<void> {
+    if (!this.currentMIDI) return;
+    try {
+      await this.customPlayer.play();
+      this.customPlayBtn.disabled = true;
+      this.customStopBtn.disabled = false;
+      this.updateStatus('Playing custom synthesis...');
+    } catch (error) {
+      this.updateStatus(`Custom player error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private handleCustomStop(): void {
+    console.log('Custom stop button clicked');
+    this.customPlayer.stop();
+    this.customPlayBtn.disabled = false;
+    this.customStopBtn.disabled = true;
+    this.updateStatus('Custom synthesis stopped.');
+  }
+
+  // Motif handlers
+  private async handleMotif(): Promise<void> {
+    console.log('Motif Generate & Play button clicked');
+    if (!this.currentMIDI) {
+      console.error('No MIDI loaded');
+      return;
+    }
 
     try {
-      // Stop preview if it's playing
-      this.currentPlayer.stop();
-      this.previewBtn.disabled = false;
-      this.previewStopBtn.disabled = true;
-
       this.updateStatus('Generating Motif synthesis...');
       this.motifBtn.disabled = true;
 
-      // Use the current MIDI data directly
-      await this.motifEngine.generateFromMIDI(this.currentMIDI.events);
+      console.log('Calling generateFromMIDI with', this.currentMIDI.events.length, 'events');
+      // Use the current MIDI data directly in passthrough mode
+      await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'passthrough');
+
+      console.log('Calling motifEngine.play()');
       await this.motifEngine.play();
 
       this.motifStopBtn.disabled = false;
       this.updateStatus('Playing Motif synthesis...');
+      console.log('Motif playback started successfully');
     } catch (error) {
+      console.error('Motif error:', error);
       this.updateStatus(`Motif error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.motifBtn.disabled = false;
     }
@@ -354,14 +388,20 @@ class MotifApp {
   }
 
   private enablePlayerControls(): void {
-    this.previewBtn.disabled = false;
+    this.tonejsPlayBtn.disabled = false;
+    this.soundfontPlayBtn.disabled = false;
+    this.customPlayBtn.disabled = false;
     this.motifBtn.disabled = false;
     this.nextResultBtn.disabled = this.searchResults.length <= 1;
   }
 
   private disablePlayerControls(): void {
-    this.previewBtn.disabled = true;
-    this.previewStopBtn.disabled = true;
+    this.tonejsPlayBtn.disabled = true;
+    this.tonejsStopBtn.disabled = true;
+    this.soundfontPlayBtn.disabled = true;
+    this.soundfontStopBtn.disabled = true;
+    this.customPlayBtn.disabled = true;
+    this.customStopBtn.disabled = true;
     this.motifBtn.disabled = true;
     this.motifStopBtn.disabled = true;
     this.nextResultBtn.disabled = true;

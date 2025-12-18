@@ -2,27 +2,52 @@ export class ScoreUtils {
   static calculateConfidence(title: string, query: string, source: string): number {
     const titleLower = title.toLowerCase();
     const queryLower = query.toLowerCase();
-    
+
     let score = 0;
-    
+
     // Token matching - split and check individual words
     const titleTokens = this.tokenize(titleLower);
     const queryTokens = this.tokenize(queryLower);
-    
-    // Exact title match gets high score
-    if (titleLower.includes(queryLower)) {
+
+    // Exact title match gets very high score
+    if (titleLower === queryLower) {
+      score += 1.0;
+    } else if (titleLower.includes(queryLower)) {
       score += 0.8;
     }
-    
-    // Token overlap scoring
-    const matchingTokens = queryTokens.filter(token => 
-      titleTokens.some(titleToken => 
-        titleToken.includes(token) || token.includes(titleToken)
-      )
-    );
-    
-    const tokenMatchRatio = matchingTokens.length / queryTokens.length;
-    score += tokenMatchRatio * 0.6;
+
+    // Parse for artist + song patterns (e.g., "Artist - Song" or "Artist Song")
+    const artistSongPattern = this.parseArtistSongQuery(queryLower);
+    if (artistSongPattern) {
+      const { artist, song } = artistSongPattern;
+
+      // Check if title contains both artist and song (high confidence)
+      const hasArtist = titleLower.includes(artist);
+      const hasSong = titleLower.includes(song);
+
+      if (hasArtist && hasSong) {
+        score += 0.9; // Very high confidence for artist + song match
+      } else if (hasArtist) {
+        score += 0.4; // Partial credit for artist match
+      } else if (hasSong) {
+        score += 0.5; // Partial credit for song match
+      }
+    } else {
+      // Standard token overlap scoring (fallback)
+      const matchingTokens = queryTokens.filter(token =>
+        titleTokens.some(titleToken =>
+          titleToken.includes(token) || token.includes(titleToken)
+        )
+      );
+
+      const tokenMatchRatio = matchingTokens.length / queryTokens.length;
+      score += tokenMatchRatio * 0.6;
+
+      // Bonus for having all query words present (in any order)
+      if (tokenMatchRatio === 1.0) {
+        score += 0.2;
+      }
+    }
     
     // Penalty for low-quality indicators
     const penalties = [
@@ -105,5 +130,49 @@ export class ScoreUtils {
   private static isStopWord(word: string): boolean {
     const stopWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'];
     return stopWords.includes(word);
+  }
+
+  /**
+   * Parse query for artist + song patterns
+   * Handles patterns like: "Artist Song", "Artist - Song", "Artist: Song", etc.
+   * Returns null if no clear pattern detected
+   */
+  private static parseArtistSongQuery(query: string): { artist: string; song: string } | null {
+    // Pattern 1: "Artist - Song" or "Artist : Song"
+    const dashPattern = /^(.+?)\s*[-:]\s*(.+)$/;
+    const dashMatch = query.match(dashPattern);
+    if (dashMatch) {
+      return {
+        artist: dashMatch[1].trim(),
+        song: dashMatch[2].trim()
+      };
+    }
+
+    // Pattern 2: Multi-word query where first few words might be artist
+    // Common patterns: "[FirstName LastName] [SongWords...]"
+    const words = query.split(/\s+/);
+    if (words.length >= 3) {
+      // Try 2-word artist name (e.g., "David Barry Live on Mars")
+      const twoWordArtist = words.slice(0, 2).join(' ');
+      const remainingSong = words.slice(2).join(' ');
+
+      // Heuristic: if first words are capitalized names and rest is longer, likely artist + song
+      if (remainingSong.length > twoWordArtist.length) {
+        return {
+          artist: twoWordArtist,
+          song: remainingSong
+        };
+      }
+
+      // Try 1-word artist name (e.g., "Madonna Like a Prayer")
+      if (words.length >= 3) {
+        return {
+          artist: words[0],
+          song: words.slice(1).join(' ')
+        };
+      }
+    }
+
+    return null;
   }
 }

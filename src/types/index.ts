@@ -4,6 +4,7 @@ export interface NoteEvent {
   pitch: number;
   velocity: number;
   track: number;
+  channel?: number; // MIDI channel (0-15, where 9 is drums)
 }
 
 export interface ChordEvent {
