@@ -7,20 +7,26 @@
     <style>
         body {
             font-family: 'Monaco', 'Consolas', monospace;
-            background: #0a0a0a;
+            background:
+                radial-gradient(1200px 800px at 50% -200px, rgba(0, 255, 136, 0.18), transparent 60%),
+                radial-gradient(900px 700px at 110% 20%, rgba(255, 170, 68, 0.10), transparent 55%),
+                radial-gradient(900px 700px at -10% 30%, rgba(120, 90, 255, 0.10), transparent 55%),
+                #070707;
             color: #e0e0e0;
             margin: 0;
             padding: 20px;
             line-height: 1.5;
         }
         .container {
-            max-width: 800px;
+            max-width: 980px;
             margin: 0 auto;
         }
         h1 {
             color: #00ff88;
             text-align: center;
             margin-bottom: 30px;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 18px rgba(0, 255, 136, 0.18);
         }
         .controls {
             margin: 20px 0;
@@ -34,20 +40,28 @@
             margin: 0 10px;
             cursor: pointer;
             font-family: inherit;
+            transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
         }
         button:hover {
             background: #444;
+            transform: translateY(-1px);
+            border-color: #6a6a6a;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
         }
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         button.primary {
             background: #00ff88;
             color: #000;
+            border-color: rgba(0, 255, 136, 0.65);
         }
         button.primary:hover {
             background: #00cc6a;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.12);
         }
         #status {
             margin: 20px 0;
@@ -55,6 +69,8 @@
             background: #1a1a1a;
             border-left: 3px solid #00ff88;
             min-height: 20px;
+            border-radius: 6px;
+            box-shadow: 0 18px 70px rgba(0, 0, 0, 0.35);
         }
         input {
             background: #333;
@@ -117,20 +133,138 @@
         }
         
         .player-controls {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin: 20px 0;
+        }
+        .player-box {
+            background: #1a1a1a;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            box-shadow: 0 18px 80px rgba(0, 0, 0, 0.55);
+            position: relative;
+            overflow: hidden;
+        }
+        .player-box::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.10), transparent 55%);
+            opacity: 0.35;
+            pointer-events: none;
+        }
+        .player-box h4 {
+            margin-top: 0;
+            color: #00ff88;
+            position: relative;
+        }
+        .player-box p {
+            font-size: 0.85em;
+            color: #888;
+            margin: 5px 0 15px 0;
+            position: relative;
+        }
+        .player-box button {
+            width: 100%;
+            margin: 5px 0;
+            position: relative;
         }
         .player-info {
             background: #1a1a1a;
             padding: 15px;
             margin: 15px 0;
             border-left: 3px solid #555;
+            border-radius: 10px;
+            box-shadow: 0 18px 80px rgba(0, 0, 0, 0.55);
         }
         
-        .issues {
-            color: #ffaa44;
+        .section {
+            margin-top: 26px;
+        }
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 18px 0 10px 0;
+        }
+        .section-title {
+            margin: 0;
+            font-size: 1.1em;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #d8ffe9;
+        }
+        .section-subtitle {
+            margin: 0;
             font-size: 0.9em;
+            color: #8f8f8f;
+        }
+        .divider {
+            height: 1px;
+            margin: 10px 0 18px 0;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.35), rgba(255, 170, 68, 0.22), transparent);
+        }
+
+        .original-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+        }
+        @media (max-width: 920px) {
+            .original-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .motif-stage {
+            margin-top: 18px;
+            padding: 22px;
+            border-radius: 14px;
+            background:
+                radial-gradient(900px 400px at 20% 0%, rgba(255, 170, 68, 0.18), transparent 55%),
+                radial-gradient(900px 400px at 80% 0%, rgba(0, 255, 136, 0.12), transparent 60%),
+                rgba(16, 16, 16, 0.75);
+            border: 1px solid rgba(255, 170, 68, 0.22);
+            box-shadow: 0 30px 120px rgba(0, 0, 0, 0.65);
+        }
+        .motif-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 240px;
+            gap: 18px;
+            align-items: start;
+        }
+        @media (max-width: 920px) {
+            .motif-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .motif-actions {
+            display: grid;
+            gap: 10px;
+        }
+        .motif-actions button.primary {
+            padding: 12px 16px;
+            font-weight: 700;
+        }
+        .motif-actions button.primary:hover {
+            box-shadow: 0 16px 60px rgba(255, 170, 68, 0.15);
+            border-color: rgba(255, 170, 68, 0.55);
+        }
+        .motif-kicker {
+            font-size: 0.85em;
+            color: #b6b6b6;
+            margin: 0 0 10px 0;
+            max-width: 70ch;
+        }
+        .try-next {
+            margin-top: 14px;
+            width: 100%;
+        }
+        .try-next button {
+            width: 100%;
         }
 
         .volume-control {
@@ -138,6 +272,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: relative;
         }
         .volume-control label {
             font-size: 0.9em;
@@ -186,10 +321,9 @@
                     <tr>
                         <th>Title</th>
                         <th>Source</th>
-                        <th>Confidence</th>
+                        <th>Match</th>
                         <th>Duration</th>
                         <th>Tracks</th>
-                        <th>Issues</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -203,40 +337,78 @@
                 <h4 id="selectedTitle">No MIDI selected</h4>
                 <p id="selectedMeta">Select a MIDI file from search results to enable playback</p>
             </div>
-            
-            <div class="player-controls">
-                <div>
-                    <h4>MIDI Preview</h4>
-                    <p>Plays original MIDI as-is</p>
-                    <div class="engine-selector">
-                        <label for="engineSelect">Playback Engine:</label>
-                        <select id="engineSelect">
-                            <option value="tonejs">Tone.js (Sampled Piano)</option>
-                            <option value="soundfont">Soundfont (Piano CDN)</option>
-                            <option value="custom">Custom Synthesis</option>
-                        </select>
-                    </div>
-                    <button id="previewBtn" disabled onclick="handlePreview()">Play Original</button>
-                    <button id="previewStopBtn" disabled>Stop</button>
+
+            <div class="section">
+                <div class="section-header">
+                    <h3 class="section-title">Original MIDI playback</h3>
+                    <p class="section-subtitle">Choose an engine and play the source performance.</p>
+                </div>
+                <div class="divider"></div>
+
+                <div class="original-grid">
+                    <div class="player-box">
+                    <h4>Tone.js Piano</h4>
+                    <p>High-quality sampled piano</p>
+                    <button id="tonejsPlayBtn" disabled>Play</button>
+                    <button id="tonejsStopBtn" disabled>Stop</button>
                     <div class="volume-control">
-                        <label for="previewVolume">Volume:</label>
-                        <input type="range" id="previewVolume" min="0" max="1" step="0.01" value="0.6" />
+                        <label for="tonejsVolume">Volume:</label>
+                        <input type="range" id="tonejsVolume" min="0" max="1" step="0.01" value="0.8" />
+                    </div>
+                    </div>
+
+                    <div class="player-box">
+                    <h4>Soundfont Piano</h4>
+                    <p>Classic soundfont piano</p>
+                    <button id="soundfontPlayBtn" disabled>Play</button>
+                    <button id="soundfontStopBtn" disabled>Stop</button>
+                    <div class="volume-control">
+                        <label for="soundfontVolume">Volume:</label>
+                        <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.8" />
+                    </div>
+                    </div>
+
+                    <div class="player-box">
+                    <h4>Custom Synthesis</h4>
+                    <p>Multi-oscillator web audio</p>
+                    <button id="customPlayBtn" disabled>Play</button>
+                    <button id="customStopBtn" disabled>Stop</button>
+                    <div class="volume-control">
+                        <label for="customVolume">Volume:</label>
+                        <input type="range" id="customVolume" min="0" max="1" step="0.01" value="0.8" />
+                    </div>
                     </div>
                 </div>
 
-                <div>
-                    <h4>Motif Generation</h4>
-                    <p>Procedural synthesis from structure</p>
-                    <button id="motifBtn" disabled onclick="handleMotif()">Generate & Play</button>
-                    <button id="motifStopBtn" disabled>Stop</button>
-                    <div class="volume-control">
-                        <label for="motifVolume">Volume:</label>
-                        <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.3" />
+                <div class="try-next">
+                    <button id="nextResultBtn" disabled>Try Next Result</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h3 class="section-title">Motif generation</h3>
+                    <p class="section-subtitle">Derive structure → synthesize a new variation.</p>
+                </div>
+                <div class="divider"></div>
+
+                <div class="motif-stage">
+                    <div class="motif-grid">
+                        <div>
+                            <h4 style="margin:0; color:#ffaa44; text-shadow: 0 0 18px rgba(255,170,68,0.15);">Generate a variation</h4>
+                            <p class="motif-kicker">Same MIDI, new energy. This is where “more ambient / more dancey / more ominous” will live.</p>
+                        </div>
+                        <div class="motif-actions">
+                            <button id="motifBtn" class="primary" disabled>Generate & Play</button>
+                            <button id="motifStopBtn" disabled>Stop</button>
+                            <div class="volume-control">
+                                <label for="motifVolume">Volume:</label>
+                                <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.3" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <button id="nextResultBtn" disabled>Try Next Result</button>
         </div>
     </div>
 
