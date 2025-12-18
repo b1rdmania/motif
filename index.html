@@ -274,15 +274,41 @@
             background: linear-gradient(90deg, transparent, var(--color-border), transparent);
         }
 
-        .original-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: calc(var(--spacing-unit) * 2);
+        .preview-controls {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 1.5);
+            align-items: center;
+            flex-wrap: wrap;
+            padding: calc(var(--spacing-unit) * 3);
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
         }
 
-        @media (max-width: 920px) {
-            .original-grid {
-                grid-template-columns: 1fr;
+        .preview-controls button.preview-play {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .preview-controls button.next-result {
+            margin-left: auto;
+        }
+
+        .preview-controls .volume-control {
+            flex: 1;
+            min-width: 200px;
+            margin-top: 0;
+        }
+
+        @media (max-width: 768px) {
+            .preview-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .preview-controls button.next-result {
+                margin-left: 0;
             }
         }
 
@@ -479,48 +505,19 @@
 
             <div class="section">
                 <div class="section-header">
-                    <h3 class="section-title">Original MIDI playback</h3>
-                    <p class="section-subtitle">Choose an engine and play the source performance.</p>
+                    <h3 class="section-title">Preview</h3>
+                    <p class="section-subtitle">Review the MIDI before generation.</p>
                 </div>
                 <div class="divider"></div>
 
-                <div class="original-grid">
-                    <div class="player-box">
-                    <h4>Tone.js Piano</h4>
-                    <p>High-quality sampled piano</p>
-                    <button id="tonejsPlayBtn" disabled>Play</button>
-                    <button id="tonejsStopBtn" disabled>Stop</button>
-                    <div class="volume-control">
-                        <label for="tonejsVolume">Volume:</label>
-                        <input type="range" id="tonejsVolume" min="0" max="1" step="0.01" value="0.8" />
-                    </div>
-                    </div>
-
-                    <div class="player-box">
-                    <h4>Soundfont Piano</h4>
-                    <p>Classic soundfont piano</p>
-                    <button id="soundfontPlayBtn" disabled>Play</button>
+                <div class="preview-controls">
+                    <button id="soundfontPlayBtn" class="preview-play" disabled>Play Preview</button>
                     <button id="soundfontStopBtn" disabled>Stop</button>
                     <div class="volume-control">
-                        <label for="soundfontVolume">Volume:</label>
+                        <label for="soundfontVolume">Volume</label>
                         <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.8" />
                     </div>
-                    </div>
-
-                    <div class="player-box">
-                    <h4>Custom Synthesis</h4>
-                    <p>Multi-oscillator web audio</p>
-                    <button id="customPlayBtn" disabled>Play</button>
-                    <button id="customStopBtn" disabled>Stop</button>
-                    <div class="volume-control">
-                        <label for="customVolume">Volume:</label>
-                        <input type="range" id="customVolume" min="0" max="1" step="0.01" value="0.8" />
-                    </div>
-                    </div>
-                </div>
-
-                <div class="try-next">
-                    <button id="nextResultBtn" disabled>Try Next Result</button>
+                    <button id="nextResultBtn" class="next-result" disabled>Try Next Result</button>
                 </div>
             </div>
 
