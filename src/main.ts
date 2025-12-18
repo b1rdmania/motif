@@ -112,10 +112,13 @@ class MotifApp {
       const volume = parseFloat((e.target as HTMLInputElement).value);
       this.motifEngine.setVolume(volume);
     });
-    this.motifProgressBar.addEventListener('input', (e) => {
+    // Use both input and change for iOS compatibility
+    const seekHandler = (e: Event) => {
       const progress = parseFloat((e.target as HTMLInputElement).value) / 100;
       this.handleMotifSeek(progress);
-    });
+    };
+    this.motifProgressBar.addEventListener('input', seekHandler);
+    this.motifProgressBar.addEventListener('change', seekHandler);
 
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
   }
@@ -160,31 +163,27 @@ class MotifApp {
 
   private displayResults(): void {
     this.resultsBody.innerHTML = '';
-    
+
     this.searchResults.forEach((result, index) => {
       const row = document.createElement('tr');
       if (index === this.selectedResultIndex) {
         row.classList.add('selected');
       }
-      
+
       row.innerHTML = `
         <td>${result.title}</td>
-        <td>${result.source}</td>
-        <td>
-          <div class="confidence-bar">
-            <div class="confidence-fill" style="width: ${result.confidence * 100}%"></div>
-          </div>
-        </td>
-        <td>${result.parsed ? Math.round(result.parsed.durationSec) + 's' : '?'}</td>
-        <td>${result.parsed ? result.parsed.tracks.length : '?'}</td>
-        <td><button onclick="window.app.selectResult(${index})">Select</button></td>
+        <td class="duration-col">${result.parsed ? Math.round(result.parsed.durationSec) + 's' : '?'}</td>
+        <td class="tracks-col">${result.parsed ? result.parsed.tracks.length : '?'}</td>
       `;
-      
+
+      // Make entire row clickable
+      row.addEventListener('click', () => this.selectResult(index));
+
       this.resultsBody.appendChild(row);
     });
-    
+
     this.resultsSection.classList.add('visible');
-    
+
     // Auto-select first result
     if (this.searchResults.length > 0) {
       this.selectResult(0);
