@@ -25,7 +25,11 @@ export class SoundfontMIDIPlayer {
   }
 
   async load(events: NoteEvent[]): Promise<void> {
-    this.events = [...events].sort((a, b) => a.time - b.time);
+    const sorted = [...events].sort((a, b) => a.time - b.time);
+
+    // Normalize times to start at 0 (skip leading silence)
+    const minTime = sorted.length > 0 ? sorted[0].time : 0;
+    this.events = sorted.map(e => ({ ...e, time: e.time - minTime }));
     this.currentEventIndex = 0;
     
     // Load the acoustic grand piano instrument (most versatile for MIDI playback)
