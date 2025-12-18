@@ -33,3 +33,7 @@ logs/
 # Runtime
 .cache/
 .tmp/
+.vercel
+
+# Backend runtime cache (downloaded MIDI files)
+server/cache/

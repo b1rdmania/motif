@@ -1,31 +1,54 @@
 import { MotifEngine } from './core/MotifEngine';
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
-import { MIDIPlayer } from './synthesis/MIDIPlayer';
+import { EnhancedMIDIPlayer } from './synthesis/EnhancedMIDIPlayer';
+import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
+import { ToneJSMIDIPlayer } from './synthesis/ToneJSMIDIPlayer';
 import type { NoteEvent } from './types';
+
+type MIDIPlayerType = 'tonejs' | 'soundfont' | 'custom';
+
+interface MIDIPlayer {
+  load(events: NoteEvent[]): void | Promise<void>;
+  play(): void | Promise<void>;
+  stop(): void;
+  setVolume(volume: number): void;
+  getDuration(): number;
+  getProgress(): number;
+}
 
 class MotifApp {
   private motifEngine: MotifEngine;
   private midiService: MIDIService;
-  private midiPlayer: MIDIPlayer;
   private audioContext: AudioContext;
+
+  // Multiple player instances
+  private toneJSPlayer: ToneJSMIDIPlayer;
+  private soundfontPlayer: SoundfontMIDIPlayer;
+  private customPlayer: EnhancedMIDIPlayer;
+  private currentPlayer: MIDIPlayer;
+  private currentPlayerType: MIDIPlayerType = 'tonejs';
   
-  private searchBtn: HTMLButtonElement;
-  private songInput: HTMLInputElement;
-  private status: HTMLElement;
+  private searchBtn!: HTMLButtonElement;
+  private songInput!: HTMLInputElement;
+  private status!: HTMLElement;
   
-  private resultsSection: HTMLElement;
-  private resultsBody: HTMLElement;
-  private playerSection: HTMLElement;
+  private resultsSection!: HTMLElement;
+  private resultsBody!: HTMLElement;
+  private playerSection!: HTMLElement;
   
-  private selectedTitle: HTMLElement;
-  private selectedMeta: HTMLElement;
+  private selectedTitle!: HTMLElement;
+  private selectedMeta!: HTMLElement;
   
-  private previewBtn: HTMLButtonElement;
-  private previewStopBtn: HTMLButtonElement;
-  private motifBtn: HTMLButtonElement;
-  private motifStopBtn: HTMLButtonElement;
-  private nextResultBtn: HTMLButtonElement;
+  private previewBtn!: HTMLButtonElement;
+  private previewStopBtn!: HTMLButtonElement;
+  private motifBtn!: HTMLButtonElement;
+  private motifStopBtn!: HTMLButtonElement;
+  private nextResultBtn!: HTMLButtonElement;
+
+  private previewVolumeSlider!: HTMLInputElement;
+  private motifVolumeSlider!: HTMLInputElement;
+  private engineSelect!: HTMLSelectElement;
   
   private searchResults: any[] = [];
   private selectedResultIndex = 0;
@@ -35,8 +58,13 @@ class MotifApp {
     this.audioContext = new AudioContext();
     this.motifEngine = new MotifEngine();
     this.midiService = new MIDIService();
-    this.midiPlayer = new MIDIPlayer(this.audioContext);
-    
+
+    // Initialize all players
+    this.toneJSPlayer = new ToneJSMIDIPlayer();
+    this.soundfontPlayer = new SoundfontMIDIPlayer(this.audioContext);
+    this.customPlayer = new EnhancedMIDIPlayer(this.audioContext);
+    this.currentPlayer = this.toneJSPlayer; // Default to Tone.js
+
     this.initializeUI();
     this.setupEventListeners();
   }
@@ -58,6 +86,10 @@ class MotifApp {
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
     this.motifStopBtn = document.getElementById('motifStopBtn') as HTMLButtonElement;
     this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
+
+    this.previewVolumeSlider = document.getElementById('previewVolume') as HTMLInputElement;
+    this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
+    this.engineSelect = document.getElementById('engineSelect') as HTMLSelectElement;
   }
 
   private setupEventListeners(): void {
@@ -74,6 +106,22 @@ class MotifApp {
     this.motifBtn.addEventListener('click', () => this.handleMotif());
     this.motifStopBtn.addEventListener('click', () => this.handleMotifStop());
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
+
+    // Volume control event listeners
+    this.previewVolumeSlider.addEventListener('input', (e) => {
+      const volume = parseFloat((e.target as HTMLInputElement).value);
+      this.currentPlayer.setVolume(volume);
+    });
+
+    this.motifVolumeSlider.addEventListener('input', (e) => {
+      const volume = parseFloat((e.target as HTMLInputElement).value);
+      this.motifEngine.setVolume(volume);
+    });
+
+    // Engine selector event listener
+    this.engineSelect.addEventListener('change', (e) => {
+      this.handleEngineChange((e.target as HTMLSelectElement).value as MIDIPlayerType);
+    });
   }
 
   private async handleSearch(): Promise<void> {
@@ -148,7 +196,7 @@ class MotifApp {
     }
   }
 
-  async selectResult(index: number): Promise<void> {
+  public async selectResult(index: number): Promise<void> {
     if (index < 0 || index >= this.searchResults.length) return;
     
     this.selectedResultIndex = index;
@@ -173,17 +221,24 @@ class MotifApp {
       const events = MIDIParser.parseMIDI(midiBuffer);
       const metadata = result.parsed || MIDIParser.getMIDIInfo(midiBuffer);
 
-      this.currentMIDI = { events, metadata };
-      
-      // Load into players
-      this.midiPlayer.load(events);
+      // Calculate duration from events if metadata duration is 0 or missing
+      let actualDuration = metadata.duration || metadata.durationSec || 0;
+      if (actualDuration === 0 && events.length > 0) {
+        // Calculate duration from the last event
+        actualDuration = Math.max(...events.map(e => e.time + e.duration));
+      }
+
+      this.currentMIDI = { events, metadata: { ...metadata, duration: actualDuration } };
+
+      // Load into current player
+      await this.currentPlayer.load(events);
       
       // Update UI
       this.selectedTitle.textContent = result.title;
       this.selectedMeta.innerHTML = `
-        <strong>Source:</strong> ${result.source} | 
-        <strong>Duration:</strong> ${Math.round(metadata.duration || 0)}s | 
-        <strong>Tracks:</strong> ${metadata.trackCount} | 
+        <strong>Source:</strong> ${result.source} |
+        <strong>Duration:</strong> ${Math.round(actualDuration)}s |
+        <strong>Tracks:</strong> ${metadata.trackCount} |
         <strong>Notes:</strong> ${events.length} |
         <strong>Tempo:</strong> ${metadata.tempo}bpm
       `;
@@ -201,35 +256,78 @@ class MotifApp {
     if (!this.currentMIDI) return;
 
     try {
-      await this.midiPlayer.play();
+      // Stop Motif if it's playing
+      this.motifEngine.stop();
+      this.motifBtn.disabled = false;
+      this.motifStopBtn.disabled = true;
+
+      await this.currentPlayer.play();
       this.previewBtn.disabled = true;
       this.previewStopBtn.disabled = false;
-      this.updateStatus('Playing MIDI preview...');
+      this.updateStatus(`Playing original MIDI (${this.currentPlayerType})...`);
     } catch (error) {
       this.updateStatus(`Preview error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   private handlePreviewStop(): void {
-    this.midiPlayer.stop();
+    this.currentPlayer.stop();
     this.previewBtn.disabled = false;
     this.previewStopBtn.disabled = true;
     this.updateStatus('Preview stopped.');
   }
 
+  private async handleEngineChange(engineType: MIDIPlayerType): Promise<void> {
+    // Stop current player
+    this.currentPlayer.stop();
+
+    // Switch to new player
+    this.currentPlayerType = engineType;
+    switch (engineType) {
+      case 'tonejs':
+        this.currentPlayer = this.toneJSPlayer;
+        break;
+      case 'soundfont':
+        this.currentPlayer = this.soundfontPlayer;
+        break;
+      case 'custom':
+        this.currentPlayer = this.customPlayer;
+        break;
+    }
+
+    // Reload MIDI into new player if we have one loaded
+    if (this.currentMIDI) {
+      try {
+        this.updateStatus(`Switching to ${engineType} engine...`);
+        await this.currentPlayer.load(this.currentMIDI.events);
+
+        // Apply current volume setting
+        const volume = parseFloat(this.previewVolumeSlider.value);
+        this.currentPlayer.setVolume(volume);
+
+        this.updateStatus(`Switched to ${engineType} engine. Ready to play.`);
+      } catch (error) {
+        this.updateStatus(`Engine switch error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+  }
+
   private async handleMotif(): Promise<void> {
     if (!this.currentMIDI) return;
 
-    const result = this.searchResults[this.selectedResultIndex];
-    
     try {
+      // Stop preview if it's playing
+      this.currentPlayer.stop();
+      this.previewBtn.disabled = false;
+      this.previewStopBtn.disabled = true;
+
       this.updateStatus('Generating Motif synthesis...');
       this.motifBtn.disabled = true;
-      
+
       // Use the current MIDI data directly
       await this.motifEngine.generateFromMIDI(this.currentMIDI.events);
       await this.motifEngine.play();
-      
+
       this.motifStopBtn.disabled = false;
       this.updateStatus('Playing Motif synthesis...');
     } catch (error) {

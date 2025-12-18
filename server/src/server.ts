@@ -44,8 +44,8 @@ app.get('/api/midi/fetch', async (req, res) => {
     
     if (result.success) {
       res.setHeader('Content-Type', 'audio/midi');
-      res.setHeader('Content-Length', result.data!.length);
-      res.send(result.data);
+      res.setHeader('Content-Length', result.data!.byteLength);
+      res.send(Buffer.from(result.data!));
     } else {
       res.status(404).json({ error: result.error });
     }

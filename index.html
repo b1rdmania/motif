@@ -132,6 +132,39 @@
             color: #ffaa44;
             font-size: 0.9em;
         }
+
+        .volume-control {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .volume-control label {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .volume-control input[type="range"] {
+            flex: 1;
+            margin: 0;
+        }
+
+        .engine-selector {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .engine-selector label {
+            color: #aaa;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .engine-selector select {
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 5px 10px;
+            font-family: inherit;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -175,15 +208,31 @@
                 <div>
                     <h4>MIDI Preview</h4>
                     <p>Plays original MIDI as-is</p>
-                    <button id="previewBtn" disabled>Play Original</button>
+                    <div class="engine-selector">
+                        <label for="engineSelect">Playback Engine:</label>
+                        <select id="engineSelect">
+                            <option value="tonejs">Tone.js (Sampled Piano)</option>
+                            <option value="soundfont">Soundfont (Piano CDN)</option>
+                            <option value="custom">Custom Synthesis</option>
+                        </select>
+                    </div>
+                    <button id="previewBtn" disabled onclick="handlePreview()">Play Original</button>
                     <button id="previewStopBtn" disabled>Stop</button>
+                    <div class="volume-control">
+                        <label for="previewVolume">Volume:</label>
+                        <input type="range" id="previewVolume" min="0" max="1" step="0.01" value="0.6" />
+                    </div>
                 </div>
-                
+
                 <div>
                     <h4>Motif Generation</h4>
                     <p>Procedural synthesis from structure</p>
-                    <button id="motifBtn" disabled>Generate & Play</button>
+                    <button id="motifBtn" disabled onclick="handleMotif()">Generate & Play</button>
                     <button id="motifStopBtn" disabled>Stop</button>
+                    <div class="volume-control">
+                        <label for="motifVolume">Volume:</label>
+                        <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.3" />
+                    </div>
                 </div>
             </div>
             

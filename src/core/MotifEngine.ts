@@ -1,4 +1,4 @@
-import type { NoteEvent, StructuralFeatures, MotifConfig, SynthLayer } from '../types';
+import type { NoteEvent, StructuralFeatures, MotifConfig } from '../types';
 import { MIDIProcessor } from '../midi/MIDIProcessor';
 import { MIDIParser } from '../midi/MIDIParser';
 import { MIDIService } from '../services/MIDIService';
@@ -103,6 +103,12 @@ export class MotifEngine {
   stop(): void {
     if (this.synthesisEngine) {
       this.synthesisEngine.stop();
+    }
+  }
+
+  setVolume(volume: number): void {
+    if (this.synthesisEngine) {
+      this.synthesisEngine.setVolume(volume);
     }
   }
 

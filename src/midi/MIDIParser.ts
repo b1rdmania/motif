@@ -14,7 +14,8 @@ export class MIDIParser {
             duration: note.duration,
             pitch: note.midi,
             velocity: note.velocity,
-            track: trackIndex
+            track: trackIndex,
+            channel: track.channel // Capture MIDI channel (9 = drums)
           });
         });
       });

@@ -76,7 +76,7 @@ export class RoleMapper {
     };
   }
 
-  private calculateRoleScores(features: TrackFeatures, globalFeatures: StructuralFeatures): Map<Role, number> {
+  private calculateRoleScores(features: TrackFeatures, _globalFeatures: StructuralFeatures): Map<Role, number> {
     const scores = new Map<Role, number>();
 
     // Bass scoring
@@ -130,7 +130,7 @@ export class RoleMapper {
     return scores;
   }
 
-  private allocateRoles(roleScores: Map<number, Map<Role, number>>, trackEvents: Map<number, NoteEvent[]>): Map<number, Role> {
+  private allocateRoles(roleScores: Map<number, Map<Role, number>>, _trackEvents: Map<number, NoteEvent[]>): Map<number, Role> {
     const assignments = new Map<number, Role>();
     const assignedRoles = new Set<Role>();
 

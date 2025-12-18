@@ -1,15 +1,18 @@
 import type { SearchAdapter, MIDICandidate } from '../types.js';
 import { BitMidiAdapter } from '../adapters/BitMidiAdapter.js';
 import { DongraysAdapter } from '../adapters/DongraysAdapter.js';
+import { MockAdapter } from '../adapters/MockAdapter.js';
 
 export class MIDISearchService {
   private adapters: SearchAdapter[];
 
   constructor() {
+    // Real MIDI adapters only - no mock
     this.adapters = [
       new BitMidiAdapter(),
       new DongraysAdapter()
     ];
+    console.log('MIDISearchService initialized with real adapters:', this.adapters.map(a => a.name));
   }
 
   async search(query: string): Promise<MIDICandidate[]> {

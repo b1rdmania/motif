@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 import { ScoreUtils } from '../utils/ScoreUtils.js';
+import { SimpleMIDI } from '../utils/SimpleMIDI.js';
 import type { CacheEntry } from '../types.js';
 
 export class MIDIFetchService {
@@ -14,6 +15,19 @@ export class MIDIFetchService {
 
   async fetch(url: string): Promise<{ success: boolean; data?: ArrayBuffer; error?: string }> {
     try {
+      // Only generate synthetic MIDI for explicit synthetic URLs or when enabled
+      if (url.startsWith('synthetic:') || url.includes('mock') || 
+          (process.env.USE_SYNTHETIC_FETCH === '1')) {
+        console.log(`Generating synthetic MIDI for: ${url}`);
+        const songName = url.startsWith('synthetic:') 
+          ? url.replace('synthetic:', '') 
+          : url.split('/').pop()?.replace('.mid', '') || 'test';
+        
+        const syntheticBuffer = SimpleMIDI.generateValidMIDI(songName);
+        console.log(`Generated ${syntheticBuffer.byteLength} bytes of synthetic MIDI data`);
+        return { success: true, data: syntheticBuffer };
+      }
+
       // Check cache first
       const hash = this.hashUrl(url);
       const cached = await this.getCached(hash);

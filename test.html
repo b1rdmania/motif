@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test</title>
+</head>
+<body>
+    <button id="testBtn">Test Button</button>
+    <div id="output">Not loaded</div>
+    
+    <script>
+        console.log('JavaScript is loading...');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            document.getElementById('output').textContent = 'JavaScript loaded!';
+            document.getElementById('testBtn').addEventListener('click', function() {
+                alert('Button works!');
+            });
+        });
+    </script>
+</body>
+</html>

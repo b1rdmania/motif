@@ -1,7 +1,7 @@
 export interface MIDICandidate {
   id: string;
   title: string;
-  source: 'bitmidi' | 'dongrays';
+  source: 'bitmidi' | 'dongrays' | 'mock';
   pageUrl: string;
   midiUrl: string;
   confidence: number;

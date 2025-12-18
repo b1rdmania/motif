@@ -8,7 +8,6 @@ export class SynthesisEngine {
   private roleAssignments: Map<Role, RoleAssignment> = new Map();
   private isPlaying = false;
   private schedulerIntervalId: number | null = null;
-  private currentTime = 0;
   private startTime = 0;
   private nextEventIndex = new Map<Role, number>();
 
@@ -40,7 +39,6 @@ export class SynthesisEngine {
     
     this.isPlaying = true;
     this.startTime = this.audioContext.currentTime;
-    this.currentTime = 0;
     
     // Reset event indices
     for (const role of this.roleAssignments.keys()) {
@@ -57,16 +55,20 @@ export class SynthesisEngine {
 
   stop(): void {
     if (!this.isPlaying) return;
-    
+
     this.isPlaying = false;
-    
+
     if (this.schedulerIntervalId) {
       clearInterval(this.schedulerIntervalId);
       this.schedulerIntervalId = null;
     }
-    
+
     // Fade out all layers
     this.fadeOutAllLayers();
+  }
+
+  setVolume(volume: number): void {
+    this.masterGain.gain.value = Math.max(0, Math.min(1, volume));
   }
 
   private createSynthLayer(role: Role): SynthLayer {
@@ -193,8 +195,6 @@ export class SynthesisEngine {
     const chords = assignment.chords;
     
     if (!events.length && !chords.length) return;
-    
-    let eventIndex = this.nextEventIndex.get(role) || 0;
     
     // For roles that support polyphony (drone, texture), prefer chords
     if ((role === 'drone' || role === 'texture') && chords.length > 0) {
