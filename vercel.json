@@ -22,6 +22,10 @@
       "src": "/health",
       "dest": "server/src/server.ts"
     },
+    {
+      "src": "/embed",
+      "dest": "/embed.html"
+    },
     { "handle": "filesystem" },
     {
       "src": "/(.*)",

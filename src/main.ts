@@ -41,6 +41,12 @@ class MotifApp {
 
   private nextResultBtn!: HTMLButtonElement;
 
+  // Embed snippet UI
+  private embedSection: HTMLElement | null = null;
+  private embedCodeEl: HTMLElement | null = null;
+  private copyEmbedBtn: HTMLButtonElement | null = null;
+  private copyToast: HTMLElement | null = null;
+
   private searchResults: any[] = [];
   private selectedResultIndex = 0;
   private currentMIDI: { events: NoteEvent[], metadata: any } | null = null;
@@ -86,6 +92,12 @@ class MotifApp {
     this.motifDuration = document.getElementById('motifDuration')!;
 
     this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
+
+    // Optional embed UI (only present on main page)
+    this.embedSection = document.getElementById('embedSection');
+    this.embedCodeEl = document.getElementById('embedCode');
+    this.copyEmbedBtn = document.getElementById('copyEmbedBtn') as HTMLButtonElement | null;
+    this.copyToast = document.getElementById('copyToast');
   }
 
   private setupEventListeners(): void {
@@ -121,6 +133,9 @@ class MotifApp {
     this.motifProgressBar.addEventListener('change', seekHandler);
 
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
+
+    // Embed snippet copy
+    this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
   }
 
   private async handleSearch(): Promise<void> {
@@ -236,6 +251,8 @@ class MotifApp {
         <strong>Notes:</strong> ${events.length} |
         <strong>Tempo:</strong> ${metadata.tempo}bpm
       `;
+
+      this.updateEmbedSnippet(result.title);
       
       this.playerSection.classList.add('visible');
       this.enablePlayerControls();
@@ -279,8 +296,8 @@ class MotifApp {
       this.motifBtn.disabled = true;
 
       console.log('Calling generateFromMIDI with', this.currentMIDI.events.length, 'events');
-      // Use the current MIDI data directly in passthrough mode
-      await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'passthrough');
+      // Generate a variation using the procedural role-mapping mode
+      await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'procedural');
 
       console.log('Calling motifEngine.play()');
       await this.motifEngine.play();
@@ -374,6 +391,52 @@ class MotifApp {
 
   private updateStatus(message: string): void {
     this.status.textContent = message;
+  }
+
+  private updateEmbedSnippet(songTitle: string): void {
+    if (!this.embedSection || !this.embedCodeEl) return;
+
+    const origin = window.location.origin;
+    const url = `${origin}/embed?song=${encodeURIComponent(songTitle)}`;
+
+    const snippet = `<iframe\n  src=\"${url}\"\n  width=\"420\"\n  height=\"260\"\n  style=\"border:0;border-radius:12px;overflow:hidden\"\n  allow=\"autoplay\"\n></iframe>`;
+
+    this.embedCodeEl.textContent = snippet;
+    this.embedSection.style.display = 'block';
+    if (this.copyToast) this.copyToast.style.display = 'none';
+  }
+
+  private async copyEmbedSnippet(): Promise<void> {
+    if (!this.embedCodeEl) return;
+
+    const text = this.embedCodeEl.textContent || '';
+    if (!text.trim()) return;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+
+      if (this.copyToast) {
+        this.copyToast.style.display = 'inline';
+        window.setTimeout(() => {
+          if (this.copyToast) this.copyToast.style.display = 'none';
+        }, 1200);
+      }
+    } catch {
+      this.updateStatus('Copy failed. Select the snippet and copy manually.');
+    }
   }
 }
 

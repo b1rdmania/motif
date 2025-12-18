@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>MOTIF Embed</title>
+    <style>
+      :root {
+        --bg: #0b0b0b;
+        --surface: #151515;
+        --border: #2a2a2a;
+        --text: #eaeaea;
+        --text-dim: #a0a0a0;
+        --accent: #00ff88;
+        --accent2: #ffaa44;
+        --radius: 10px;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background:
+          radial-gradient(900px 420px at 50% -180px, rgba(0, 255, 136, 0.10), transparent 60%),
+          radial-gradient(900px 420px at 110% 20%, rgba(255, 170, 68, 0.08), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        padding: 14px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: rgba(21, 21, 21, 0.88);
+        border-radius: var(--radius);
+        box-shadow: 0 18px 80px rgba(0,0,0,0.55);
+        overflow: hidden;
+      }
+
+      header {
+        padding: 12px 12px 10px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .dot {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 18px rgba(0,255,136,0.25);
+      }
+      h1 {
+        margin: 0;
+        font-size: 14px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .subtitle {
+        margin-left: auto;
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+
+      main { padding: 12px; }
+      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+      input[type="text"] {
+        flex: 1;
+        min-width: 160px;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 10px 10px;
+        font-size: 16px; /* iOS zoom prevention */
+      }
+
+      button {
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #1b1b1b;
+        color: var(--text);
+        padding: 10px 12px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+      }
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        border-color: #444;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+      }
+      button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+      button.primary {
+        background: var(--accent);
+        color: #000;
+        border-color: rgba(0,255,136,0.75);
+        font-weight: 800;
+      }
+
+      .status {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-left: 3px solid var(--accent);
+        background: rgba(0,0,0,0.22);
+        border-radius: 10px;
+        font-size: 12px;
+        color: var(--text-dim);
+        min-height: 18px;
+      }
+
+      .section {
+        margin-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        padding-top: 12px;
+      }
+      .sectionTitle {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text);
+        margin: 0 0 8px 0;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 440px) {
+        .controls { grid-template-columns: 1fr; }
+      }
+
+      .panel {
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 10px;
+        background: rgba(0,0,0,0.18);
+      }
+      .panel h2 {
+        margin: 0 0 6px 0;
+        font-size: 13px;
+        color: var(--accent);
+      }
+      .panel p {
+        margin: 0 0 10px 0;
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+      .panel.motif h2 { color: var(--accent2); }
+
+      .btnRow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .btnRow button { flex: 1; min-width: 110px; }
+
+      .sliderRow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+      .sliderRow label { font-size: 12px; color: var(--text-dim); min-width: 52px; }
+      .sliderRow input[type="range"] { flex: 1; }
+
+      .footnote {
+        margin-top: 10px;
+        font-size: 11px;
+        color: rgba(255,255,255,0.55);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <header>
+        <div class="dot"></div>
+        <h1>MOTIF</h1>
+        <div class="subtitle">Embed</div>
+      </header>
+
+      <main>
+        <div class="row">
+          <input id="songInput" type="text" placeholder="Song (e.g. Hotel California)" />
+          <button id="loadBtn" class="primary">Load</button>
+          <button id="nextBtn" disabled>Next</button>
+        </div>
+
+        <div id="status" class="status">Ready.</div>
+
+        <div class="section">
+          <p class="sectionTitle">Playback</p>
+          <div class="controls">
+            <div class="panel">
+              <h2>Preview</h2>
+              <p>Play the original MIDI (piano).</p>
+              <div class="btnRow">
+                <button id="previewPlayBtn" disabled class="primary">Play</button>
+                <button id="previewStopBtn" disabled>Stop</button>
+              </div>
+              <div class="sliderRow">
+                <label for="previewVol">Volume</label>
+                <input id="previewVol" type="range" min="0" max="1" step="0.01" value="0.8" />
+              </div>
+            </div>
+
+            <div class="panel motif">
+              <h2>Variation</h2>
+              <p>Generate a chiptune-ish Motif.</p>
+              <div class="btnRow">
+                <button id="motifPlayBtn" disabled class="primary">Generate &amp; Play</button>
+                <button id="motifStopBtn" disabled>Stop</button>
+              </div>
+              <div class="sliderRow">
+                <label for="motifVol">Volume</label>
+                <input id="motifVol" type="range" min="0" max="1" step="0.01" value="0.35" />
+              </div>
+            </div>
+          </div>
+
+          <div class="footnote">
+            Note: autoplay is best-effort; iOS/Safari requires a tap before sound.
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/embed.ts"></script>
+  </body>
+</html>
+

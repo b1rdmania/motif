@@ -16,6 +16,26 @@ MOTIF is a small experiment in **music-as-code**: treat MIDI as structural data,
 
 Note: if the backend isn’t deployed/configured for the demo environment, search/fetch won’t work from the hosted URL. Run locally for the full experience.
 
+## Use on your website (embed)
+
+MOTIF includes an embeddable widget page at **`/embed`**. It generates audio in the user’s browser (no audio files needed).
+
+Example:
+
+```html
+<iframe
+  src="https://YOUR_DOMAIN/embed?song=Hotel%20California"
+  width="420"
+  height="260"
+  style="border:0;border-radius:12px;overflow:hidden"
+  allow="autoplay"
+></iframe>
+```
+
+### Embed parameters (v1)
+- **`song`**: the query to load (e.g. `Hotel%20California`)\n+- **`volume`**: preview volume `0..1` (optional)\n+- **`motifVolume`**: motif volume `0..1` (optional)
+
+Notes:\n- Autoplay is best-effort; iOS/Safari requires a user gesture before sound.\n
 ## Features
 
 - **MIDI search** (currently BitMidi; additional sources optional)

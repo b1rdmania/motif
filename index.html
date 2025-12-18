@@ -541,6 +541,55 @@
             transition: width 0.1s linear;
         }
 
+        /* Use on your website */
+        .embed-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: calc(var(--spacing-unit) * 3);
+            box-shadow: var(--shadow-md);
+        }
+        .embed-row {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 1.5);
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .embed-row button {
+            flex-shrink: 0;
+        }
+        .codeblock {
+            flex: 1;
+            min-width: 260px;
+            margin: 0;
+            padding: calc(var(--spacing-unit) * 2);
+            border-radius: calc(var(--radius) + 2px);
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: auto;
+            box-shadow: var(--shadow-sm);
+        }
+        .codeblock code {
+            font-size: 12px;
+            color: rgba(255,255,255,0.85);
+            white-space: pre;
+        }
+        .embed-hint {
+            margin-top: calc(var(--spacing-unit) * 1.5);
+            color: var(--color-text-dim);
+            font-size: 12px;
+        }
+        .embed-hint strong {
+            color: var(--color-text);
+            font-weight: 600;
+        }
+        .copy-toast {
+            margin-left: auto;
+            font-size: 12px;
+            color: rgba(0,255,136,0.85);
+            display: none;
+        }
+
         .engine-selector {
             margin-top: 10px;
             font-size: 0.9em;
@@ -644,6 +693,27 @@
                                 <div class="progress-fill" id="motifProgressFill"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" id="embedSection" style="display:none;">
+                <div class="section-header">
+                    <h3 class="section-title">Use on your website</h3>
+                    <p class="section-subtitle">Embed this generator as a widget.</p>
+                </div>
+                <div class="divider"></div>
+
+                <div class="embed-card">
+                    <div class="embed-row">
+                        <pre class="codeblock"><code id="embedCode">&lt;iframe src=&quot;...&quot;&gt;&lt;/iframe&gt;</code></pre>
+                        <div style="display:flex; flex-direction:column; gap: calc(var(--spacing-unit) * 1.5);">
+                            <button id="copyEmbedBtn" class="primary" type="button">Copy embed</button>
+                            <span id="copyToast" class="copy-toast">Copied</span>
+                        </div>
+                    </div>
+                    <div class="embed-hint">
+                        <strong>Tip:</strong> iOS/Safari requires a tap before audio can start. Add <code>allow=&quot;autoplay&quot;</code> and expect a user gesture.
                     </div>
                 </div>
             </div>
