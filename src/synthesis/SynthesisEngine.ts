@@ -22,7 +22,33 @@ export class SynthesisEngine {
   setupLayers(assignments: RoleAssignment[]): void {
     // Clean up existing layers
     this.cleanupLayers();
-    
+
+    // Find the earliest event time across all assignments
+    let earliestTime = Infinity;
+    for (const assignment of assignments) {
+      if (assignment.events.length > 0) {
+        earliestTime = Math.min(earliestTime, assignment.events[0].time);
+      }
+      if (assignment.chords.length > 0) {
+        earliestTime = Math.min(earliestTime, assignment.chords[0].time);
+      }
+    }
+
+    // If we found events, normalize times to start at 0
+    if (earliestTime !== Infinity && earliestTime > 0) {
+      console.log('Normalizing event times, earliest was:', earliestTime);
+      for (const assignment of assignments) {
+        // Normalize note events
+        for (const event of assignment.events) {
+          event.time -= earliestTime;
+        }
+        // Normalize chord events
+        for (const chord of assignment.chords) {
+          chord.time -= earliestTime;
+        }
+      }
+    }
+
     // Store role assignments and create layers
     for (const assignment of assignments) {
       const layer = this.createSynthLayer(assignment.role);
@@ -30,7 +56,7 @@ export class SynthesisEngine {
       this.roleAssignments.set(assignment.role, assignment);
       this.nextEventIndex.set(assignment.role, 0);
     }
-    
+
     console.log('Setup layers for roles:', Array.from(this.roleAssignments.keys()));
   }
 
