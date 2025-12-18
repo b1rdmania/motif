@@ -83,6 +83,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(port, () => {
-  console.log(`🎵 Motif backend running on port ${port}`);
-});
+// Vercel serverless runtime expects an exported handler (Express apps are handlers).
+// Locally, we still want to run a dev server with `app.listen`.
+export default app;
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`🎵 Motif backend running on port ${port}`);
+  });
+}

@@ -2,8 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/index.html",
-      "use": "@vercel/static"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
       "src": "server/src/server.ts",
@@ -19,9 +22,10 @@
       "src": "/health",
       "dest": "server/src/server.ts"
     },
+    { "handle": "filesystem" },
     {
       "src": "/(.*)",
-      "dest": "/dist/$1"
+      "dest": "/index.html"
     }
   ]
 }

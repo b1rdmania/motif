@@ -35,8 +35,20 @@ export class MIDIService {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    // Use environment variable or fallback to localhost for development
-    this.baseUrl = baseUrl || import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // Production (Vercel): prefer same-origin API (no env var needed)
+    // Dev: default to local backend on :3001
+    const envUrl = (import.meta as any).env?.VITE_API_URL as string | undefined;
+    const isDev = Boolean((import.meta as any).env?.DEV);
+
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+    } else if (envUrl) {
+      this.baseUrl = envUrl;
+    } else if (isDev) {
+      this.baseUrl = 'http://localhost:3001';
+    } else {
+      this.baseUrl = '';
+    }
   }
 
   async search(query: string): Promise<MIDISearchResult[]> {
