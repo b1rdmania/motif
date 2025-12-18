@@ -183,8 +183,12 @@
             text-transform: uppercase;
         }
 
-        .results-table .duration-col,
-        .results-table .tracks-col {
+        .results-table .source-col {
+            width: 100px;
+            text-align: center;
+        }
+
+        .results-table .duration-col {
             width: 80px;
             text-align: center;
         }
@@ -222,7 +226,7 @@
                 font-size: 11px;
             }
 
-            .results-table .tracks-col {
+            .results-table .source-col {
                 display: none;
             }
 
@@ -627,8 +631,8 @@
                 <thead>
                     <tr>
                         <th>Title</th>
+                        <th class="source-col">Source</th>
                         <th class="duration-col">Duration</th>
-                        <th class="tracks-col">Tracks</th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody">

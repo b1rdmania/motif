@@ -190,8 +190,8 @@ class MotifApp {
 
       row.innerHTML = `
         <td>${result.title}</td>
+        <td class="source-col">${result.source}</td>
         <td class="duration-col">${result.parsed ? Math.round(result.parsed.durationSec) + 's' : '?'}</td>
-        <td class="tracks-col">${result.parsed ? result.parsed.tracks.length : '?'}</td>
       `;
 
       // Make entire row clickable
