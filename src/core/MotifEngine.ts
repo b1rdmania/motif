@@ -134,6 +134,33 @@ export class MotifEngine {
     }
   }
 
+  seek(progress: number): void {
+    if (this.synthesisEngine) {
+      this.synthesisEngine.seek(progress);
+    }
+  }
+
+  getProgress(): number {
+    if (this.synthesisEngine) {
+      return this.synthesisEngine.getProgress();
+    }
+    return 0;
+  }
+
+  getCurrentTime(): number {
+    if (this.synthesisEngine) {
+      return this.synthesisEngine.getCurrentTime();
+    }
+    return 0;
+  }
+
+  getDuration(): number {
+    if (this.synthesisEngine) {
+      return this.synthesisEngine.getDuration();
+    }
+    return 0;
+  }
+
   private generateSyntheticMIDI(songName: string): NoteEvent[] {
     // Generate procedural MIDI based on song name hash
     const hash = this.simpleHash(songName);

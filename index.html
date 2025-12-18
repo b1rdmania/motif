@@ -284,6 +284,69 @@
             margin: 0;
         }
 
+        .motif-progress-container {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 170, 68, 0.15);
+        }
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            color: #8f8f8f;
+        }
+        .progress-bar-wrapper {
+            position: relative;
+            height: 32px;
+            display: flex;
+            align-items: center;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+        .progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffaa44;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 170, 68, 0.5);
+        }
+        .progress-bar::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffaa44;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(255, 170, 68, 0.5);
+        }
+        .progress-fill {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 8px;
+            background: linear-gradient(90deg, #ffaa44, rgba(255, 170, 68, 0.6));
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
         .engine-selector {
             margin-top: 10px;
             font-size: 0.9em;
@@ -396,8 +459,8 @@
                 <div class="motif-stage">
                     <div class="motif-grid">
                         <div>
-                            <h4 style="margin:0; color:#ffaa44; text-shadow: 0 0 18px rgba(255,170,68,0.15);">Generate a variation</h4>
-                            <p class="motif-kicker">Same MIDI, new energy. This is where “more ambient / more dancey / more ominous” will live.</p>
+                            <h4 style="margin:0; color:#ffaa44; text-shadow: 0 0 18px rgba(255,170,68,0.15);">Procedural Synthesis</h4>
+                            <p class="motif-kicker">Web Audio oscillators with dynamic filtering and envelopes.</p>
                         </div>
                         <div class="motif-actions">
                             <button id="motifBtn" class="primary" disabled>Generate & Play</button>
@@ -406,6 +469,17 @@
                                 <label for="motifVolume">Volume:</label>
                                 <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.3" />
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="motif-progress-container" id="motifProgressContainer" style="display: none;">
+                        <div class="progress-time">
+                            <span id="motifCurrentTime">0:00</span>
+                            <span id="motifDuration">0:00</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <input type="range" id="motifProgressBar" class="progress-bar" min="0" max="100" value="0" step="0.1" />
+                            <div class="progress-fill" id="motifProgressFill"></div>
                         </div>
                     </div>
                 </div>

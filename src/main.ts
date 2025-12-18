@@ -46,9 +46,15 @@ class MotifApp {
   private motifBtn!: HTMLButtonElement;
   private motifStopBtn!: HTMLButtonElement;
   private motifVolumeSlider!: HTMLInputElement;
+  private motifProgressContainer!: HTMLElement;
+  private motifProgressBar!: HTMLInputElement;
+  private motifProgressFill!: HTMLElement;
+  private motifCurrentTime!: HTMLElement;
+  private motifDuration!: HTMLElement;
+  private motifProgressInterval: number | null = null;
 
   private nextResultBtn!: HTMLButtonElement;
-  
+
   private searchResults: any[] = [];
   private selectedResultIndex = 0;
   private currentMIDI: { events: NoteEvent[], metadata: any } | null = null;
@@ -99,6 +105,11 @@ class MotifApp {
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
     this.motifStopBtn = document.getElementById('motifStopBtn') as HTMLButtonElement;
     this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
+    this.motifProgressContainer = document.getElementById('motifProgressContainer')!;
+    this.motifProgressBar = document.getElementById('motifProgressBar') as HTMLInputElement;
+    this.motifProgressFill = document.getElementById('motifProgressFill')!;
+    this.motifCurrentTime = document.getElementById('motifCurrentTime')!;
+    this.motifDuration = document.getElementById('motifDuration')!;
 
     this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
   }
@@ -142,6 +153,10 @@ class MotifApp {
     this.motifVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
       this.motifEngine.setVolume(volume);
+    });
+    this.motifProgressBar.addEventListener('input', (e) => {
+      const progress = parseFloat((e.target as HTMLInputElement).value) / 100;
+      this.handleMotifSeek(progress);
     });
 
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
@@ -361,6 +376,17 @@ class MotifApp {
       await this.motifEngine.play();
 
       this.motifStopBtn.disabled = false;
+
+      // Show progress bar and set duration
+      this.motifProgressContainer.style.display = 'block';
+      const duration = this.motifEngine.getDuration();
+      this.motifDuration.textContent = this.formatTime(duration);
+      this.motifProgressBar.value = '0';
+      this.motifProgressFill.style.width = '0%';
+
+      // Start progress updates
+      this.startMotifProgressUpdates();
+
       this.updateStatus('Playing Motif synthesis...');
       console.log('Motif playback started successfully');
     } catch (error) {
@@ -374,7 +400,42 @@ class MotifApp {
     this.motifEngine.stop();
     this.motifBtn.disabled = false;
     this.motifStopBtn.disabled = true;
+    this.stopMotifProgressUpdates();
     this.updateStatus('Motif synthesis stopped.');
+  }
+
+  private handleMotifSeek(progress: number): void {
+    this.motifEngine.seek(progress);
+    this.updateMotifProgress();
+  }
+
+  private startMotifProgressUpdates(): void {
+    this.stopMotifProgressUpdates();
+    this.motifProgressInterval = window.setInterval(() => {
+      this.updateMotifProgress();
+    }, 100); // Update 10 times per second
+  }
+
+  private stopMotifProgressUpdates(): void {
+    if (this.motifProgressInterval !== null) {
+      clearInterval(this.motifProgressInterval);
+      this.motifProgressInterval = null;
+    }
+  }
+
+  private updateMotifProgress(): void {
+    const progress = this.motifEngine.getProgress();
+    const currentTime = this.motifEngine.getCurrentTime();
+
+    this.motifProgressBar.value = (progress * 100).toString();
+    this.motifProgressFill.style.width = `${progress * 100}%`;
+    this.motifCurrentTime.textContent = this.formatTime(currentTime);
+  }
+
+  private formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
   private handleNextResult(): void {

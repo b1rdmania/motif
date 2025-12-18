@@ -71,6 +71,65 @@ export class SynthesisEngine {
     this.masterGain.gain.value = Math.max(0, Math.min(1, volume));
   }
 
+  seek(progress: number): void {
+    if (!this.isPlaying) return;
+
+    // Calculate the new start time based on progress
+    const duration = this.getDuration();
+    const targetTime = progress * duration;
+
+    // Adjust startTime to effectively seek to the target position
+    this.startTime = this.audioContext.currentTime - targetTime;
+
+    // Reset event indices to the appropriate position
+    for (const [role, assignment] of this.roleAssignments) {
+      const events = assignment.events;
+      if (events.length > 0) {
+        // Find the first event after the target time
+        let index = 0;
+        while (index < events.length && events[index].time < targetTime) {
+          index++;
+        }
+        this.nextEventIndex.set(role, index);
+      }
+    }
+  }
+
+  getProgress(): number {
+    if (!this.isPlaying) return 0;
+
+    const duration = this.getDuration();
+    if (duration === 0) return 0;
+
+    const currentTime = this.audioContext.currentTime - this.startTime;
+    return Math.max(0, Math.min(1, currentTime / duration));
+  }
+
+  getCurrentTime(): number {
+    if (!this.isPlaying) return 0;
+    return Math.max(0, this.audioContext.currentTime - this.startTime);
+  }
+
+  getDuration(): number {
+    let maxDuration = 0;
+
+    for (const assignment of this.roleAssignments.values()) {
+      if (assignment.events.length > 0) {
+        const lastEvent = assignment.events[assignment.events.length - 1];
+        const eventEnd = lastEvent.time + lastEvent.duration;
+        maxDuration = Math.max(maxDuration, eventEnd);
+      }
+
+      if (assignment.chords.length > 0) {
+        const lastChord = assignment.chords[assignment.chords.length - 1];
+        const chordEnd = lastChord.time + lastChord.duration;
+        maxDuration = Math.max(maxDuration, chordEnd);
+      }
+    }
+
+    return maxDuration;
+  }
+
   private createSynthLayer(role: Role): SynthLayer {
     const gainNode = this.audioContext.createGain();
     const filterNode = this.audioContext.createBiquadFilter();
