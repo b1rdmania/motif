@@ -134,7 +134,7 @@ class MotifApp {
 
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
 
-    // Embed snippet copy
+    // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
   }
 
@@ -396,8 +396,9 @@ class MotifApp {
   private updateEmbedSnippet(songTitle: string): void {
     if (!this.embedSection || !this.embedCodeEl) return;
 
-    const origin = window.location.origin;
-    const url = `${origin}/embed?song=${encodeURIComponent(songTitle)}`;
+    const notLive = this.embedSection.getAttribute('data-not-live') === 'true';
+    const base = notLive ? 'https://YOUR_DOMAIN' : window.location.origin;
+    const url = `${base}/embed?song=${encodeURIComponent(songTitle)}`;
 
     const snippet = `<iframe\n  src=\"${url}\"\n  width=\"420\"\n  height=\"260\"\n  style=\"border:0;border-radius:12px;overflow:hidden\"\n  allow=\"autoplay\"\n></iframe>`;
 
@@ -408,6 +409,10 @@ class MotifApp {
 
   private async copyEmbedSnippet(): Promise<void> {
     if (!this.embedCodeEl) return;
+    if (this.embedSection?.getAttribute('data-not-live') === 'true') {
+      this.updateStatus('Embed is coming soon.');
+      return;
+    }
 
     const text = this.embedCodeEl.textContent || '';
     if (!text.trim()) return;

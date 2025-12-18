@@ -697,23 +697,24 @@
                 </div>
             </div>
 
-            <div class="section" id="embedSection" style="display:none;">
+            <div class="section" id="embedSection" data-not-live="true" style="display:none;">
                 <div class="section-header">
-                    <h3 class="section-title">Use on your website</h3>
-                    <p class="section-subtitle">Embed this generator as a widget.</p>
+                    <h3 class="section-title">Use on your website <span style="color: rgba(255,255,255,0.5); font-weight: 500;">(Coming soon)</span></h3>
+                    <p class="section-subtitle">Embeddable widget + multiple synth engines.</p>
                 </div>
                 <div class="divider"></div>
 
-                <div class="embed-card">
+                <div class="embed-card" style="opacity:0.55; filter: grayscale(20%); position:relative;">
+                    <div style="position:absolute; inset:0; background: linear-gradient(90deg, rgba(0,0,0,0.35), rgba(0,0,0,0)); pointer-events:none;"></div>
                     <div class="embed-row">
                         <pre class="codeblock"><code id="embedCode">&lt;iframe src=&quot;...&quot;&gt;&lt;/iframe&gt;</code></pre>
                         <div style="display:flex; flex-direction:column; gap: calc(var(--spacing-unit) * 1.5);">
-                            <button id="copyEmbedBtn" class="primary" type="button">Copy embed</button>
+                            <button id="copyEmbedBtn" class="primary" type="button" disabled>Copy embed</button>
                             <span id="copyToast" class="copy-toast">Copied</span>
                         </div>
                     </div>
                     <div class="embed-hint">
-                        <strong>Tip:</strong> iOS/Safari requires a tap before audio can start. Add <code>allow=&quot;autoplay&quot;</code> and expect a user gesture.
+                        <strong>Note:</strong> This is not live yet. We’ll ship a dedicated <code>/embed</code> widget + style presets next.
                     </div>
                 </div>
             </div>
