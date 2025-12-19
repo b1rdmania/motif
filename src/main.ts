@@ -52,6 +52,11 @@ class MotifApp {
   private copyEmbedBtn: HTMLButtonElement | null = null;
   private copyToast: HTMLElement | null = null;
 
+  // FAQ modal
+  private faqBtn!: HTMLButtonElement;
+  private faqBackdrop!: HTMLElement;
+  private faqCloseBtn!: HTMLButtonElement;
+
   private searchResults: any[] = [];
   private selectedResultIndex = 0;
   private currentMIDI: { events: NoteEvent[], metadata: any } | null = null;
@@ -116,6 +121,11 @@ class MotifApp {
     this.embedCodeEl = document.getElementById('embedCode');
     this.copyEmbedBtn = document.getElementById('copyEmbedBtn') as HTMLButtonElement | null;
     this.copyToast = document.getElementById('copyToast');
+
+    // FAQ modal
+    this.faqBtn = document.getElementById('faqBtn') as HTMLButtonElement;
+    this.faqBackdrop = document.getElementById('faqModalBackdrop')!;
+    this.faqCloseBtn = document.getElementById('faqCloseBtn') as HTMLButtonElement;
   }
 
   private setupEventListeners(): void {
@@ -159,6 +169,26 @@ class MotifApp {
     const enable = () => void this.handleEnableAudio();
     this.enableAudioBtn.addEventListener('click', enable);
     this.enableAudioBtn.addEventListener('touchend', enable, { passive: true });
+
+    // FAQ
+    this.faqBtn.addEventListener('click', () => this.openFaq());
+    this.faqCloseBtn.addEventListener('click', () => this.closeFaq());
+    this.faqBackdrop.addEventListener('click', (e) => {
+      if (e.target === this.faqBackdrop) this.closeFaq();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.closeFaq();
+    });
+  }
+
+  private openFaq(): void {
+    this.faqBackdrop.classList.add('open');
+    // focus close for keyboard users
+    this.faqCloseBtn.focus();
+  }
+
+  private closeFaq(): void {
+    this.faqBackdrop.classList.remove('open');
   }
 
   private isIOSLike(): boolean {

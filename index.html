@@ -73,6 +73,103 @@
             letter-spacing: 0.05em;
             text-shadow: var(--glow-primary);
         }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        .topbar h1 {
+            margin: 0;
+        }
+        .faq-link {
+            margin-left: auto;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.14);
+            color: rgba(255,255,255,0.85);
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            box-shadow: none;
+            font-size: 13px;
+        }
+        .faq-link:hover:not(:disabled) {
+            box-shadow: var(--shadow-sm);
+            border-color: rgba(255,255,255,0.22);
+        }
+
+        /* FAQ modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal {
+            width: min(720px, 100%);
+            background: rgba(20,20,20,0.98);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            box-shadow: 0 30px 120px rgba(0,0,0,0.75);
+            overflow: hidden;
+        }
+        .modal header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .modal header h3 {
+            margin: 0;
+            font-size: 14px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.9);
+        }
+        .modal header .spacer { margin-left: auto; }
+        .modal header button {
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: none;
+        }
+        .modal main {
+            padding: 14px 16px 16px 16px;
+        }
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .faq-item {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px 12px;
+            background: rgba(0,0,0,0.18);
+        }
+        .faq-item h4 {
+            margin: 0 0 6px 0;
+            font-size: 13px;
+            color: rgba(0,255,136,0.9);
+        }
+        .faq-item p {
+            margin: 0;
+            color: rgba(255,255,255,0.75);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .faq-item code {
+            font-size: 12px;
+            color: rgba(255,255,255,0.85);
+        }
         .controls {
             margin: calc(var(--spacing-unit) * 3) 0;
             text-align: center;
@@ -662,7 +759,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎵 MOTIF</h1>
+        <div class="topbar">
+            <h1>🎵 MOTIF</h1>
+            <button id="faqBtn" class="faq-link" type="button">FAQ</button>
+        </div>
         <p>Procedural Music Synthesis from MIDI Structure</p>
         
         <div class="controls">
@@ -779,6 +879,36 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="faqModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
+        <div class="modal" role="document">
+            <header>
+                <h3 id="faqTitle">FAQ</h3>
+                <div class="spacer"></div>
+                <button id="faqCloseBtn" type="button">Close</button>
+            </header>
+            <main>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h4>What is this?</h4>
+                        <p>A hobby project exploring <strong>MIDI → retro synthesis</strong>. Search a song, preview its MIDI, then generate a chiptune-style variation.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>How was it built?</h4>
+                        <p><strong>Vite + TypeScript</strong> frontend using <strong>Web Audio</strong> (procedural synth) plus a <strong>Soundfont</strong> piano preview. Backend is a small <strong>Express</strong> API (search/fetch/parse) deployed on Vercel.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>Why do I need “Enable Audio” on iOS?</h4>
+                        <p>iOS Safari requires a user tap before audio can play. Tap <strong>Enable Audio</strong>, then press <strong>Generate &amp; Play</strong>. If it’s still silent: disable Silent Mode / raise volume / disconnect Bluetooth.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>How can we develop it further?</h4>
+                        <p>Add more MIDI sources, better matching, and style presets (ambient / dance / ominous). Then ship a compact <code>/embed</code> widget and an SDK so other sites can drop in “pixelised music”.</p>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
