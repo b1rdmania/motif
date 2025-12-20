@@ -24,18 +24,31 @@ export function getAudioContext(): AudioContext {
 }
 
 /**
+ * Return the existing AudioContext without creating one.
+ * Useful for UI/debug without triggering iOS restrictions.
+ */
+export function peekAudioContext(): AudioContext | null {
+  return sharedAudioContext;
+}
+
+/**
  * Unlock audio for iOS/Safari. Safe to call multiple times.
  * Returns the AudioContext once it's confirmed running.
  *
  * Must be called from a user gesture (click/touchend).
  */
 export async function unlockAudio(): Promise<AudioContext> {
-  // Return existing unlock in progress
-  if (unlockPromise) {
-    return unlockPromise;
-  }
+  const ctx = sharedAudioContext;
+  if (ctx?.state === 'running') return ctx;
 
-  unlockPromise = doUnlock();
+  // IMPORTANT: allow retries. If a previous unlock attempt ran outside a user gesture
+  // or failed to transition the context to running, iOS can remain blocked.
+  // We only de-dupe concurrent calls; once an attempt finishes, we clear the promise.
+  if (unlockPromise) return unlockPromise;
+
+  unlockPromise = doUnlock().finally(() => {
+    unlockPromise = null;
+  });
   return unlockPromise;
 }
 

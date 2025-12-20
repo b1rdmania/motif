@@ -2,7 +2,7 @@ import { MotifEngine } from './core/MotifEngine';
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
-import { getAudioContext, isAudioReady, unlockAudio } from './utils/audioUnlock';
+import { getAudioContext, isAudioReady, peekAudioContext, unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
 
 class MotifApp {
@@ -209,9 +209,7 @@ class MotifApp {
     this.iosAudioBanner.style.display = ready ? 'none' : 'block';
 
     // Optional tiny state readout (helps support debugging)
-    const ctx = (() => {
-      try { return getAudioContext(); } catch { return null; }
-    })();
+    const ctx = peekAudioContext();
     if (!ready && ctx) {
       this.iosAudioState.style.display = 'block';
       this.iosAudioState.textContent = `Audio: ${ctx.state} @ ${ctx.sampleRate}Hz`;

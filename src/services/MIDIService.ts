@@ -51,25 +51,41 @@ export class MIDIService {
     }
   }
 
-  async search(query: string): Promise<MIDISearchResult[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/midi/search?q=${encodeURIComponent(query)}`);
-      
-      if (!response.ok) {
-        throw new Error(`Search failed: ${response.status}`);
+  private async fetchWithRetry(url: string, init?: RequestInit, timeoutMs = 20000): Promise<Response> {
+    const attempt = async (): Promise<Response> => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        // iOS Safari can behave oddly with cached API responses; force no-store.
+        return await fetch(url, {
+          ...init,
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+      } finally {
+        window.clearTimeout(timeout);
       }
+    };
 
-      const data: MIDISearchResponse = await response.json();
-      return data.results;
-    } catch (error) {
-      console.error('MIDI search error:', error);
-      return [];
+    try {
+      return await attempt();
+    } catch (e) {
+      // One fast retry for transient iOS/network hiccups.
+      await new Promise(r => window.setTimeout(r, 200));
+      return await attempt();
     }
+  }
+
+  async search(query: string): Promise<MIDISearchResult[]> {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+    const data: MIDISearchResponse = await response.json();
+    return data.results;
   }
 
   async fetchMIDI(url: string): Promise<ArrayBuffer | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/midi/fetch?u=${encodeURIComponent(url)}`);
+      const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/fetch?u=${encodeURIComponent(url)}`);
       
       if (!response.ok) {
         throw new Error(`Fetch failed: ${response.status}`);
@@ -84,7 +100,7 @@ export class MIDIService {
 
   async parseMIDI(url: string): Promise<ParsedMIDIInfo | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/midi/parse?u=${encodeURIComponent(url)}`);
+      const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/parse?u=${encodeURIComponent(url)}`);
       
       if (!response.ok) {
         throw new Error(`Parse failed: ${response.status}`);
