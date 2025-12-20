@@ -38,9 +38,6 @@ export interface StructuralFeatures {
 
 export type Role = 'bass' | 'drone' | 'ostinato' | 'texture' | 'accents' | 'melody';
 
-// Procedural synth model presets (test page uses these)
-export type SynthModel = 'pre8bit' | 'nes_gb' | 'snes_ish';
-
 export interface RoleAssignment {
   role: Role;
   sourceTrack: number;

@@ -1,13 +1,19 @@
-import { MotifEngine } from './core/MotifEngine';
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { getAudioContext, isAudioReady, unlockAudio } from './utils/audioUnlock';
-import type { NoteEvent, SynthModel } from './types';
+import { MIDIProcessor } from './midi/MIDIProcessor';
+import { RoleMapper } from './core/RoleMapper';
+import { TestModelSynthesisEngine } from './synthesis/TestModelSynthesisEngine';
+import type { NoteEvent } from './types';
+
+type SynthModel = 'pre8bit' | 'nes_gb' | 'snes_ish';
 
 class ModelsApp {
-  private motifEngine: MotifEngine;
   private midiService: MIDIService;
+  private midiProcessor: MIDIProcessor;
+  private roleMapper: RoleMapper;
+  private testEngine: TestModelSynthesisEngine | null = null;
 
   private soundfontPlayer: SoundfontMIDIPlayer | null = null;
 
@@ -44,8 +50,9 @@ class ModelsApp {
   private currentMIDI: { events: NoteEvent[]; metadata: any } | null = null;
 
   constructor() {
-    this.motifEngine = new MotifEngine();
     this.midiService = new MIDIService();
+    this.midiProcessor = new MIDIProcessor();
+    this.roleMapper = new RoleMapper();
     this.initializeUI();
     this.setupEventListeners();
     this.syncModelHint();
@@ -106,7 +113,7 @@ class ModelsApp {
     this.motifStopBtn.addEventListener('click', () => this.handleMotifStop());
     this.motifVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
-      this.motifEngine.setVolume(volume);
+      this.testEngine?.setVolume(volume);
     });
 
     this.modelSelect.addEventListener('change', () => this.syncModelHint());
@@ -350,8 +357,17 @@ class ModelsApp {
       this.updateStatus(`Generating Motif (${model})...`);
       this.motifBtn.disabled = true;
 
-      await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'procedural', model);
-      await this.motifEngine.play();
+      // Ensure the previous model engine is stopped/cleared so each run is isolated.
+      this.handleMotifStop();
+
+      const audioContext = getAudioContext();
+      const features = this.midiProcessor.extractFeatures(this.currentMIDI.events);
+      const assignments = this.roleMapper.assignRoles(features, this.currentMIDI.events);
+
+      this.testEngine = new TestModelSynthesisEngine(audioContext, model);
+      this.testEngine.setupLayers(assignments);
+      this.testEngine.setVolume(parseFloat(this.motifVolumeSlider.value));
+      this.testEngine.start();
 
       this.motifStopBtn.disabled = false;
       this.updateStatus(`Playing Motif (${model})...`);
@@ -362,7 +378,8 @@ class ModelsApp {
   }
 
   private handleMotifStop(): void {
-    this.motifEngine.stop();
+    this.testEngine?.stop();
+    this.testEngine = null;
     this.motifBtn.disabled = false;
     this.motifStopBtn.disabled = true;
   }

@@ -1,4 +1,4 @@
-import type { NoteEvent, MotifConfig, SynthModel } from '../types';
+import type { NoteEvent, MotifConfig } from '../types';
 import { MIDIProcessor } from '../midi/MIDIProcessor';
 import { MIDIParser } from '../midi/MIDIParser';
 import { MIDIService } from '../services/MIDIService';
@@ -27,17 +27,13 @@ export class MotifEngine {
     this.roleMapper = new RoleMapper();
   }
 
-  async generateFromMIDI(
-    events: NoteEvent[],
-    transformMode: 'passthrough' | 'procedural' = 'passthrough',
-    model: SynthModel = 'nes_gb'
-  ): Promise<void> {
+  async generateFromMIDI(events: NoteEvent[], transformMode: 'passthrough' | 'procedural' = 'passthrough'): Promise<void> {
     // Initialize audio context using shared unlock (iOS compatibility)
     if (!this.audioContext) {
       this.audioContext = await unlockAudio();
     }
 
-    this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config, model);
+    this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
 
     if (transformMode === 'passthrough') {
       // Direct playback mode - play MIDI as-is without transformations
@@ -111,7 +107,7 @@ export class MotifEngine {
       this.audioContext = await unlockAudio();
     }
 
-    this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config, 'nes_gb');
+    this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
     this.synthesisEngine.setupLayers(roleAssignments);
   }
 
