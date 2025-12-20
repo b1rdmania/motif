@@ -961,20 +961,20 @@
             <main>
                 <div class="faq-grid">
                     <div class="faq-item">
-                        <h4>What is this?</h4>
-                        <p>A hobby project. It turns MIDI into <strong>Game Boy / SNES-style</strong> synth sound (v1). You search a song, preview the MIDI, then generate a variation.</p>
+                        <h4>What is MOTIF?</h4>
+                        <p>Turn any song into retro <strong>Gameboy-style</strong> synth. Search a track, preview the MIDI, hit Generate.</p>
                     </div>
                     <div class="faq-item">
-                        <h4>How was it built?</h4>
-                        <p>It’s a deliberately small build. The UI is <strong>Vite + TypeScript</strong>. Sound is generated with <strong>Web Audio</strong>. The preview uses a simple piano soundfont loaded on demand. The backend is a small <strong>Express</strong> API (search/fetch/parse) running on Vercel.</p>
+                        <h4>How does it work?</h4>
+                        <p>We scrape MIDI files from the web, analyse the structure (melody, bass, chords), then resynthesise with an emulation engine. Light touch and runs in any browser through <strong>Web Audio</strong>.</p>
                     </div>
                     <div class="faq-item">
-                        <h4>Why do I need “Enable Audio” on iOS?</h4>
-                        <p>iOS Safari blocks audio until you tap. Tap <strong>Enable Audio</strong>, then press <strong>Generate &amp; Play</strong>. If it’s still silent: disable Silent Mode, raise volume, or disconnect Bluetooth.</p>
+                        <h4>Why "Enable Audio" on iPhone?</h4>
+                        <p>Apple blocks sound until you tap something. Just hit the button once — you're good. Still silent? Check your ringer switch isn't on mute.</p>
                     </div>
                     <div class="faq-item">
-                        <h4>How can we develop it further?</h4>
-                        <p>Workflow we aimed for: <strong>search → pick → preview → generate → share</strong>. Next: add more MIDI sources, better matching, and style presets (ambient / dance / ominous). Then ship a compact embed widget and an SDK.</p>
+                        <h4>What's next?</h4>
+                        <p>More sources, better song matching, style presets (ambient / ominous / dance), embeddable widget, maybe an API. Ideas? Hit us up.</p>
                     </div>
                 </div>
             </main>
