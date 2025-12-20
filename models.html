@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MOTIF — Models (lab)</title>
+  <style>
+    :root {
+      --bg: #0b0b0f;
+      --surface: rgba(0,0,0,0.18);
+      --border: rgba(255,255,255,0.12);
+      --text: rgba(255,255,255,0.9);
+      --muted: rgba(255,255,255,0.7);
+      --accent: #00ff88;
+      --accent2: #ff3cf5;
+      --radius: 14px;
+      --shadow: 0 26px 90px rgba(0,0,0,0.35);
+    }
+    body {
+      background: radial-gradient(1000px 600px at 20% 10%, rgba(255,60,245,0.10), transparent 55%),
+                  radial-gradient(900px 500px at 80% 20%, rgba(0,255,136,0.09), transparent 50%),
+                  linear-gradient(180deg, #07070a, #0b0b0f 60%, #060609);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      margin: 0;
+      padding: 48px 20px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .top {
+      display:flex; align-items:center; gap: 12px; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .title {
+      margin:0;
+      color: var(--accent);
+      text-shadow: 0 0 18px rgba(0,255,136,0.18);
+      letter-spacing: 0.05em;
+    }
+    .pill {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: transparent;
+      color: rgba(255,255,255,0.85);
+      padding: 8px 10px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .sub { margin: 0 0 16px 0; color: var(--muted); }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      margin-top: 14px;
+    }
+    .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+    input[type="text"] {
+      flex: 1 1 360px;
+      padding: 12px 14px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: var(--text);
+      outline: none;
+    }
+    button {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.86);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button.primary {
+      background: linear-gradient(90deg, rgba(0,255,136,0.18), rgba(255,60,245,0.10));
+      border-color: rgba(0,255,136,0.28);
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.20);
+      color: rgba(255,255,255,0.75);
+    }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align:left; }
+    tr.selected { background: rgba(0,255,136,0.06); }
+
+    .toggle { display:flex; gap: 8px; flex-wrap: wrap; align-items:center; }
+    .model-btn {
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
+      color: rgba(255,255,255,0.86);
+      font-size: 12px;
+      line-height: 1;
+      user-select: none;
+    }
+    .model-btn .dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(255,255,255,0.35); }
+    .model-btn[aria-pressed="true"] {
+      border-color: rgba(0,255,136,0.35);
+      background: linear-gradient(90deg, rgba(0,255,136,0.16), rgba(255,60,245,0.10));
+    }
+    .model-btn[aria-pressed="true"] .dot { background: rgba(0,255,136,0.85); box-shadow: 0 0 14px rgba(0,255,136,0.22); }
+    .hint { color: rgba(255,255,255,0.65); font-size: 12px; }
+    .vol { display:flex; gap: 8px; align-items:center; }
+    .vol label { color: rgba(255,255,255,0.65); font-size: 12px; }
+    input[type="range"] { width: 170px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top">
+      <h1 class="title">MOTIF — Models</h1>
+      <a class="pill" href="/" aria-label="Back to main app">Home</a>
+    </div>
+    <p class="sub">Lab page. Choose a synthesis model, then click Generate. This page does not modify the main engine.</p>
+
+    <div class="card">
+      <div class="row">
+        <input id="songInput" type="text" placeholder="Enter song name…" />
+        <button id="searchBtn" class="primary">Search</button>
+      </div>
+      <div id="status" class="status">Ready.</div>
+    </div>
+
+    <div id="resultsCard" class="card" style="display:none;">
+      <div class="row" style="justify-content: space-between;">
+        <strong>Search results</strong>
+        <span class="hint">Pick one MIDI, then compare models.</span>
+      </div>
+      <div style="height:10px"></div>
+      <table>
+        <thead>
+          <tr><th>Title</th><th>Source</th><th>Duration</th></tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <div id="playerCard" class="card" style="display:none;">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <div id="selectedTitle" style="font-weight:700;">No MIDI selected</div>
+          <div id="selectedMeta" class="hint">Select a result to enable playback.</div>
+        </div>
+      </div>
+
+      <div style="height:14px"></div>
+
+      <div class="row">
+        <button id="previewPlayBtn" class="primary" disabled>Play Preview</button>
+        <button id="previewStopBtn" disabled>Stop</button>
+        <div class="vol">
+          <label for="previewVol">Preview vol</label>
+          <input id="previewVol" type="range" min="0" max="1" step="0.01" value="0.8" />
+        </div>
+        <button id="nextResultBtn" disabled>Try Next</button>
+      </div>
+
+      <div style="height:14px"></div>
+      <div style="height:1px; background: rgba(255,255,255,0.08);"></div>
+      <div style="height:14px"></div>
+
+      <div class="row" style="justify-content: space-between; align-items: baseline;">
+        <strong>Motif (model test)</strong>
+        <span id="modelHint" class="hint">Choose a model, then Generate.</span>
+      </div>
+      <div style="height:10px"></div>
+
+      <div class="row">
+        <div class="toggle" role="group" aria-label="Synthesis model">
+          <button class="model-btn" id="modelPre8" type="button" data-model="pre8bit" aria-pressed="false">
+            <span class="dot" aria-hidden="true"></span> Pre‑8bit
+          </button>
+          <button class="model-btn" id="modelNesGb" type="button" data-model="nes_gb" aria-pressed="true">
+            <span class="dot" aria-hidden="true"></span> NES / GB
+          </button>
+          <button class="model-btn" id="modelSnes" type="button" data-model="snes" aria-pressed="false">
+            <span class="dot" aria-hidden="true"></span> SNES
+          </button>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="row">
+        <button id="motifPlayBtn" class="primary" disabled>Generate &amp; Play</button>
+        <button id="motifStopBtn" disabled>Stop</button>
+        <div class="vol">
+          <label for="motifVol">Motif vol</label>
+          <input id="motifVol" type="range" min="0" max="1" step="0.01" value="0.3" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/models.ts"></script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>MOTIF — Test models</title>
+    <style>
+        :root {
+            --color-bg: #0b0b0f;
+            --color-surface: rgba(255, 255, 255, 0.06);
+            --color-surface-2: rgba(255, 255, 255, 0.09);
+            --color-border: rgba(255, 255, 255, 0.12);
+            --color-text: rgba(255, 255, 255, 0.9);
+            --color-text-muted: rgba(255, 255, 255, 0.7);
+            --color-accent-primary: #00ff88;
+            --color-accent-secondary: #ff3cf5;
+            --radius: 12px;
+            --shadow-sm: 0 12px 34px rgba(0,0,0,0.45);
+            --glow-primary: 0 0 18px rgba(0, 255, 136, 0.18);
+            --spacing-unit: 8px;
+        }
+
+        body {
+            background: radial-gradient(1000px 600px at 20% 10%, rgba(255,60,245,0.10), transparent 55%),
+                        radial-gradient(900px 500px at 80% 20%, rgba(0,255,136,0.09), transparent 50%),
+                        linear-gradient(180deg, #07070a, #0b0b0f 60%, #060609);
+            color: var(--color-text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            margin: 0;
+            padding: calc(var(--spacing-unit) * 6) calc(var(--spacing-unit) * 3);
+        }
+
+        .container { max-width: 960px; margin: 0 auto; }
+
+        h1 {
+            color: var(--color-accent-primary);
+            text-align: center;
+            margin: 0 0 calc(var(--spacing-unit) * 4) 0;
+            font-size: 2em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-shadow: var(--glow-primary);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing-unit) * 2);
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+        .topbar h1 { margin: 0; }
+        .topbar-actions {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-link {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.14);
+            color: rgba(255,255,255,0.85);
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            box-shadow: none;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .nav-link:hover { box-shadow: var(--shadow-sm); border-color: rgba(255,255,255,0.22); }
+
+        .controls { margin: calc(var(--spacing-unit) * 3) 0; text-align: center; }
+        input[type="text"] {
+            width: min(600px, 100%);
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            color: var(--color-text);
+            outline: none;
+        }
+        button {
+            background: var(--color-surface);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.86);
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        button.primary {
+            background: linear-gradient(90deg, rgba(0,255,136,0.18), rgba(255,60,245,0.10));
+            border-color: rgba(0,255,136,0.28);
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #status {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.20);
+            color: rgba(255,255,255,0.75);
+        }
+
+        .section {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            background: rgba(0,0,0,0.18);
+            padding: 14px;
+            box-shadow: 0 26px 90px rgba(0,0,0,0.35);
+            margin-top: 16px;
+        }
+        .section-header { display:flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+        .section-title { margin: 0; font-size: 18px; }
+        .section-subtitle { margin: 0; color: rgba(255,255,255,0.65); font-size: 13px; }
+        .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0; }
+
+        .results-section { display: none; }
+        .results-section.visible { display: block; }
+        .results-table { width: 100%; border-collapse: collapse; }
+        .results-table th, .results-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .results-table tr.selected { background: rgba(0,255,136,0.06); }
+
+        .player-section { display: none; }
+        .player-section.visible { display: block; }
+
+        .preview-controls, .motif-controls { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+        .volume-control { display:flex; align-items:center; gap: 8px; }
+        .volume-control label { color: rgba(255,255,255,0.65); font-size: 12px; }
+        input[type="range"] { width: 160px; }
+
+        .model-row { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
+        .model-row label { color: rgba(255,255,255,0.7); font-size: 12px; }
+        .model-toggle {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .model-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(0,0,0,0.18);
+            color: rgba(255,255,255,0.86);
+            font-size: 12px;
+            line-height: 1;
+            user-select: none;
+        }
+        .model-btn .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.35);
+        }
+        .model-btn:hover { border-color: rgba(255,255,255,0.22); box-shadow: 0 14px 40px rgba(0,0,0,0.35); }
+        .model-btn[aria-pressed="true"] {
+            border-color: rgba(0,255,136,0.35);
+            background: linear-gradient(90deg, rgba(0,255,136,0.16), rgba(255,60,245,0.10));
+        }
+        .model-btn[aria-pressed="true"] .dot {
+            background: rgba(0,255,136,0.85);
+            box-shadow: 0 0 14px rgba(0,255,136,0.22);
+        }
+        .model-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,255,136,0.25), 0 14px 40px rgba(0,0,0,0.35);
+        }
+
+        .ios-audio-banner {
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.18);
+            display:none;
+        }
+        .ios-audio-banner .row { display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+        .ios-audio-banner .state { margin-top: 6px; font-size: 12px; color: rgba(255,255,255,0.65); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <h1>🎵 MOTIF</h1>
+            <div class="topbar-actions">
+                <a class="nav-link" href="/" aria-label="Back to main app">Home</a>
+            </div>
+        </div>
+        <p style="text-align:center; color: rgba(255,255,255,0.7); margin-top: 0;">Test models: Pre‑8bit → NES/GB → SNES‑ish</p>
+
+        <div class="controls">
+            <input type="text" id="songInput" placeholder="Enter song name..." />
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div id="status">Ready. Enter a song name to search for MIDI files.</div>
+
+        <div id="resultsSection" class="section results-section">
+            <div class="section-header">
+                <h3 class="section-title">Search Results</h3>
+                <p class="section-subtitle">Pick a MIDI, then compare models.</p>
+            </div>
+            <div class="divider"></div>
+            <table id="resultsTable" class="results-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Source</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <div id="playerSection" class="player-section">
+            <div id="selectedInfo" class="section">
+                <div style="display:flex; flex-direction:column; gap: 6px;">
+                    <h4 id="selectedTitle" style="margin:0;">No MIDI selected</h4>
+                    <p id="selectedMeta" style="margin:0; color: rgba(255,255,255,0.7); font-size: 13px;">Select a MIDI file from search results to enable playback</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h3 class="section-title">Preview</h3>
+                    <p class="section-subtitle">Soundfont MIDI preview (baseline).</p>
+                </div>
+                <div class="divider"></div>
+                <div class="preview-controls">
+                    <button id="soundfontPlayBtn" class="primary" disabled>Play Preview</button>
+                    <button id="soundfontStopBtn" disabled>Stop</button>
+                    <div class="volume-control">
+                        <label for="soundfontVolume">Volume</label>
+                        <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.8" />
+                    </div>
+                    <button id="nextResultBtn" disabled>Try Next Result</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h3 class="section-title">Motif generation</h3>
+                    <p class="section-subtitle">Same MIDI → different synth models.</p>
+                </div>
+                <div class="divider"></div>
+
+                <div class="model-row">
+                    <label>Model</label>
+                    <div class="model-toggle" role="group" aria-label="Synthesis model">
+                        <button class="model-btn" id="modelBtnPre8" type="button" data-model="pre8bit" aria-pressed="false">
+                            <span class="dot" aria-hidden="true"></span>
+                            Pre‑8bit
+                        </button>
+                        <button class="model-btn" id="modelBtnNesGb" type="button" data-model="nes_gb" aria-pressed="true">
+                            <span class="dot" aria-hidden="true"></span>
+                            NES / GB
+                        </button>
+                        <button class="model-btn" id="modelBtnSnes" type="button" data-model="snes_ish" aria-pressed="false">
+                            <span class="dot" aria-hidden="true"></span>
+                            SNES‑ish
+                        </button>
+                    </div>
+                    <span id="modelHint" style="color: rgba(255,255,255,0.65); font-size: 12px;">Chip: square/triangle/saw flavor, tight envelope, crisp attacks.</span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="motif-controls">
+                    <button id="motifBtn" class="primary" disabled>Generate & Play</button>
+                    <button id="motifStopBtn" disabled>Stop</button>
+                    <div class="volume-control">
+                        <label for="motifVolume">Volume</label>
+                        <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.3" />
+                    </div>
+                </div>
+
+                <div id="iosAudioBanner" class="ios-audio-banner" aria-live="polite">
+                    <div class="row">
+                        <div class="copy" style="color: rgba(255,255,255,0.8); font-size: 13px;">
+                            <strong>iOS Safari:</strong> tap once to enable audio, then press <strong>Generate &amp; Play</strong>.
+                        </div>
+                        <button id="enableAudioBtn" type="button">Enable Audio</button>
+                    </div>
+                    <div id="iosAudioState" class="state">Audio: …</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/models.ts"></script>
+</body>
+</html>
+
