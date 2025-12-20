@@ -1,52 +1,31 @@
-import type { RoleAssignment, MotifConfig, SynthLayer, Role, NoteEvent, ChordEvent, SynthModel } from '../types';
+import type { RoleAssignment, MotifConfig, SynthLayer, Role, NoteEvent, ChordEvent } from '../types';
 
 export class SynthesisEngine {
   private audioContext: AudioContext;
   private config: MotifConfig;
   private masterGain: GainNode;
-  private postGain: GainNode;
-  private model: SynthModel;
   private layers: Map<Role, SynthLayer> = new Map();
   private roleAssignments: Map<Role, RoleAssignment> = new Map();
   private isPlaying = false;
   private schedulerIntervalId: number | null = null;
   private startTime = 0;
   private nextEventIndex = new Map<Role, number>();
-  private activeVoiceCount = 0;
-  private maxVoices: number;
-  private effectCleanup: (() => void) | null = null;
 
-  constructor(audioContext: AudioContext, config: MotifConfig, model: SynthModel = 'nes_gb') {
+  constructor(audioContext: AudioContext, config: MotifConfig) {
     this.audioContext = audioContext;
     this.config = config;
     this.masterGain = audioContext.createGain();
-    this.postGain = audioContext.createGain();
-    this.postGain.connect(audioContext.destination);
-
-    this.model = model;
-    this.maxVoices = this.getMaxVoicesForModel(model, config.maxOscillators);
-
-    // Default overall level
+    this.masterGain.connect(audioContext.destination);
     this.masterGain.gain.value = 0.3;
-    this.postGain.gain.value = 1.0;
-
-    // Route + optional effects
-    this.effectCleanup = this.configureMasterChain(model);
   }
 
   setupLayers(assignments: RoleAssignment[]): void {
     // Clean up existing layers
     this.cleanupLayers();
 
-    // Reset voice budgeting per setup (important when switching models)
-    this.activeVoiceCount = 0;
-
-    // Apply model role filtering
-    const filteredAssignments = this.filterAssignmentsForModel(assignments);
-
     // Find the earliest event time across all assignments
     let earliestTime = Infinity;
-    for (const assignment of filteredAssignments) {
+    for (const assignment of assignments) {
       if (assignment.events.length > 0) {
         earliestTime = Math.min(earliestTime, assignment.events[0].time);
       }
@@ -58,7 +37,7 @@ export class SynthesisEngine {
     // If we found events, normalize times to start at 0
     if (earliestTime !== Infinity && earliestTime > 0) {
       console.log('Normalizing event times, earliest was:', earliestTime);
-      for (const assignment of filteredAssignments) {
+      for (const assignment of assignments) {
         // Normalize note events
         for (const event of assignment.events) {
           event.time -= earliestTime;
@@ -71,7 +50,7 @@ export class SynthesisEngine {
     }
 
     // Store role assignments and create layers
-    for (const assignment of filteredAssignments) {
+    for (const assignment of assignments) {
       const layer = this.createSynthLayer(assignment.role);
       this.layers.set(assignment.role, layer);
       this.roleAssignments.set(assignment.role, assignment);
@@ -196,62 +175,37 @@ export class SynthesisEngine {
   }
 
   private configureLayerForRole(gain: GainNode, filter: BiquadFilterNode, role: Role): void {
-    // Default per-model filter shaping (keeps presets recognizable)
-    if (this.model === 'pre8bit') {
-      // Very bright, very simple
-      filter.type = 'lowpass';
-      filter.frequency.value = 6000;
-      filter.Q.value = 0.8;
-    } else if (this.model === 'snes_ish') {
-      // Warmer, a little more body
-      filter.type = 'lowpass';
-      filter.frequency.value = 2400;
-      filter.Q.value = 0.9;
-    }
-
     switch (role) {
       case 'bass':
-        gain.gain.value = this.model === 'pre8bit' ? 0.5 : 0.4;
-        if (this.model !== 'pre8bit') {
-          filter.type = 'lowpass';
-          filter.frequency.value = this.model === 'snes_ish' ? 260 : 200;
-        } else {
-          filter.frequency.value = 350;
-        }
+        gain.gain.value = 0.4;
+        filter.type = 'lowpass';
+        filter.frequency.value = 200;
         break;
       case 'drone':
-        gain.gain.value = this.model === 'pre8bit' ? 0.0 : 0.2;
-        if (this.model !== 'pre8bit') {
-          filter.type = 'bandpass';
-          filter.frequency.value = this.model === 'snes_ish' ? 520 : 400;
-        }
+        gain.gain.value = 0.2;
+        filter.type = 'bandpass';
+        filter.frequency.value = 400;
         break;
       case 'ostinato':
-        gain.gain.value = this.model === 'pre8bit' ? 0.25 : 0.3;
-        if (this.model !== 'pre8bit') {
-          filter.type = 'highpass';
-          filter.frequency.value = this.model === 'snes_ish' ? 220 : 300;
-        }
+        gain.gain.value = 0.3;
+        filter.type = 'highpass';
+        filter.frequency.value = 300;
         break;
       case 'texture':
-        gain.gain.value = this.model === 'pre8bit' ? 0.0 : 0.1;
-        if (this.model !== 'pre8bit') {
-          filter.type = 'bandpass';
-          filter.frequency.value = this.model === 'snes_ish' ? 900 : 800;
-        }
+        gain.gain.value = 0.1;
+        filter.type = 'bandpass';
+        filter.frequency.value = 800;
         break;
       case 'accents':
-        gain.gain.value = this.model === 'pre8bit' ? 0.35 : 0.5;
-        if (this.model !== 'pre8bit') {
-          filter.type = 'peaking';
-          filter.frequency.value = this.model === 'snes_ish' ? 1200 : 1000;
-        }
+        gain.gain.value = 0.5;
+        filter.type = 'peaking';
+        filter.frequency.value = 1000;
         break;
       case 'melody':
         // Passthrough mode - balanced sound for all notes
-        gain.gain.value = this.model === 'pre8bit' ? 0.4 : 0.35;
+        gain.gain.value = 0.35;
         filter.type = 'lowpass';
-        filter.frequency.value = this.model === 'snes_ish' ? 3200 : 4000; // Brighter for chip, warmer for SNES-ish
+        filter.frequency.value = 4000; // Brighter sound for full range
         break;
     }
   }
@@ -263,13 +217,6 @@ export class SynthesisEngine {
   private scheduleNote(role: Role, pitch: number, duration: number, velocity: number, when: number): void {
     const layer = this.layers.get(role);
     if (!layer) return;
-
-    // Model gating: pre8bit runs intentionally sparse
-    if (this.model === 'pre8bit') {
-      if (role !== 'bass' && role !== 'melody') return;
-    }
-
-    if (this.activeVoiceCount >= this.maxVoices) return;
     
     const osc = this.audioContext.createOscillator();
     const envelope = this.audioContext.createGain();
@@ -278,50 +225,33 @@ export class SynthesisEngine {
     const frequency = this.midiToFrequency(pitch);
     osc.frequency.value = frequency;
     
-    // Choose oscillator type based on model + role
-    if (this.model === 'pre8bit') {
-      osc.type = role === 'bass' ? 'triangle' : 'square';
-    } else if (this.model === 'snes_ish') {
-      // Warmer “sample-ish” feel: richer waveforms + filtering + echo on master
-      if (role === 'bass') osc.type = 'triangle';
-      else if (role === 'drone') osc.type = 'sawtooth';
-      else if (role === 'ostinato') osc.type = 'triangle';
-      else if (role === 'melody') osc.type = 'sawtooth';
-      else osc.type = 'sine';
-
-      // Subtle detune (feels less “pure chip”)
-      osc.detune.value = (Math.random() - 0.5) * 8; // ±4 cents
-    } else {
-      // nes_gb (current default)
-      switch (role) {
-        case 'bass':
-          osc.type = 'square';
-          break;
-        case 'drone':
-          osc.type = 'sawtooth';
-          break;
-        case 'ostinato':
-          osc.type = 'triangle';
-          break;
-        case 'melody':
-          osc.type = 'triangle';
-          break;
-        case 'texture':
-        case 'accents':
-          osc.type = 'sine';
-          break;
-      }
+    // Choose oscillator type based on role
+    switch (role) {
+      case 'bass':
+        osc.type = 'square';
+        break;
+      case 'drone':
+        osc.type = 'sawtooth';
+        break;
+      case 'ostinato':
+        osc.type = 'triangle';
+        break;
+      case 'melody':
+        osc.type = 'triangle';
+        break;
+      case 'texture':
+      case 'accents':
+        osc.type = 'sine';
+        break;
     }
     
     osc.connect(envelope);
     envelope.connect(layer.filterNode);
     
-    // Envelope tuned per model (still with minimum times to prevent clicks)
+    // Envelope based on velocity and duration with minimum times to prevent clicks
     const gainValue = velocity * 0.5; // Scale velocity
-    const attackBase = this.model === 'pre8bit' ? 0.003 : this.model === 'snes_ish' ? 0.01 : 0.005;
-    const releaseBase = this.model === 'pre8bit' ? 0.008 : this.model === 'snes_ish' ? 0.14 : 0.01;
-    const attackTime = Math.max(attackBase, Math.min(0.06, duration * 0.1));
-    const releaseTime = Math.max(releaseBase, Math.min(this.model === 'snes_ish' ? 0.22 : 0.12, duration * 0.3));
+    const attackTime = Math.max(0.005, Math.min(0.05, duration * 0.1)); // Min 5ms attack
+    const releaseTime = Math.max(0.01, Math.min(0.1, duration * 0.3)); // Min 10ms release
 
     envelope.gain.setValueAtTime(0, when);
     envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
@@ -330,8 +260,6 @@ export class SynthesisEngine {
 
     osc.start(when);
     osc.stop(when + duration + releaseTime + 0.01); // Stop after envelope completes
-
-    this.activeVoiceCount++;
     
     // Clean up after note ends
     setTimeout(() => {
@@ -341,7 +269,6 @@ export class SynthesisEngine {
       } catch (e) {
         // Already disconnected
       }
-      this.activeVoiceCount = Math.max(0, this.activeVoiceCount - 1);
     }, (duration + releaseTime + 0.1) * 1000);
   }
 
@@ -363,12 +290,6 @@ export class SynthesisEngine {
     
     if (!events.length && !chords.length) return;
     
-    // pre8bit is intentionally simple: no chord scheduling
-    if (this.model === 'pre8bit') {
-      this.scheduleSingleEvents(role, events, scheduleUntil);
-      return;
-    }
-
     // For roles that support polyphony (drone, texture), prefer chords
     if ((role === 'drone' || role === 'texture') && chords.length > 0) {
       this.scheduleChordEvents(role, chords, scheduleUntil);
@@ -471,13 +392,9 @@ export class SynthesisEngine {
   private scheduleChord(role: Role, pitches: number[], duration: number, velocity: number, when: number): void {
     const layer = this.layers.get(role);
     if (!layer) return;
-
-    if (this.activeVoiceCount >= this.maxVoices) return;
     
-    // Create oscillator for each pitch in the chord (unless constrained)
-    const chordPitches = this.model === 'snes_ish' ? pitches.slice(0, 4) : pitches.slice(0, 3);
-    for (const pitch of chordPitches) {
-      if (this.activeVoiceCount >= this.maxVoices) break;
+    // Create oscillator for each pitch in the chord
+    for (const pitch of pitches) {
       const osc = this.audioContext.createOscillator();
       const envelope = this.audioContext.createGain();
       
@@ -485,46 +402,35 @@ export class SynthesisEngine {
       const frequency = this.midiToFrequency(pitch);
       osc.frequency.value = frequency;
       
-      // Choose oscillator type based on model + role (same as note path)
-      if (this.model === 'snes_ish') {
-        if (role === 'bass') osc.type = 'triangle';
-        else if (role === 'drone') osc.type = 'sawtooth';
-        else if (role === 'ostinato') osc.type = 'triangle';
-        else if (role === 'melody') osc.type = 'sawtooth';
-        else osc.type = 'sine';
-        osc.detune.value = (Math.random() - 0.5) * 8;
-      } else {
-        switch (role) {
-          case 'bass':
-            osc.type = 'square';
-            break;
-          case 'drone':
-            osc.type = 'sawtooth';
-            break;
-          case 'ostinato':
-            osc.type = 'triangle';
-            break;
-          case 'texture':
-            osc.type = 'sine';
-            break;
-          case 'melody':
-            osc.type = 'triangle';
-            break;
-          case 'accents':
-            osc.type = 'sine';
-            break;
-        }
+      // Choose oscillator type based on role
+      switch (role) {
+        case 'bass':
+          osc.type = 'square';
+          break;
+        case 'drone':
+          osc.type = 'sawtooth';
+          break;
+        case 'ostinato':
+          osc.type = 'triangle';
+          break;
+        case 'texture':
+          osc.type = 'sine';
+          break;
+        case 'melody':
+          osc.type = 'triangle';
+          break;
+        case 'accents':
+          osc.type = 'sine';
+          break;
       }
       
       osc.connect(envelope);
       envelope.connect(layer.filterNode);
       
       // Envelope based on velocity and duration, scaled for chords with minimum times to prevent clicks
-      const gainValue = (velocity * 0.3) / Math.max(chordPitches.length * 0.5, 1); // Scale down for chords
-      const attackBase = this.model === 'snes_ish' ? 0.01 : 0.005;
-      const releaseBase = this.model === 'snes_ish' ? 0.16 : 0.01;
-      const attackTime = Math.max(attackBase, Math.min(0.06, duration * 0.1));
-      const releaseTime = Math.max(releaseBase, Math.min(this.model === 'snes_ish' ? 0.24 : 0.12, duration * 0.3));
+      const gainValue = (velocity * 0.3) / Math.max(pitches.length * 0.5, 1); // Scale down for chords
+      const attackTime = Math.max(0.005, Math.min(0.05, duration * 0.1)); // Min 5ms attack
+      const releaseTime = Math.max(0.01, Math.min(0.1, duration * 0.3)); // Min 10ms release
 
       envelope.gain.setValueAtTime(0, when);
       envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
@@ -534,8 +440,6 @@ export class SynthesisEngine {
       osc.start(when);
       osc.stop(when + duration + releaseTime + 0.01); // Stop after envelope completes
 
-      this.activeVoiceCount++;
-
       // Clean up after note ends
       setTimeout(() => {
         try {
@@ -544,7 +448,6 @@ export class SynthesisEngine {
         } catch (e) {
           // Already disconnected
         }
-        this.activeVoiceCount = Math.max(0, this.activeVoiceCount - 1);
       }, (duration + releaseTime + 0.1) * 1000);
     }
   }
@@ -563,77 +466,5 @@ export class SynthesisEngine {
       layer.filterNode.disconnect();
     }
     this.layers.clear();
-  }
-
-  private getMaxVoicesForModel(model: SynthModel, defaultMax: number): number {
-    if (model === 'pre8bit') return Math.min(2, defaultMax);
-    if (model === 'snes_ish') return Math.max(12, defaultMax);
-    return defaultMax;
-  }
-
-  private filterAssignmentsForModel(assignments: RoleAssignment[]): RoleAssignment[] {
-    if (this.model === 'pre8bit') {
-      // Keep it intentionally simple and sparse.
-      const keep: Role[] = ['melody', 'bass'];
-      const kept = assignments.filter(a => keep.includes(a.role));
-      // If role mapper didn’t produce those roles, fall back to first available assignment.
-      if (kept.length > 0) return kept.slice(0, 2);
-      return assignments.slice(0, 1);
-    }
-    return assignments;
-  }
-
-  private configureMasterChain(model: SynthModel): () => void {
-    // Disconnect any previous chain
-    try { this.masterGain.disconnect(); } catch {}
-    if (this.effectCleanup) {
-      try { this.effectCleanup(); } catch {}
-    }
-
-    // Default: dry only
-    if (model !== 'snes_ish') {
-      this.masterGain.connect(this.postGain);
-      return () => {
-        try { this.masterGain.disconnect(); } catch {}
-      };
-    }
-
-    // SNES-ish: add a simple echo/reverb-like feedback delay with filtering.
-    const dry = this.audioContext.createGain();
-    const wet = this.audioContext.createGain();
-    const delay = this.audioContext.createDelay(1.0);
-    const feedback = this.audioContext.createGain();
-    const fbFilter = this.audioContext.createBiquadFilter();
-
-    dry.gain.value = 0.85;
-    wet.gain.value = 0.28;
-    delay.delayTime.value = 0.165; // ~165ms echo
-    feedback.gain.value = 0.32;
-    fbFilter.type = 'lowpass';
-    fbFilter.frequency.value = 1800;
-    fbFilter.Q.value = 0.7;
-
-    // master -> dry -> post
-    this.masterGain.connect(dry);
-    dry.connect(this.postGain);
-
-    // master -> delay -> wet -> post
-    this.masterGain.connect(delay);
-    delay.connect(wet);
-    wet.connect(this.postGain);
-
-    // feedback loop: delay -> filter -> feedback -> delay
-    delay.connect(fbFilter);
-    fbFilter.connect(feedback);
-    feedback.connect(delay);
-
-    return () => {
-      try { this.masterGain.disconnect(); } catch {}
-      try { dry.disconnect(); } catch {}
-      try { wet.disconnect(); } catch {}
-      try { delay.disconnect(); } catch {}
-      try { feedback.disconnect(); } catch {}
-      try { fbFilter.disconnect(); } catch {}
-    };
   }
 }

@@ -26,10 +26,6 @@
       "src": "/embed",
       "dest": "/embed.html"
     },
-    {
-      "src": "/models",
-      "dest": "/models.html"
-    },
     { "handle": "filesystem" },
     {
       "src": "/(.*)",
