@@ -893,19 +893,20 @@
                 <div class="faq-grid">
                     <div class="faq-item">
                         <h4>What is this?</h4>
-                        <p>A hobby project exploring <strong>MIDI → retro synthesis</strong>. Search a song, preview its MIDI, then generate a chiptune-style variation.</p>
+                        <p>A hobby project. It turns MIDI into <strong>Game Boy / SNES-style</strong> synth sound (v1). You search a song, preview the MIDI, then generate a variation.</p>
                     </div>
                     <div class="faq-item">
                         <h4>How was it built?</h4>
-                        <p><strong>Vite + TypeScript</strong> frontend using <strong>Web Audio</strong> (procedural synth) plus a <strong>Soundfont</strong> piano preview. Backend is a small <strong>Express</strong> API (search/fetch/parse) deployed on Vercel.</p>
+                        <p>It’s a deliberately small build. The UI is <strong>Vite + TypeScript</strong>. Sound is generated with <strong>Web Audio</strong>. The preview uses a simple piano soundfont loaded on demand. The backend is a small <strong>Express</strong> API (search/fetch/parse) running on Vercel.</p>
                     </div>
                     <div class="faq-item">
                         <h4>Why do I need “Enable Audio” on iOS?</h4>
-                        <p>iOS Safari requires a user tap before audio can play. Tap <strong>Enable Audio</strong>, then press <strong>Generate &amp; Play</strong>. If it’s still silent: disable Silent Mode / raise volume / disconnect Bluetooth.</p>
+                        <p>iOS Safari blocks audio until you tap. Tap <strong>Enable Audio</strong>, then press <strong>Generate &amp; Play</strong>. If it’s still silent: disable Silent Mode, raise volume, or disconnect Bluetooth.</p>
                     </div>
                     <div class="faq-item">
                         <h4>How can we develop it further?</h4>
-                        <p>Add more MIDI sources, better matching, and style presets (ambient / dance / ominous). Then ship a compact <code>/embed</code> widget and an SDK so other sites can drop in “pixelised music”.</p>
+                        <p>Workflow we aimed for: <strong>search → pick → preview → generate → share</strong>. Next: add more MIDI sources, better matching, and style presets (ambient / dance / ominous). Then ship a compact embed widget and an SDK.</p>
+                        <p style="margin-top: 8px;">Links: <a href="https://x.com/b1rdmania" target="_blank" rel="noopener noreferrer" style="color: rgba(0,255,136,0.9); text-decoration: none;">@b1rdmania on X</a></p>
                     </div>
                 </div>
             </main>
