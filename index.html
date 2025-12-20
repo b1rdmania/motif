@@ -84,8 +84,13 @@
         .topbar h1 {
             margin: 0;
         }
-        .faq-link {
+        .topbar-actions {
             margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .faq-link {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.14);
             color: rgba(255,255,255,0.85);
@@ -820,7 +825,10 @@
     <div class="container">
         <div class="topbar">
             <h1>🎵 MOTIF</h1>
-            <button id="faqBtn" class="faq-link" type="button">FAQ</button>
+            <div class="topbar-actions">
+                <a class="faq-link" href="/models" style="text-decoration:none;" aria-label="Open test models page">Models</a>
+                <button id="faqBtn" class="faq-link" type="button">FAQ</button>
+            </div>
         </div>
         <p>Procedural Music Synthesis from MIDI Structure</p>
         
