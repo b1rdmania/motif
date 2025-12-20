@@ -36,9 +36,8 @@ class ModelsApp {
   private motifStopBtn!: HTMLButtonElement;
   private motifVolumeSlider!: HTMLInputElement;
 
+  private modelSelect!: HTMLSelectElement;
   private modelHint!: HTMLElement;
-  private currentModel: SynthModel = 'nes_gb';
-  private modelButtons: HTMLButtonElement[] = [];
 
   private iosAudioBanner!: HTMLElement;
   private enableAudioBtn!: HTMLButtonElement;
@@ -87,12 +86,8 @@ class ModelsApp {
     this.motifStopBtn = document.getElementById('motifStopBtn') as HTMLButtonElement;
     this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
 
+    this.modelSelect = document.getElementById('modelSelect') as HTMLSelectElement;
     this.modelHint = document.getElementById('modelHint')!;
-    this.modelButtons = [
-      document.getElementById('modelBtnPre8') as HTMLButtonElement,
-      document.getElementById('modelBtnNesGb') as HTMLButtonElement,
-      document.getElementById('modelBtnSnes') as HTMLButtonElement,
-    ];
 
     this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
 
@@ -121,9 +116,7 @@ class ModelsApp {
       this.testEngine?.setVolume(volume);
     });
 
-    for (const btn of this.modelButtons) {
-      btn.addEventListener('click', () => this.setModel((btn.dataset.model as SynthModel) || 'nes_gb'));
-    }
+    this.modelSelect.addEventListener('change', () => this.syncModelHint());
 
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
 
@@ -133,17 +126,9 @@ class ModelsApp {
   }
 
   private getModel(): SynthModel {
-    return this.currentModel;
-  }
-
-  private setModel(model: SynthModel): void {
-    if (model !== 'pre8bit' && model !== 'nes_gb' && model !== 'snes_ish') return;
-    this.currentModel = model;
-    for (const btn of this.modelButtons) {
-      const isOn = btn.dataset.model === model;
-      btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
-    }
-    this.syncModelHint();
+    const v = (this.modelSelect.value || 'nes_gb') as SynthModel;
+    if (v === 'pre8bit' || v === 'nes_gb' || v === 'snes_ish') return v;
+    return 'nes_gb';
   }
 
   private syncModelHint(): void {

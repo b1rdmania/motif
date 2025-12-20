@@ -130,43 +130,13 @@
 
         .model-row { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
         .model-row label { color: rgba(255,255,255,0.7); font-size: 12px; }
-        .model-toggle {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .model-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        select {
+            background: rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.9);
             padding: 10px 12px;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.14);
-            background: rgba(0,0,0,0.18);
-            color: rgba(255,255,255,0.86);
-            font-size: 12px;
-            line-height: 1;
-            user-select: none;
-        }
-        .model-btn .dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.35);
-        }
-        .model-btn:hover { border-color: rgba(255,255,255,0.22); box-shadow: 0 14px 40px rgba(0,0,0,0.35); }
-        .model-btn[aria-pressed="true"] {
-            border-color: rgba(0,255,136,0.35);
-            background: linear-gradient(90deg, rgba(0,255,136,0.16), rgba(255,60,245,0.10));
-        }
-        .model-btn[aria-pressed="true"] .dot {
-            background: rgba(0,255,136,0.85);
-            box-shadow: 0 0 14px rgba(0,255,136,0.22);
-        }
-        .model-btn:focus-visible {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0,255,136,0.25), 0 14px 40px rgba(0,0,0,0.35);
+            border-radius: 10px;
+            font-family: inherit;
         }
 
         .ios-audio-banner {
@@ -249,22 +219,13 @@
                 <div class="divider"></div>
 
                 <div class="model-row">
-                    <label>Model</label>
-                    <div class="model-toggle" role="group" aria-label="Synthesis model">
-                        <button class="model-btn" id="modelBtnPre8" type="button" data-model="pre8bit" aria-pressed="false">
-                            <span class="dot" aria-hidden="true"></span>
-                            Pre‑8bit
-                        </button>
-                        <button class="model-btn" id="modelBtnNesGb" type="button" data-model="nes_gb" aria-pressed="true">
-                            <span class="dot" aria-hidden="true"></span>
-                            NES / GB
-                        </button>
-                        <button class="model-btn" id="modelBtnSnes" type="button" data-model="snes_ish" aria-pressed="false">
-                            <span class="dot" aria-hidden="true"></span>
-                            SNES‑ish
-                        </button>
-                    </div>
-                    <span id="modelHint" style="color: rgba(255,255,255,0.65); font-size: 12px;">Chip: square/triangle/saw flavor, tight envelope, crisp attacks.</span>
+                    <label for="modelSelect">Model</label>
+                    <select id="modelSelect">
+                        <option value="pre8bit">Pre‑8bit (beep / sparse)</option>
+                        <option value="nes_gb" selected>NES / Game Boy (chip)</option>
+                        <option value="snes_ish">SNES‑ish (warm + echo)</option>
+                    </select>
+                    <span id="modelHint" style="color: rgba(255,255,255,0.65); font-size: 12px;">Square/triangle/noise vibe, tight envelope.</span>
                 </div>
 
                 <div class="divider"></div>
