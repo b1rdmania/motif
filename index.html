@@ -133,6 +133,65 @@
             text-transform: uppercase;
             color: rgba(255,255,255,0.9);
         }
+        .modal header .faq-header-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .modal header .faq-header-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.18);
+            color: rgba(255,255,255,0.82);
+            text-decoration: none;
+            font-size: 12px;
+            line-height: 1;
+            box-shadow: none;
+            transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+        }
+        .modal header .faq-header-links a:hover {
+            border-color: rgba(255,255,255,0.22);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+            background: rgba(0,0,0,0.28);
+        }
+        .modal header .faq-header-links a:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,255,136,0.25), 0 12px 34px rgba(0,0,0,0.55);
+            border-color: rgba(0,255,136,0.45);
+        }
+        .modal header .faq-header-links .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(0,255,136,0.85);
+            box-shadow: 0 0 14px rgba(0,255,136,0.22);
+            flex: 0 0 auto;
+        }
+        .modal header .faq-header-links .label {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .modal header .faq-header-links .handle {
+            color: rgba(0,255,136,0.9);
+            font-weight: 600;
+        }
+        @media (max-width: 480px) {
+            .modal header {
+                gap: 10px;
+                padding: 12px 12px;
+            }
+            .modal header .faq-header-links a {
+                padding: 6px 9px;
+                font-size: 12px;
+            }
+        }
         .modal header .spacer { margin-left: auto; }
         .modal header button {
             padding: 8px 10px;
@@ -886,6 +945,16 @@
         <div class="modal" role="document">
             <header>
                 <h3 id="faqTitle">FAQ</h3>
+                <nav class="faq-header-links" aria-label="FAQ links">
+                    <a href="https://x.com/b1rdmania" target="_blank" rel="noopener noreferrer" aria-label="Open @b1rdmania on X">
+                        <span class="dot" aria-hidden="true"></span>
+                        <span class="label"><span class="handle">@b1rdmania</span><span aria-hidden="true">X</span></span>
+                    </a>
+                    <a href="https://github.com/b1rdmania/motif" target="_blank" rel="noopener noreferrer" aria-label="Open the MOTIF GitHub repository">
+                        <span class="dot" aria-hidden="true"></span>
+                        <span class="label">GitHub</span>
+                    </a>
+                </nav>
                 <div class="spacer"></div>
                 <button id="faqCloseBtn" type="button">Close</button>
             </header>
@@ -906,7 +975,6 @@
                     <div class="faq-item">
                         <h4>How can we develop it further?</h4>
                         <p>Workflow we aimed for: <strong>search → pick → preview → generate → share</strong>. Next: add more MIDI sources, better matching, and style presets (ambient / dance / ominous). Then ship a compact embed widget and an SDK.</p>
-                        <p style="margin-top: 8px;">Links: <a href="https://x.com/b1rdmania" target="_blank" rel="noopener noreferrer" style="color: rgba(0,255,136,0.9); text-decoration: none;">@b1rdmania on X</a> · <a href="https://github.com/b1rdmania/motif" target="_blank" rel="noopener noreferrer" style="color: rgba(0,255,136,0.9); text-decoration: none;">GitHub repo</a></p>
                     </div>
                 </div>
             </main>
