@@ -34,10 +34,6 @@ export class TestModelSynthesisEngine {
   private scheduleInterval = 25;
   private fadeTime = 0.05;
 
-  // SNES-ish “APU constraints”
-  private snesSampleRate = 32000;
-  private snesBitDepth = 12;
-
   constructor(audioContext: AudioContext, model: SynthModel) {
     this.audioContext = audioContext;
     this.model = model;
@@ -113,34 +109,74 @@ export class TestModelSynthesisEngine {
   private configureMasterChain(): void {
     try { this.masterGain.disconnect(); } catch {}
 
-    // dry always
-    const dry = this.audioContext.createGain();
-    dry.gain.value = 1.0;
-    this.masterGain.connect(dry);
-    dry.connect(this.postGain);
+    // Always connect master -> post, but for SNES we insert a stable “color” chain
+    // (bandlimit + gentle saturation + limiter) before post.
+    if (this.model !== 'snes') {
+      const dry = this.audioContext.createGain();
+      dry.gain.value = 1.0;
+      this.masterGain.connect(dry);
+      dry.connect(this.postGain);
+      return;
+    }
 
-    if (this.model !== 'snes') return;
+    // Create a single color chain (stable, avoids per-note ScriptProcessor crackle).
+    const colorIn = this.audioContext.createGain();
+    const hp = this.audioContext.createBiquadFilter();
+    const lp = this.audioContext.createBiquadFilter();
+    const shaper = this.audioContext.createWaveShaper();
+    const limiter = this.audioContext.createDynamicsCompressor();
 
-    // SNES-ish echo (APU has echo buffer + 8-tap FIR). Approx with feedback delay + lowpass.
+    // Band-limit similar to “sample playback through DSP”
+    hp.type = 'highpass';
+    hp.frequency.value = 45;
+    hp.Q.value = 0.7;
+
+    lp.type = 'lowpass';
+    lp.frequency.value = 5200;
+    lp.Q.value = 0.7;
+
+    // Gentle saturation curve (keeps things from sounding like pure oscillators)
+    // Type cast avoids TS lib generic mismatch (runtime is correct).
+    shaper.curve = this.makeSoftClipCurve(0.75) as any;
+    shaper.oversample = '2x';
+
+    // Limiter to stop “mess” / clipping during dense passages
+    limiter.threshold.value = -14;
+    limiter.knee.value = 18;
+    limiter.ratio.value = 12;
+    limiter.attack.value = 0.003;
+    limiter.release.value = 0.12;
+
+    // Wire: master -> colorIn -> hp -> lp -> shaper -> limiter -> post
+    this.masterGain.connect(colorIn);
+    colorIn.connect(hp);
+    hp.connect(lp);
+    lp.connect(shaper);
+    shaper.connect(limiter);
+    limiter.connect(this.postGain);
+
+    // SNES-ish echo (single instance): feedback delay + lowpass in loop
     const wet = this.audioContext.createGain();
     const delay = this.audioContext.createDelay(1.0);
     const feedback = this.audioContext.createGain();
     const fbFilter = this.audioContext.createBiquadFilter();
 
-    wet.gain.value = 0.28;
+    wet.gain.value = 0.22;
     delay.delayTime.value = 0.165;
-    feedback.gain.value = 0.32;
+    feedback.gain.value = 0.28;
     fbFilter.type = 'lowpass';
-    fbFilter.frequency.value = 1800;
+    fbFilter.frequency.value = 2200;
     fbFilter.Q.value = 0.7;
 
-    this.masterGain.connect(delay);
+    // Tap echo from color chain output (post-filter) into delay, then back to post.
+    lp.connect(delay);
     delay.connect(wet);
     wet.connect(this.postGain);
 
     delay.connect(fbFilter);
     fbFilter.connect(feedback);
     feedback.connect(delay);
+
   }
 
   private filterAssignments(assignments: RoleAssignment[]): RoleAssignment[] {
@@ -315,10 +351,7 @@ export class TestModelSynthesisEngine {
     }
 
     osc.connect(envelope);
-
-    // Per-voice crunch for SNES-ish
-    const out: AudioNode = this.model === 'snes' ? this.makeSnesCrunchNode(envelope) : envelope;
-    out.connect(layer.filterNode);
+    envelope.connect(layer.filterNode);
 
     const gainValue = velocity * 0.5;
     const attackBase = this.model === 'pre8bit' ? 0.003 : this.model === 'snes' ? 0.01 : 0.005;
@@ -339,7 +372,6 @@ export class TestModelSynthesisEngine {
       try {
         osc.disconnect();
         envelope.disconnect();
-        if (out !== envelope) out.disconnect();
       } catch {}
       this.activeVoiceCount = Math.max(0, this.activeVoiceCount - 1);
     }, (duration + releaseTime + 0.1) * 1000);
@@ -366,8 +398,7 @@ export class TestModelSynthesisEngine {
       }
 
       osc.connect(envelope);
-      const out: AudioNode = this.model === 'snes' ? this.makeSnesCrunchNode(envelope) : envelope;
-      out.connect(layer.filterNode);
+      envelope.connect(layer.filterNode);
 
       const gainValue = (velocity * 0.3) / Math.max(chordPitches.length * 0.5, 1);
       const attackBase = this.model === 'snes' ? 0.01 : 0.005;
@@ -388,49 +419,22 @@ export class TestModelSynthesisEngine {
         try {
           osc.disconnect();
           envelope.disconnect();
-          if (out !== envelope) out.disconnect();
         } catch {}
         this.activeVoiceCount = Math.max(0, this.activeVoiceCount - 1);
       }, (duration + releaseTime + 0.1) * 1000);
     }
   }
 
-  /**
-   * SNES “crunch” approximation:
-   * - downsample to ~32kHz
-   * - quantize to ~12-bit
-   *
-   * Implemented via ScriptProcessorNode for broad compatibility (lab-only).
-   */
-  private makeSnesCrunchNode(input: AudioNode): AudioNode {
-    const sp = this.audioContext.createScriptProcessor(1024, 1, 1);
-    const gain = this.audioContext.createGain();
-    gain.gain.value = 1.0;
-
-    const targetRate = this.snesSampleRate;
-    const ratio = this.audioContext.sampleRate / targetRate;
-    const step = Math.max(1, Math.round(ratio));
-    const levels = Math.pow(2, this.snesBitDepth);
-
-    let hold = 0;
-    let last = 0;
-
-    sp.onaudioprocess = (e) => {
-      const inp = e.inputBuffer.getChannelData(0);
-      const out = e.outputBuffer.getChannelData(0);
-      for (let i = 0; i < inp.length; i++) {
-        if (hold-- <= 0) {
-          hold = step;
-          const q = Math.max(-1, Math.min(1, inp[i]));
-          last = Math.round(q * (levels / 2)) / (levels / 2);
-        }
-        out[i] = last;
-      }
-    };
-
-    input.connect(gain);
-    gain.connect(sp);
-    return sp;
+  private makeSoftClipCurve(amount: number): Float32Array {
+    // amount: 0..1 (higher = more distortion)
+    const k = 1 + amount * 30;
+    const n = 2048;
+    const curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / (n - 1) - 1;
+      curve[i] = Math.tanh(k * x) / Math.tanh(k);
+    }
+    return curve as unknown as Float32Array;
   }
 
   private fadeOutAllLayers(): void {
