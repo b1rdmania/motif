@@ -348,6 +348,10 @@
             width: 80px;
             text-align: center;
         }
+        .results-table .preview-col {
+            width: 110px;
+            text-align: center;
+        }
 
         .results-table tbody tr {
             cursor: pointer;
@@ -388,6 +392,47 @@
 
             .results-table .duration-col {
                 width: 60px;
+            }
+
+            .results-table .preview-col {
+                width: 84px;
+            }
+        }
+
+        .results-controls {
+            display: flex;
+            gap: calc(var(--spacing-unit) * 1.5);
+            align-items: center;
+            flex-wrap: wrap;
+            padding: calc(var(--spacing-unit) * 2);
+            background: var(--color-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            margin-top: calc(var(--spacing-unit) * 2);
+        }
+        .results-controls .volume-control {
+            flex: 1;
+            min-width: 220px;
+            margin-top: 0;
+        }
+        .results-controls .actions {
+            margin-left: auto;
+            display: inline-flex;
+            gap: calc(var(--spacing-unit) * 1.25);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 768px) {
+            .results-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .results-controls .actions {
+                margin-left: 0;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
             }
         }
         
@@ -849,37 +894,29 @@
                         <th>Title</th>
                         <th class="source-col">Source</th>
                         <th class="duration-col">Duration</th>
+                        <th class="preview-col">Preview</th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody">
                 </tbody>
             </table>
+
+            <div class="results-controls" aria-label="Preview controls">
+                <div class="volume-control">
+                    <label for="soundfontVolume">Preview volume</label>
+                    <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.7" />
+                </div>
+                <div class="actions">
+                    <button id="soundfontStopBtn" disabled>Stop preview</button>
+                    <button id="nextResultBtn" class="next-result" disabled>Try Next Result</button>
+                </div>
+            </div>
         </div>
         
         <div id="playerSection" class="player-section">
             <div id="selectedInfo" class="player-info">
                 <h4 id="selectedTitle">No MIDI selected</h4>
                 <p id="selectedMeta">Select a MIDI file from search results to enable playback</p>
-            </div>
-
-            <div class="section">
-                <div class="section-header">
-                    <h3 class="section-title">Preview</h3>
-                    <p class="section-subtitle">Review the MIDI before generation.</p>
-                </div>
-                <div class="divider"></div>
-
-                <div class="preview-controls">
-                    <button id="soundfontPlayBtn" class="preview-play" disabled>Play Preview</button>
-                    <button id="soundfontStopBtn" disabled>Stop</button>
-                    <div class="volume-control">
-                        <label for="soundfontVolume">Volume</label>
-                        <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.7" />
-                    </div>
-                    <div class="preview-actions">
-                        <button id="nextResultBtn" class="next-result" disabled>Try Next Result</button>
-                    </div>
-                </div>
             </div>
 
             <div class="section">
