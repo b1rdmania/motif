@@ -70,6 +70,7 @@ class MotifApp {
   // FAQ modal
   private faqBtn!: HTMLButtonElement;
   private faqBtnFooter: HTMLButtonElement | null = null;
+  private newSearchBtn: HTMLButtonElement | null = null;
   private faqBackdrop!: HTMLElement;
   private faqCloseBtn!: HTMLButtonElement;
 
@@ -152,6 +153,7 @@ class MotifApp {
     // FAQ modal
     this.faqBtn = document.getElementById('faqBtn') as HTMLButtonElement;
     this.faqBtnFooter = document.getElementById('faqBtnFooter') as HTMLButtonElement | null;
+    this.newSearchBtn = document.getElementById('newSearchBtn') as HTMLButtonElement | null;
     this.faqBackdrop = document.getElementById('faqModalBackdrop')!;
     this.faqCloseBtn = document.getElementById('faqCloseBtn') as HTMLButtonElement;
   }
@@ -199,6 +201,7 @@ class MotifApp {
     // FAQ
     this.faqBtn.addEventListener('click', () => this.openFaq());
     this.faqBtnFooter?.addEventListener('click', () => this.openFaq());
+    this.newSearchBtn?.addEventListener('click', () => this.resetToNewSearch());
     this.faqCloseBtn.addEventListener('click', () => this.closeFaq());
     this.faqBackdrop.addEventListener('click', (e) => {
       if (e.target === this.faqBackdrop) this.closeFaq();
@@ -216,6 +219,34 @@ class MotifApp {
 
   private closeFaq(): void {
     this.faqBackdrop.classList.remove('open');
+  }
+
+  private resetToNewSearch(): void {
+    // Stop all audio and return to the search workbench.
+    this.stopPreview();
+    this.handleMotifStop();
+    this.hasGenerated = false;
+    this.isMotifPlaying = false;
+    this.motifResumeProgress = 0;
+    this.currentMIDI = null;
+
+    this.setState('idle');
+    this.updateStatus('Ready. Enter a song name to search for MIDI files.');
+
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // ignore
+    }
+    // Focus search field for immediate next query
+    window.setTimeout(() => {
+      try {
+        this.songInput.focus();
+        this.songInput.select();
+      } catch {
+        // ignore
+      }
+    }, 150);
   }
 
   private isIOSLike(): boolean {
