@@ -464,6 +464,14 @@ class MotifApp {
       this.enablePlayerControls();
       this.updateStatus('');
 
+      // Intent: after selecting "Use this", bring the workbench controls into view.
+      // Do this after the card is visible and MIDI is loaded.
+      try {
+        this.playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        // ignore
+      }
+
     } catch (error) {
       this.updateStatus(`Load error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
