@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title>MOTIF - Play</title>
+    <meta name="description" content="Play a shared MOTIF chiptune and generate your own." />
+    <style>
+      :root {
+        --color-bg: #0a0a0a;
+        --color-surface: #141414;
+        --color-surface-elevated: #1a1a1a;
+        --color-border: #2a2a2a;
+        --color-text: #e8e8e8;
+        --color-text-dim: #999;
+        --color-accent-primary: #00ff88;
+        --color-accent-secondary: #ffaa44;
+        --radius: 10px;
+        --shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 22px 16px;
+        background:
+          radial-gradient(1000px 600px at 50% -150px, rgba(0, 255, 136, 0.12), transparent 60%),
+          radial-gradient(800px 600px at 110% 20%, rgba(255, 170, 68, 0.08), transparent 55%),
+          var(--color-bg);
+        color: var(--color-text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .brand {
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--color-accent-primary);
+        text-shadow: 0 0 20px rgba(0, 255, 136, 0.25);
+      }
+
+      .sub {
+        color: var(--color-text-dim);
+        font-size: 13px;
+      }
+
+      .card {
+        background: rgba(20, 20, 20, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 16px;
+      }
+
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      #status {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--color-text-dim);
+        min-height: 18px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      button, a.button {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--color-text);
+        padding: 12px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 650;
+        font-size: 14px;
+        transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 140px;
+      }
+
+      button.primary {
+        background: var(--color-accent-secondary);
+        border-color: rgba(255, 170, 68, 0.6);
+        color: #000;
+      }
+
+      button:hover:not(:disabled), a.button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      label {
+        font-size: 12px;
+        color: var(--color-text-dim);
+        min-width: 54px;
+      }
+
+      input[type="range"] {
+        flex: 1;
+      }
+
+      footer {
+        margin-top: 14px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      footer a {
+        color: rgba(0, 255, 136, 0.85);
+        text-decoration: none;
+        font-size: 13px;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div>
+          <div class="brand">MOTIF</div>
+          <div class="sub">Shared chiptune player</div>
+        </div>
+        <div class="sub" id="shareHint">/play</div>
+      </header>
+
+      <div class="card">
+        <h1 id="title">Loading…</h1>
+        <div class="controls">
+          <button id="playBtn" class="primary" disabled>Play</button>
+          <button id="stopBtn" disabled>Stop</button>
+        </div>
+        <div class="row">
+          <label for="volume">Volume</label>
+          <input id="volume" type="range" min="0" max="1" step="0.01" value="0.35" />
+        </div>
+        <div id="status"></div>
+        <footer>
+          <a id="generateOwn" href="/">Generate your own</a>
+          <a href="/" aria-label="Back to MOTIF home">Home</a>
+        </footer>
+      </div>
+    </div>
+
+    <script type="module" src="/src/play.ts"></script>
+  </body>
+</html>
+

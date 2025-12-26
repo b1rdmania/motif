@@ -27,7 +27,10 @@ export class MotifEngine {
     this.roleMapper = new RoleMapper();
   }
 
-  async generateFromMIDI(events: NoteEvent[], transformMode: 'passthrough' | 'procedural' = 'passthrough'): Promise<void> {
+  async generateFromMIDI(
+    events: NoteEvent[],
+    transformMode: 'passthrough' | 'procedural' = 'passthrough'
+  ): Promise<void> {
     // Initialize audio context using shared unlock (iOS compatibility)
     if (!this.audioContext) {
       this.audioContext = await unlockAudio();

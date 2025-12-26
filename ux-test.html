@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOTIF - UX Test</title>
+    <style>
+        :root {
+            --bg: #08080c;
+            --surface: #101014;
+            --surface-2: #18181f;
+            --border: rgba(255,255,255,0.08);
+            --text: #e8e8e8;
+            --text-dim: #888;
+            --neon-green: #00ff88;
+            --neon-pink: #ff00aa;
+            --neon-blue: #00aaff;
+            --neon-orange: #ff8800;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin: 0 0 8px 0;
+            color: var(--neon-green);
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+            letter-spacing: 0.05em;
+        }
+
+        .tagline {
+            color: var(--text-dim);
+            font-size: 15px;
+            margin: 0;
+        }
+
+        /* Search */
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border-color 0.15s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: #555;
+        }
+
+        button {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        button:hover:not(:disabled) {
+            border-color: rgba(255,255,255,0.2);
+            background: var(--surface-2);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: var(--neon-green);
+            color: #000;
+            border-color: var(--neon-green);
+            font-weight: 600;
+        }
+
+        button.primary:hover:not(:disabled) {
+            box-shadow: 0 0 24px rgba(0, 255, 136, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Status */
+        .status {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            min-height: 20px;
+        }
+
+        .status.error {
+            color: var(--neon-pink);
+        }
+
+        /* Results */
+        .results {
+            display: none;
+            margin-bottom: 24px;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        .results-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .result-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-item:hover {
+            border-color: rgba(255,255,255,0.15);
+            background: var(--surface-2);
+        }
+
+        .result-item.selected {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+        }
+
+        .result-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .result-meta {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Player Card */
+        .player-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            display: none;
+        }
+
+        .player-card.visible {
+            display: block;
+        }
+
+        .now-playing {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .now-playing-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .now-playing-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* EQ Visualizer */
+        .eq-visualizer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 2px;
+            height: 80px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .eq-visualizer::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.1) 2px,
+                rgba(0,0,0,0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .eq-bar {
+            width: 6px;
+            min-height: 3px;
+            background: linear-gradient(to top, var(--neon-green) 0%, var(--neon-blue) 100%);
+            border-radius: 2px;
+            transition: height 0.05s ease-out;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+        }
+
+        .eq-bar.hot {
+            background: linear-gradient(to top, var(--neon-orange) 0%, var(--neon-pink) 100%);
+            box-shadow: 0 0 8px rgba(255, 0, 170, 0.4);
+        }
+
+        /* Player Controls */
+        .player-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .player-controls button {
+            flex: 1;
+            max-width: 140px;
+        }
+
+        /* Share row */
+        .share-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .share-row button {
+            flex: 1;
+            max-width: 140px;
+        }
+        .share-hint {
+            margin: 0 0 16px 0;
+            font-size: 12px;
+            color: var(--text-dim);
+            min-height: 16px;
+            text-align: center;
+        }
+
+        /* Volume */
+        .volume-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .volume-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            min-width: 50px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--surface-2);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: var(--surface-2);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .mode-btn:hover {
+            color: var(--text);
+        }
+
+        .mode-btn.active {
+            background: var(--surface);
+            color: var(--neon-green);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        footer p {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin: 0;
+        }
+
+        footer a {
+            color: var(--neon-green);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 MOTIF</h1>
+            <p class="tagline">Gameboy synth for any song</p>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="songInput" placeholder="Search any song..." value="Hotel California" />
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div id="status" class="status">Search for a song to get started</div>
+
+        <div id="results" class="results">
+            <div class="results-label">Results</div>
+            <div id="resultsList"></div>
+        </div>
+
+        <div id="playerCard" class="player-card">
+            <div class="now-playing">
+                <div class="now-playing-label">Now Playing</div>
+                <div class="now-playing-title" id="nowPlayingTitle">--</div>
+            </div>
+
+            <div class="eq-visualizer" id="eqVisualizer"></div>
+
+            <div class="mode-toggle">
+                <button class="mode-btn active" data-mode="preview">Preview</button>
+                <button class="mode-btn" data-mode="synth">Synth Engine</button>
+            </div>
+
+            <div class="player-controls">
+                <button id="playBtn" class="primary">Play</button>
+                <button id="stopBtn" disabled>Stop</button>
+            </div>
+
+            <div class="share-row">
+                <button id="copyLinkBtn" disabled>Copy link</button>
+                <button id="shareXBtn" disabled>Share on X</button>
+            </div>
+            <div id="shareHint" class="share-hint"></div>
+
+            <div class="volume-row">
+                <span class="volume-label">Volume</span>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.7" />
+            </div>
+        </div>
+
+        <footer>
+            <p>UX Test Page · <a href="/">Back to main</a></p>
+        </footer>
+    </div>
+
+    <script type="module">
+        import { MIDIService } from './src/services/MIDIService.ts';
+        import { MIDIParser } from './src/midi/MIDIParser.ts';
+        import { SoundfontMIDIPlayer } from './src/synthesis/SoundfontMIDIPlayer.ts';
+        import { MotifEngine } from './src/core/MotifEngine.ts';
+        import { unlockAudio } from './src/utils/audioUnlock.ts';
+
+        const NUM_BARS = 40;
+        const midiService = new MIDIService();
+
+        let previewPlayer = null;
+        let motifEngine = null;
+        let analyser = null;
+        let dataArray = null;
+        let animationId = null;
+        let currentEvents = null;
+        let currentTitle = '';
+        let currentMidiUrl = '';
+        let currentSource = '';
+        let currentMode = 'preview';
+        let isPlaying = false;
+
+        // DOM
+        const eqVisualizer = document.getElementById('eqVisualizer');
+        const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const shareXBtn = document.getElementById('shareXBtn');
+        const shareHint = document.getElementById('shareHint');
+        const searchBtn = document.getElementById('searchBtn');
+        const songInput = document.getElementById('songInput');
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        const resultsList = document.getElementById('resultsList');
+        const playerCard = document.getElementById('playerCard');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+
+        // Create EQ bars
+        function createBars() {
+            eqVisualizer.innerHTML = '';
+            for (let i = 0; i < NUM_BARS; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'eq-bar';
+                bar.style.height = '3px';
+                eqVisualizer.appendChild(bar);
+            }
+        }
+
+        // Update visualizer
+        function updateVisualizer() {
+            const bars = eqVisualizer.querySelectorAll('.eq-bar');
+
+            // If we don't have a real analyser wired up, run a lightweight faux animation
+            // so the UX test page doesn't depend on player internals.
+            if (!analyser || !dataArray) {
+                bars.forEach((bar) => {
+                    const value = isPlaying ? Math.floor(Math.random() * 255) : 0;
+                    const height = Math.max(3, (value / 255) * 60);
+                    bar.style.height = height + 'px';
+                    if (value > 180) bar.classList.add('hot');
+                    else bar.classList.remove('hot');
+                });
+                if (isPlaying) animationId = requestAnimationFrame(updateVisualizer);
+                return;
+            }
+
+            analyser.getByteFrequencyData(dataArray);
+            const step = Math.floor(dataArray.length / NUM_BARS);
+
+            bars.forEach((bar, i) => {
+                let sum = 0;
+                for (let j = 0; j < step; j++) {
+                    sum += dataArray[i * step + j] || 0;
+                }
+                const value = sum / step;
+                const height = Math.max(3, (value / 255) * 60);
+                bar.style.height = height + 'px';
+
+                if (value > 180) {
+                    bar.classList.add('hot');
+                } else {
+                    bar.classList.remove('hot');
+                }
+            });
+
+            if (isPlaying) animationId = requestAnimationFrame(updateVisualizer);
+        }
+
+        function stopVisualizer() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            const bars = eqVisualizer.querySelectorAll('.eq-bar');
+            bars.forEach(bar => {
+                bar.style.height = '3px';
+                bar.classList.remove('hot');
+            });
+        }
+
+        // Search
+        async function handleSearch() {
+            const query = songInput.value.trim();
+            if (!query) return;
+
+            setStatus('Searching...');
+            searchBtn.disabled = true;
+            results.classList.remove('visible');
+            playerCard.classList.remove('visible');
+
+            try {
+                const searchResults = await midiService.search(query);
+                if (searchResults.length === 0) {
+                    setStatus('No results found', true);
+                    return;
+                }
+
+                displayResults(searchResults.slice(0, 5));
+                setStatus(`Found ${searchResults.length} results`);
+
+            } catch (e) {
+                setStatus(`Error: ${e.message}`, true);
+            } finally {
+                searchBtn.disabled = false;
+            }
+        }
+
+        function displayResults(items) {
+            resultsList.innerHTML = '';
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = `
+                    <span class="result-title">${item.title}</span>
+                    <span class="result-meta">${item.source}</span>
+                `;
+                div.addEventListener('click', () => selectResult(item, div));
+                resultsList.appendChild(div);
+            });
+            results.classList.add('visible');
+        }
+
+        async function selectResult(item, element) {
+            // Update selection UI
+            document.querySelectorAll('.result-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+
+            setStatus(`Loading ${item.title}...`);
+            stopPlayback();
+
+            try {
+                const midiBuffer = await midiService.fetchMIDI(item.midiUrl);
+                if (!midiBuffer) throw new Error('Failed to fetch');
+
+                currentEvents = MIDIParser.parseMIDI(midiBuffer);
+                currentTitle = item.title;
+                currentMidiUrl = item.midiUrl;
+                currentSource = item.source;
+
+                // Setup audio
+                const audioContext = await unlockAudio();
+
+                // Create preview player
+                previewPlayer = new SoundfontMIDIPlayer(audioContext);
+                await previewPlayer.load(currentEvents);
+                previewPlayer.setVolume(parseFloat(volumeSlider.value));
+
+                // Create motif engine
+                motifEngine = new MotifEngine();
+
+                // Setup analyser
+                // Note: SoundfontMIDIPlayer doesn't expose a stable analyser hook.
+                // Keep analyser null and use faux EQ animation for the test page.
+                analyser = null;
+                dataArray = null;
+
+                // Show player
+                nowPlayingTitle.textContent = currentTitle;
+                playerCard.classList.add('visible');
+                playBtn.disabled = false;
+                copyLinkBtn.disabled = false;
+                shareXBtn.disabled = false;
+                setStatus('Ready to play');
+                shareHint.textContent = '';
+
+            } catch (e) {
+                setStatus(`Error: ${e.message}`, true);
+            }
+        }
+
+        async function handlePlay() {
+            if (!currentEvents) return;
+
+            try {
+                isPlaying = true;
+                playBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                if (currentMode === 'preview') {
+                    await previewPlayer.play();
+                } else {
+                    // Match main page output: passthrough → SynthesisEngine
+                    await motifEngine.generateFromMIDI(currentEvents, 'passthrough');
+                    motifEngine.setVolume(parseFloat(volumeSlider.value));
+                    await motifEngine.play();
+                }
+
+                updateVisualizer();
+
+            } catch (e) {
+                setStatus(`Play error: ${e.message}`, true);
+                stopPlayback();
+            }
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            if (previewPlayer) previewPlayer.stop();
+            if (motifEngine) motifEngine.stop();
+            playBtn.disabled = !currentEvents;
+            stopBtn.disabled = true;
+            stopVisualizer();
+        }
+
+        async function copyShareLink() {
+            if (!currentMidiUrl) return;
+            const url = buildShareUrl();
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(url);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = url;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.focus();
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                shareHint.textContent = 'Link copied.';
+                window.setTimeout(() => (shareHint.textContent = ''), 1200);
+            } catch {
+                shareHint.textContent = 'Copy failed.';
+            }
+        }
+
+        function cleanTitleForShare(title) {
+            return (title || '')
+                .replace(/\.mid$/i, '')
+                .replace(/_/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function buildShareUrl() {
+            const title = cleanTitleForShare(currentTitle);
+
+            // Make BitMidi links short: /play?src=bitmidi&id=12345&title=...
+            if (currentSource === 'bitmidi') {
+                const m = String(currentMidiUrl).match(/\/uploads\/(\d+)\.mid/i);
+                if (m && m[1]) {
+                    return `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}&title=${encodeURIComponent(title)}`;
+                }
+            }
+
+            // Fallback: include full MIDI URL (long, but works)
+            return `${window.location.origin}/play?u=${encodeURIComponent(currentMidiUrl)}&title=${encodeURIComponent(title)}`;
+        }
+
+        function shareOnX() {
+            if (!currentMidiUrl) return;
+            const url = buildShareUrl();
+            const niceTitle = cleanTitleForShare(currentTitle);
+            // Keep tweet text clean; URL is passed separately.
+            const text = niceTitle ? `MOTIF chiptune: ${niceTitle}` : 'MOTIF chiptune';
+            const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            window.open(intent, '_blank', 'noopener,noreferrer');
+        }
+
+        function setStatus(msg, isError = false) {
+            status.textContent = msg;
+            status.classList.toggle('error', isError);
+        }
+
+        // Mode toggle
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                stopPlayback();
+            });
+        });
+
+        // Volume
+        volumeSlider.addEventListener('input', () => {
+            const vol = parseFloat(volumeSlider.value);
+            if (previewPlayer) previewPlayer.setVolume(vol);
+            if (motifEngine) motifEngine.setVolume(vol);
+        });
+
+        // Events
+        searchBtn.addEventListener('click', handleSearch);
+        songInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') handleSearch();
+        });
+        playBtn.addEventListener('click', handlePlay);
+        stopBtn.addEventListener('click', stopPlayback);
+        copyLinkBtn.addEventListener('click', () => void copyShareLink());
+        shareXBtn.addEventListener('click', shareOnX);
+
+        // Init
+        createBars();
+    </script>
+</body>
+</html>
