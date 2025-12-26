@@ -27,7 +27,6 @@ class MotifApp {
   private selectedMeta!: HTMLElement;
 
   // Preview player controls
-  private soundfontStopBtn!: HTMLButtonElement;
   private soundfontVolumeSlider!: HTMLInputElement;
 
   // Motif controls
@@ -46,7 +45,6 @@ class MotifApp {
   private enableAudioBtn!: HTMLButtonElement;
   private iosAudioState!: HTMLElement;
 
-  private nextResultBtn!: HTMLButtonElement;
   private copyLinkBtn!: HTMLButtonElement;
 
   // Embed snippet UI
@@ -102,7 +100,6 @@ class MotifApp {
     this.selectedMeta = document.getElementById('selectedMeta')!;
 
     // Preview player controls
-    this.soundfontStopBtn = document.getElementById('soundfontStopBtn') as HTMLButtonElement;
     this.soundfontVolumeSlider = document.getElementById('soundfontVolume') as HTMLInputElement;
 
     // Motif controls
@@ -115,7 +112,6 @@ class MotifApp {
     this.motifCurrentTime = document.getElementById('motifCurrentTime')!;
     this.motifDuration = document.getElementById('motifDuration')!;
 
-    this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
 
     // iOS audio unlock UI (Motif)
@@ -145,7 +141,6 @@ class MotifApp {
     });
 
     // Preview player (row buttons in results table)
-    this.soundfontStopBtn.addEventListener('click', () => this.stopPreview(true));
     this.soundfontVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
       this.soundfontPlayer?.setVolume(volume);
@@ -166,7 +161,6 @@ class MotifApp {
     this.motifProgressBar.addEventListener('input', seekHandler);
     this.motifProgressBar.addEventListener('change', seekHandler);
 
-    this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
     this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
 
     // Embed snippet copy (may be disabled / not-live)
@@ -361,7 +355,6 @@ class MotifApp {
       await player.play();
 
       this.playingPreviewIndex = index;
-      this.soundfontStopBtn.disabled = false;
       this.updatePreviewButtons();
       this.updateStatus('Previewing MIDI…');
 
@@ -387,7 +380,6 @@ class MotifApp {
     }
     this.soundfontPlayer?.stop();
     this.playingPreviewIndex = null;
-    this.soundfontStopBtn.disabled = true;
     this.updatePreviewButtons();
     if (updateStatus) this.updateStatus('Preview stopped.');
   }
@@ -544,11 +536,6 @@ class MotifApp {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
-  private handleNextResult(): void {
-    const nextIndex = (this.selectedResultIndex + 1) % this.searchResults.length;
-    this.selectResult(nextIndex);
-  }
-
   private hideResults(): void {
     this.resultsSection.classList.remove('visible');
     this.playerSection.classList.remove('visible');
@@ -556,15 +543,12 @@ class MotifApp {
 
   private enablePlayerControls(): void {
     this.motifBtn.disabled = false;
-    this.nextResultBtn.disabled = this.searchResults.length <= 1;
     this.copyLinkBtn.disabled = this.searchResults.length === 0;
   }
 
   private disablePlayerControls(): void {
-    this.soundfontStopBtn.disabled = true;
     this.motifBtn.disabled = true;
     this.motifStopBtn.disabled = true;
-    this.nextResultBtn.disabled = true;
     this.copyLinkBtn.disabled = true;
   }
 
