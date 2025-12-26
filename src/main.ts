@@ -45,6 +45,7 @@ class MotifApp {
   private iosAudioState!: HTMLElement;
 
   private nextResultBtn!: HTMLButtonElement;
+  private copyLinkBtn!: HTMLButtonElement;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -68,6 +69,9 @@ class MotifApp {
 
     this.initializeUI();
     this.setupEventListeners();
+
+    // Apply initial volume immediately (slider default set in HTML)
+    this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value));
   }
 
   /**
@@ -78,6 +82,7 @@ class MotifApp {
     const audioContext = await unlockAudio();
     if (!this.soundfontPlayer) {
       this.soundfontPlayer = new SoundfontMIDIPlayer(audioContext);
+      this.soundfontPlayer.setVolume(parseFloat(this.soundfontVolumeSlider.value));
     }
     return this.soundfontPlayer;
   }
@@ -110,6 +115,7 @@ class MotifApp {
     this.motifDuration = document.getElementById('motifDuration')!;
 
     this.nextResultBtn = document.getElementById('nextResultBtn') as HTMLButtonElement;
+    this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
 
     // iOS audio unlock UI (Motif)
     this.iosAudioBanner = document.getElementById('iosAudioBanner')!;
@@ -161,6 +167,7 @@ class MotifApp {
     this.motifProgressBar.addEventListener('change', seekHandler);
 
     this.nextResultBtn.addEventListener('click', () => this.handleNextResult());
+    this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
@@ -359,6 +366,7 @@ class MotifApp {
       // Load into preview player (ensure audio unlocked on iOS)
       const player = await this.ensureAudioReady();
       await player.load(events);
+      player.setVolume(parseFloat(this.soundfontVolumeSlider.value));
 
       // Update UI
       this.selectedTitle.textContent = result.title;
@@ -505,6 +513,7 @@ class MotifApp {
     this.soundfontPlayBtn.disabled = false;
     this.motifBtn.disabled = false;
     this.nextResultBtn.disabled = this.searchResults.length <= 1;
+    this.copyLinkBtn.disabled = this.searchResults.length === 0;
   }
 
   private disablePlayerControls(): void {
@@ -513,10 +522,90 @@ class MotifApp {
     this.motifBtn.disabled = true;
     this.motifStopBtn.disabled = true;
     this.nextResultBtn.disabled = true;
+    this.copyLinkBtn.disabled = true;
   }
 
   private updateStatus(message: string): void {
     this.status.textContent = message;
+  }
+
+  private cleanTitleForShare(title: string): string {
+    return (title || '')
+      .replace(/\.mid$/i, '')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 200);
+  }
+
+  private async copyToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  private async handleCopyLink(): Promise<void> {
+    const result = this.searchResults[this.selectedResultIndex];
+    if (!result?.midiUrl) return;
+
+    const title = this.cleanTitleForShare(result.title || 'MOTIF');
+
+    // Prefer backend shortlink /s/<code>
+    let shareUrl: string | null = null;
+    try {
+      let payload: any = null;
+      if (result.source === 'bitmidi') {
+        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
+        if (m?.[1]) payload = { src: 'bitmidi', id: m[1], title };
+      }
+      if (!payload) payload = { u: result.midiUrl, title };
+
+      const resp = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.url) shareUrl = `${window.location.origin}${data.url}`;
+      }
+    } catch {
+      // fall through
+    }
+
+    // Fallback: direct /play link (still works, just longer)
+    if (!shareUrl) {
+      if (result.source === 'bitmidi') {
+        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
+        if (m?.[1]) {
+          shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}`;
+        }
+      }
+      if (!shareUrl) {
+        shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}`;
+      }
+    }
+
+    try {
+      this.copyLinkBtn.disabled = true;
+      await this.copyToClipboard(shareUrl);
+      this.updateStatus('Link copied.');
+    } catch {
+      this.updateStatus('Copy failed.');
+    } finally {
+      this.copyLinkBtn.disabled = false;
+    }
   }
 
   private updateEmbedSnippet(songTitle: string): void {
