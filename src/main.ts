@@ -54,6 +54,7 @@ class MotifApp {
 
   // FAQ modal
   private faqBtn!: HTMLButtonElement;
+  private faqBtnFooter: HTMLButtonElement | null = null;
   private faqBackdrop!: HTMLElement;
   private faqCloseBtn!: HTMLButtonElement;
 
@@ -123,6 +124,7 @@ class MotifApp {
 
     // FAQ modal
     this.faqBtn = document.getElementById('faqBtn') as HTMLButtonElement;
+    this.faqBtnFooter = document.getElementById('faqBtnFooter') as HTMLButtonElement | null;
     this.faqBackdrop = document.getElementById('faqModalBackdrop')!;
     this.faqCloseBtn = document.getElementById('faqCloseBtn') as HTMLButtonElement;
   }
@@ -161,6 +163,7 @@ class MotifApp {
 
     // FAQ
     this.faqBtn.addEventListener('click', () => this.openFaq());
+    this.faqBtnFooter?.addEventListener('click', () => this.openFaq());
     this.faqCloseBtn.addEventListener('click', () => this.closeFaq());
     this.faqBackdrop.addEventListener('click', (e) => {
       if (e.target === this.faqBackdrop) this.closeFaq();

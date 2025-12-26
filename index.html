@@ -67,6 +67,7 @@
         .hero {
             text-align: center;
             margin: 0 0 calc(var(--spacing-unit) * 4) 0;
+            position: relative;
         }
         .hero h1 {
             color: var(--color-accent-primary);
@@ -93,6 +94,11 @@
         .faq-link:hover:not(:disabled) {
             box-shadow: var(--shadow-sm);
             border-color: rgba(255,255,255,0.22);
+        }
+        .faq-top {
+            position: absolute;
+            top: 0;
+            right: 0;
         }
 
         /* FAQ modal */
@@ -938,6 +944,7 @@
 <body>
     <div class="container">
         <div class="hero">
+            <button id="faqBtn" class="faq-link faq-top" type="button">FAQ</button>
             <h1>MOTIF</h1>
             <p class="tagline"><strong>Procedural music generated from MIDI structure</strong></p>
         </div>
@@ -1035,7 +1042,7 @@
     </div>
 
     <div class="footer">
-        <button id="faqBtn" class="faq-link" type="button">FAQ</button>
+        <button id="faqBtnFooter" class="faq-link" type="button">FAQ</button>
     </div>
 
     <div id="faqModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
