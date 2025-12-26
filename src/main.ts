@@ -16,6 +16,7 @@ class MotifApp {
   private searchBtn!: HTMLButtonElement;
   private songInput!: HTMLInputElement;
   private status!: HTMLElement;
+  private controlsEl!: HTMLElement;
   
   private resultsSection!: HTMLElement;
   private resultsBody!: HTMLElement;
@@ -25,6 +26,13 @@ class MotifApp {
   private selectedTitle!: HTMLElement;
   private selectedMeta!: HTMLElement;
   private selectedDetails!: HTMLElement;
+  private selectedExpectation!: HTMLElement;
+  private preGenActions!: HTMLElement;
+  private preGenSupport!: HTMLElement;
+  private generatedBlock!: HTMLElement;
+  private playPauseBtn!: HTMLButtonElement;
+  private motifVolumeSlider!: HTMLInputElement;
+  private detailsToggle!: HTMLElement;
   private previewBtn!: HTMLButtonElement;
   private previewStopBtn!: HTMLButtonElement;
   private previewState!: HTMLElement;
@@ -32,12 +40,13 @@ class MotifApp {
 
   private isPreviewPlaying = false;
   private hasGenerated = false;
+  private isMotifPlaying = false;
+  private motifResumeProgress = 0;
 
   // Preview player (no UI volume)
 
   // Motif controls
   private motifBtn!: HTMLButtonElement;
-  private motifStopBtn!: HTMLButtonElement;
   private motifProgressContainer!: HTMLElement;
   private motifProgressBar!: HTMLInputElement;
   private motifProgressFill!: HTMLElement;
@@ -97,6 +106,7 @@ class MotifApp {
     this.searchBtn = document.getElementById('searchBtn') as HTMLButtonElement;
     this.songInput = document.getElementById('songInput') as HTMLInputElement;
     this.status = document.getElementById('status')!;
+    this.controlsEl = document.querySelector('.controls') as HTMLElement;
     
     this.resultsSection = document.getElementById('resultsSection')!;
     this.resultsBody = document.getElementById('resultsBody')!;
@@ -106,6 +116,13 @@ class MotifApp {
     this.selectedTitle = document.getElementById('selectedTitle')!;
     this.selectedMeta = document.getElementById('selectedMeta')!;
     this.selectedDetails = document.getElementById('selectedDetails')!;
+    this.selectedExpectation = document.getElementById('selectedExpectation')!;
+    this.preGenActions = document.getElementById('preGenActions')!;
+    this.preGenSupport = document.getElementById('preGenSupport')!;
+    this.generatedBlock = document.getElementById('generatedBlock')!;
+    this.playPauseBtn = document.getElementById('playPauseBtn') as HTMLButtonElement;
+    this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
+    this.detailsToggle = document.getElementById('detailsToggle')!;
     this.previewBtn = document.getElementById('previewBtn') as HTMLButtonElement;
     this.previewStopBtn = document.getElementById('previewStopBtn') as HTMLButtonElement;
     this.previewState = document.getElementById('previewState')!;
@@ -113,7 +130,6 @@ class MotifApp {
 
     // Motif controls
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
-    this.motifStopBtn = document.getElementById('motifStopBtn') as HTMLButtonElement;
     this.motifProgressContainer = document.getElementById('motifProgressContainer')!;
     this.motifProgressBar = document.getElementById('motifProgressBar') as HTMLInputElement;
     this.motifProgressFill = document.getElementById('motifProgressFill')!;
@@ -153,7 +169,10 @@ class MotifApp {
 
     // Motif
     this.motifBtn.addEventListener('click', () => this.handleMotif());
-    this.motifStopBtn.addEventListener('click', () => this.handleMotifStop());
+    this.playPauseBtn.addEventListener('click', () => void this.handlePlayPause());
+    this.motifVolumeSlider.addEventListener('input', () => {
+      this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value));
+    });
 
     // Preview inside selected source only
     this.previewBtn.addEventListener('click', () => void this.handlePreviewToggle());
@@ -433,7 +452,8 @@ class MotifApp {
       this.previewBtn.disabled = true;
       const player = await this.ensureAudioReady();
       await player.load(this.currentMIDI.events);
-      player.setVolume(1);
+      // conservative fixed preview level
+      player.setVolume(0.8);
       await player.play();
 
       this.isPreviewPlaying = true;
@@ -464,16 +484,21 @@ class MotifApp {
       await unlockAudio();
       this.updateIOSAudioBanner();
 
+      // Once generation starts: lock into generated experience mode.
+      this.setState('generated');
       this.updateStatus('Generating…');
       this.motifBtn.disabled = true;
+      this.playPauseBtn.disabled = true;
 
       // Generate a variation using the procedural role-mapping mode
       await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'procedural');
-      this.motifEngine.setVolume(1);
+      this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value) || 0.8);
 
       await this.motifEngine.play();
 
-      this.motifStopBtn.disabled = false;
+      this.isMotifPlaying = true;
+      this.playPauseBtn.disabled = false;
+      this.playPauseBtn.textContent = 'Pause';
 
       // Show progress bar and set duration
       this.motifProgressContainer.style.display = 'block';
@@ -487,24 +512,35 @@ class MotifApp {
 
       this.updateStatus('');
       this.hasGenerated = true;
-      this.setState('generated');
+      // keep generated state
     } catch (error) {
       this.updateStatus(`Motif error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.motifBtn.disabled = false;
+      this.playPauseBtn.disabled = false;
+      // If generation fails, return to selected state
+      this.setState('selected');
     }
   }
 
   private handleMotifStop(): void {
     this.motifEngine.stop();
-    this.motifBtn.disabled = false;
-    this.motifStopBtn.disabled = true;
+    this.isMotifPlaying = false;
+    this.playPauseBtn.textContent = 'Play';
     this.stopMotifProgressUpdates();
     this.updateStatus('');
   }
 
   private handleMotifSeek(progress: number): void {
-    this.motifEngine.seek(progress);
-    this.updateMotifProgress();
+    this.motifResumeProgress = progress;
+    if (this.isMotifPlaying) {
+      this.motifEngine.seek(progress);
+      this.updateMotifProgress();
+      return;
+    }
+    const duration = this.motifEngine.getDuration();
+    this.motifProgressBar.value = (progress * 100).toString();
+    this.motifProgressFill.style.width = `${progress * 100}%`;
+    this.motifCurrentTime.textContent = this.formatTime(progress * duration);
   }
 
   private startMotifProgressUpdates(): void {
@@ -528,6 +564,16 @@ class MotifApp {
     this.motifProgressBar.value = (progress * 100).toString();
     this.motifProgressFill.style.width = `${progress * 100}%`;
     this.motifCurrentTime.textContent = this.formatTime(currentTime);
+
+    // Auto-pause at end
+    const duration = this.motifEngine.getDuration();
+    if (duration > 0 && progress >= 0.999) {
+      this.motifResumeProgress = 0;
+      this.handleMotifStop();
+      this.motifCurrentTime.textContent = this.formatTime(duration);
+      this.motifProgressBar.value = '100';
+      this.motifProgressFill.style.width = '100%';
+    }
   }
 
   private formatTime(seconds: number): string {
@@ -588,7 +634,6 @@ class MotifApp {
 
   private disablePlayerControls(): void {
     this.motifBtn.disabled = true;
-    this.motifStopBtn.disabled = true;
     this.copyLinkBtn.disabled = true;
     this.previewBtn.disabled = true;
   }
@@ -683,7 +728,7 @@ class MotifApp {
 
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
     // results
-    const hasResults = state === 'results' || state === 'selected' || state === 'generated';
+    const hasResults = state === 'results' || state === 'selected';
     this.resultsSection.classList.toggle('visible', hasResults);
     this.chooseHelper.style.display = state === 'results' ? 'block' : 'none';
 
@@ -693,16 +738,69 @@ class MotifApp {
 
     // share link only after generation
     this.copyLinkBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
-    this.copyLinkBtn.disabled = state !== 'generated';
+    this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
 
     // collapse results when selected/generated
-    this.resultsSection.classList.toggle('collapsed', state === 'selected' || state === 'generated');
+    this.resultsSection.classList.toggle('collapsed', state === 'selected');
+
+    // Search affordances: hidden after generation (no choice)
+    const hideSearch = state === 'generated';
+    this.controlsEl.style.display = hideSearch ? 'none' : '';
+    this.status.style.display = hideSearch ? 'none' : '';
+
+    // Selected pre-generation content
+    const showPreGen = state === 'selected';
+    this.selectedExpectation.style.display = showPreGen ? 'block' : 'none';
+    this.preGenActions.style.display = showPreGen ? 'block' : 'none';
+    this.preGenSupport.style.display = showPreGen ? 'flex' : 'none';
+    this.detailsToggle.style.display = showPreGen ? 'block' : 'none';
+
+    // Generated artifact content
+    const showGenerated = state === 'generated';
+    this.generatedBlock.style.display = showGenerated ? 'block' : 'none';
+    this.playPauseBtn.disabled = !showGenerated || !this.hasGenerated;
+    this.playPauseBtn.textContent = this.isMotifPlaying ? 'Pause' : 'Play';
+
+    // iOS banner only before generation
+    if (showPreGen) {
+      this.updateIOSAudioBanner();
+    } else {
+      this.iosAudioBanner.style.display = 'none';
+    }
   }
 
   private goToResults(): void {
     this.setState('results');
     try {
       this.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {
+      // ignore
+    }
+  }
+
+  private async handlePlayPause(): Promise<void> {
+    if (!this.hasGenerated) return;
+
+    if (this.isMotifPlaying) {
+      this.motifResumeProgress = this.motifEngine.getProgress();
+      this.motifEngine.stop();
+      this.isMotifPlaying = false;
+      this.stopMotifProgressUpdates();
+      this.playPauseBtn.textContent = 'Play';
+      return;
+    }
+
+    try {
+      // Audio exclusivity
+      this.stopPreview();
+      await unlockAudio();
+
+      this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value) || 0.8);
+      await this.motifEngine.play();
+      if (this.motifResumeProgress > 0) this.motifEngine.seek(this.motifResumeProgress);
+      this.isMotifPlaying = true;
+      this.playPauseBtn.textContent = 'Pause';
+      this.startMotifProgressUpdates();
     } catch {
       // ignore
     }

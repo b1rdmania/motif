@@ -1026,17 +1026,17 @@
             <div id="selectedCard" class="selected-card">
                 <h2 id="selectedTitle" class="selected-title">No source selected</h2>
                 <div id="selectedMeta" class="selected-meta">Search for a song, then choose a source to use.</div>
+
+                <!-- selected_pre_generate only -->
                 <div id="selectedExpectation" class="selected-meta" style="margin-top: 8px; color: rgba(255,255,255,0.62);">
                     Some MIDI files work better than others. If the result sounds off, try another source.
                 </div>
 
-                <div class="selected-actions">
+                <div class="selected-actions" id="preGenActions">
                     <button id="motifBtn" class="primary" disabled>Generate music</button>
                 </div>
 
-                <div class="selected-support">
-                    <button id="motifStopBtn" type="button" disabled>Stop</button>
-                    <button id="copyLinkBtn" type="button" disabled style="display:none;">Copy link</button>
+                <div class="selected-support" id="preGenSupport">
                     <div class="preview-inline">
                         <button id="previewBtn" type="button" class="linklike" disabled>Preview original MIDI</button>
                         <span id="previewState" class="preview-state">Previewing…</span>
@@ -1045,30 +1045,49 @@
                     <button id="chooseDifferentBtn" type="button" class="linklike">Choose a different source</button>
                 </div>
 
-                <div class="engine-line">Reimagined as classic game-console music using Motif’s Wario engine.</div>
-
                 <div id="iosAudioBanner" class="ios-audio-banner" aria-live="polite">
                     <div class="row">
                         <div class="copy">
-                            <strong>iOS Safari:</strong> tap once to enable audio, then press <strong>Generate</strong>.
+                            <strong>iOS Safari:</strong> tap once to enable audio, then press <strong>Generate music</strong>.
                         </div>
                         <button id="enableAudioBtn" type="button">Enable Audio</button>
                     </div>
                     <div id="iosAudioState" class="state">Audio: …</div>
                 </div>
 
-                <div class="motif-progress-container" id="motifProgressContainer" style="display: none;">
-                    <div class="progress-time">
-                        <span id="motifCurrentTime">0:00</span>
-                        <span id="motifDuration">0:00</span>
+                <!-- generated only: artifact playback + sharing -->
+                <div id="generatedBlock" style="display:none;">
+                    <div class="engine-line" id="generatedTransform">
+                        Reimagined as classic game-console music<br />
+                        using Motif’s Wario engine.
                     </div>
-                    <div class="progress-bar-wrapper">
-                        <input type="range" id="motifProgressBar" class="progress-bar" min="0" max="100" value="0" step="0.1" />
-                        <div class="progress-fill" id="motifProgressFill"></div>
+
+                    <div style="display:flex; justify-content:center; margin-top: 14px; margin-bottom: 14px;">
+                        <button id="playPauseBtn" class="primary" type="button">Play</button>
+                    </div>
+
+                    <div class="motif-progress-container" id="motifProgressContainer" style="display: none;">
+                        <div class="progress-time">
+                            <span id="motifCurrentTime">0:00</span>
+                            <span id="motifDuration">0:00</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <input type="range" id="motifProgressBar" class="progress-bar" min="0" max="100" value="0" step="0.1" />
+                            <div class="progress-fill" id="motifProgressFill"></div>
+                        </div>
+                    </div>
+
+                    <div class="volume-control" id="generatedVolumeRow" style="margin-top: 14px; opacity: 0.75;">
+                        <label for="motifVolume" style="min-width: auto;">Volume</label>
+                        <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.8" />
+                    </div>
+
+                    <div style="margin-top: 14px;">
+                        <button id="copyLinkBtn" type="button" disabled>Copy link</button>
                     </div>
                 </div>
 
-                <details class="details-toggle">
+                <details class="details-toggle" id="detailsToggle">
                     <summary>Details</summary>
                     <div id="selectedDetails" class="selected-details"></div>
                 </details>
