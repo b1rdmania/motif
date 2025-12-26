@@ -11,6 +11,9 @@ class MotifApp {
 
   // Preview player (lazily created for iOS compatibility)
   private soundfontPlayer: SoundfontMIDIPlayer | null = null;
+  private playingPreviewIndex: number | null = null;
+  private previewStopTimeout: number | null = null;
+  private previewButtons: HTMLButtonElement[] = [];
   
   private searchBtn!: HTMLButtonElement;
   private songInput!: HTMLInputElement;
@@ -26,7 +29,6 @@ class MotifApp {
 
   // Preview player controls
   private soundfontVolumeSlider!: HTMLInputElement;
-  private previewBtn!: HTMLButtonElement;
 
   // Motif controls
   private motifBtn!: HTMLButtonElement;
@@ -101,7 +103,6 @@ class MotifApp {
 
     // Preview player controls
     this.soundfontVolumeSlider = document.getElementById('soundfontVolume') as HTMLInputElement;
-    this.previewBtn = document.getElementById('previewBtn') as HTMLButtonElement;
 
     // Motif controls
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
@@ -141,8 +142,7 @@ class MotifApp {
       }
     });
 
-    // Preview MIDI (verification only)
-    this.previewBtn.addEventListener('click', () => void this.handlePreviewMIDI());
+    // Preview MIDI (verification only) — controlled from results table rows
     this.soundfontVolumeSlider.addEventListener('input', (e) => {
       const volume = parseFloat((e.target as HTMLInputElement).value);
       this.soundfontPlayer?.setVolume(volume);
@@ -295,6 +295,7 @@ class MotifApp {
 
   private displayResults(): void {
     this.resultsBody.innerHTML = '';
+    this.previewButtons = [];
 
     this.searchResults.forEach((result, index) => {
       const row = document.createElement('tr');
@@ -302,8 +303,20 @@ class MotifApp {
         <td>${this.cleanSongTitle(result.title)}</td>
         <td class="source-col">${this.formatSourceLabel(result.source)}</td>
         <td class="duration-col">${this.formatDuration(result.parsed?.durationSec)}</td>
-        <td class="action-col"><button type="button" class="row-use-btn">Use this</button></td>
+        <td class="action-col">
+          <div style="display:flex; gap: 10px; justify-content: flex-end; align-items:center;">
+            <button type="button" class="row-preview-btn">Play</button>
+            <button type="button" class="row-use-btn">Use this</button>
+          </div>
+        </td>
       `;
+
+      const previewBtn = row.querySelector('button.row-preview-btn') as HTMLButtonElement;
+      previewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        void this.handleRowPreview(index);
+      });
+      this.previewButtons[index] = previewBtn;
 
       // Use explicit action button to reduce accidental selection
       const useBtn = row.querySelector('button.row-use-btn') as HTMLButtonElement;
@@ -320,6 +333,72 @@ class MotifApp {
     this.playerSection.classList.remove('visible');
 
     // No auto-select: user should choose "Use this"
+  }
+
+  private updatePreviewButtons(): void {
+    for (let i = 0; i < this.previewButtons.length; i++) {
+      const btn = this.previewButtons[i];
+      if (!btn) continue;
+      btn.textContent = this.playingPreviewIndex === i ? 'Stop' : 'Play';
+    }
+  }
+
+  private async handleRowPreview(index: number): Promise<void> {
+    // Toggle stop if same row
+    if (this.playingPreviewIndex === index) {
+      this.stopPreview(true);
+      return;
+    }
+
+    // Stop any existing preview first
+    this.stopPreview(false);
+
+    const result = this.searchResults[index];
+    if (!result?.midiUrl) return;
+
+    try {
+      const player = await this.ensureAudioReady();
+
+      // Lazy-load events for preview without affecting selection state.
+      let events: NoteEvent[] | null = (result as any).__previewEvents || null;
+      if (!events) {
+        const midiBuffer = await this.midiService.fetchMIDI(result.midiUrl);
+        if (!midiBuffer) throw new Error('Failed to fetch MIDI');
+        events = MIDIParser.parseMIDI(midiBuffer);
+        (result as any).__previewEvents = events;
+      }
+
+      await player.load(events);
+      player.setVolume(parseFloat(this.soundfontVolumeSlider.value));
+      await player.play();
+
+      this.playingPreviewIndex = index;
+      this.updatePreviewButtons();
+
+      // Best-effort: reset UI after playback ends (SoundfontMIDIPlayer self-stops)
+      const duration = player.getDuration();
+      if (this.previewStopTimeout) window.clearTimeout(this.previewStopTimeout);
+      this.previewStopTimeout = window.setTimeout(() => {
+        if (this.playingPreviewIndex === index) {
+          this.stopPreview(false);
+        }
+      }, Math.max(0.5, duration + 0.5) * 1000);
+    } catch {
+      this.stopPreview(false);
+    }
+  }
+
+  private stopPreview(updateStatus: boolean): void {
+    if (this.previewStopTimeout) {
+      window.clearTimeout(this.previewStopTimeout);
+      this.previewStopTimeout = null;
+    }
+    this.soundfontPlayer?.stop();
+    this.playingPreviewIndex = null;
+    this.updatePreviewButtons();
+    if (updateStatus) {
+      // No status spam in main flow.
+    }
   }
 
   public async selectResult(index: number): Promise<void> {
@@ -387,29 +466,6 @@ class MotifApp {
 
     } catch (error) {
       this.updateStatus(`Load error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private async handlePreviewMIDI(): Promise<void> {
-    if (!this.currentMIDI) return;
-    try {
-      this.previewBtn.disabled = true;
-      const prevLabel = this.previewBtn.textContent || 'Preview MIDI';
-      this.previewBtn.textContent = 'Previewing…';
-
-      const player = await this.ensureAudioReady();
-      await player.load(this.currentMIDI.events);
-      player.setVolume(parseFloat(this.soundfontVolumeSlider.value));
-      await player.play();
-
-      const duration = player.getDuration();
-      window.setTimeout(() => {
-        this.previewBtn.disabled = false;
-        this.previewBtn.textContent = prevLabel;
-      }, Math.max(0.5, duration + 0.25) * 1000);
-    } catch {
-      this.previewBtn.disabled = false;
-      this.previewBtn.textContent = 'Preview MIDI';
     }
   }
 
@@ -544,13 +600,11 @@ class MotifApp {
 
   private enablePlayerControls(): void {
     this.motifBtn.disabled = false;
-    this.previewBtn.disabled = false;
     this.copyLinkBtn.disabled = this.currentMIDI == null;
   }
 
   private disablePlayerControls(): void {
     this.motifBtn.disabled = true;
-    this.previewBtn.disabled = true;
     this.motifStopBtn.disabled = true;
     this.copyLinkBtn.disabled = true;
   }

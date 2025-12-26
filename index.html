@@ -413,6 +413,14 @@
             }
         }
 
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: calc(var(--spacing-unit) * 2);
+            flex-wrap: wrap;
+            margin: 0 0 calc(var(--spacing-unit) * 2) 0;
+        }
         .results-header h3 { margin: 0; }
         
         .confidence-bar {
@@ -944,6 +952,10 @@
         <div id="resultsSection" class="results-section">
             <div class="results-header">
                 <h3>Search Results</h3>
+                <div class="volume-control" style="margin-top:0; min-width: 260px; flex: 0 1 360px; opacity: 0.85;">
+                    <label for="soundfontVolume" style="font-size: 12px;">Preview volume</label>
+                    <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.7" />
+                </div>
             </div>
             <table id="resultsTable" class="results-table">
                 <thead>
@@ -965,7 +977,6 @@
                 <div id="selectedMeta" class="selected-meta">Search for a song, then choose a source to use.</div>
 
                 <div class="selected-actions">
-                    <button id="previewBtn" type="button" disabled>Preview MIDI</button>
                     <button id="motifBtn" class="primary" disabled>Generate</button>
                 </div>
 
@@ -975,10 +986,6 @@
                     <div class="volume-control">
                         <label for="motifVolume">Output</label>
                         <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.7" />
-                    </div>
-                    <div class="volume-control">
-                        <label for="soundfontVolume">Preview</label>
-                        <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.7" />
                     </div>
                 </div>
 
