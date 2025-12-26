@@ -249,6 +249,96 @@
         font-size: 13px;
         color: rgba(255, 255, 255, 0.65);
       }
+
+      /* Progress (matches main page style) */
+      .progress-container {
+        margin-top: 8px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 170, 68, 0.15);
+        display: none;
+      }
+
+      .progress-time {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.85em;
+        color: #8f8f8f;
+      }
+
+      .progress-bar-wrapper {
+        position: relative;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        padding: calc(var(--spacing-unit) * 2) 0;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        z-index: 2;
+      }
+
+      .progress-bar::-webkit-slider-runnable-track {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+
+      .progress-bar::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--color-accent-secondary);
+        cursor: pointer;
+        box-shadow: 0 0 8px rgba(255, 170, 68, 0.6), var(--shadow-sm);
+        margin-top: -7px;
+        transition: transform 100ms ease;
+      }
+
+      .progress-bar:active::-webkit-slider-thumb {
+        transform: scale(1.15);
+      }
+
+      .progress-bar::-moz-range-track {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+
+      .progress-bar::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--color-accent-secondary);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 8px rgba(255, 170, 68, 0.6), var(--shadow-sm);
+      }
+
+      .progress-fill {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 6px;
+        background: linear-gradient(90deg, var(--color-accent-secondary), rgba(255, 170, 68, 0.5));
+        border-radius: 3px;
+        pointer-events: none;
+        z-index: 1;
+        width: 0%;
+        transition: width 0.1s linear;
+      }
     </style>
   </head>
   <body>
@@ -258,7 +348,7 @@
 
       <div class="section">
         <div class="section-header">
-          <h3 class="section-title">Synthesis Engine</h3>
+          <h3 class="section-title">Wario synthesis engine</h3>
           <p class="section-subtitle">The same Game Boy/NES render you hear on the main page.</p>
         </div>
         <div class="divider"></div>
@@ -267,7 +357,7 @@
           <div class="motif-grid">
             <div class="motif-header">
               <h2 class="motif-title" id="title">Loading…</h2>
-              <p class="motif-kicker">Tap play to run the shared MIDI through MOTIF’s synth engine.</p>
+              <p class="motif-kicker">Tap play to run the shared MIDI through the Wario engine.</p>
             </div>
 
             <div class="motif-controls">
@@ -275,12 +365,23 @@
               <button id="stopBtn" disabled>Stop</button>
               <div class="volume-control">
                 <label for="volume">Volume</label>
-                <input id="volume" type="range" min="0" max="1" step="0.01" value="0.35" />
+                <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
               </div>
               <span class="backpill" id="shareHint">/play</span>
             </div>
 
             <div id="status">Loading…</div>
+
+            <div class="progress-container" id="playProgressContainer">
+              <div class="progress-time">
+                <span id="playCurrentTime">0:00</span>
+                <span id="playDuration">0:00</span>
+              </div>
+              <div class="progress-bar-wrapper">
+                <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
+                <div id="playProgressFill" class="progress-fill"></div>
+              </div>
+            </div>
 
             <div class="actions">
               <a id="generateOwn" href="/">Generate your own</a>

@@ -56,6 +56,11 @@ async function main(): Promise<void> {
   const volumeEl = qs('volume') as HTMLInputElement;
   const generateOwn = qs('generateOwn') as HTMLAnchorElement;
   const shareHint = qs('shareHint');
+  const progressContainer = qs('playProgressContainer') as HTMLElement;
+  const progressBar = qs('playProgressBar') as HTMLInputElement;
+  const progressFill = qs('playProgressFill') as HTMLElement;
+  const currentTimeEl = qs('playCurrentTime') as HTMLElement;
+  const durationEl = qs('playDuration') as HTMLElement;
 
   const { midiUrl: u, title } = buildMidiUrlFromParams();
 
@@ -76,6 +81,8 @@ async function main(): Promise<void> {
   const motifEngine = new MotifEngine();
   let events: NoteEvent[] | null = null;
   let isPlaying = false;
+  let progressInterval: number | null = null;
+  let durationSec = 0;
 
   statusEl.textContent = 'Loading MIDI…';
   try {
@@ -97,6 +104,32 @@ async function main(): Promise<void> {
     stopBtn.disabled = !playing;
   }
 
+  function formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  function updateProgress(): void {
+    const progress = motifEngine.getProgress();
+    const current = motifEngine.getCurrentTime();
+    progressBar.value = (progress * 100).toString();
+    progressFill.style.width = `${progress * 100}%`;
+    currentTimeEl.textContent = formatTime(current);
+  }
+
+  function startProgressUpdates(): void {
+    stopProgressUpdates();
+    progressInterval = window.setInterval(updateProgress, 100);
+  }
+
+  function stopProgressUpdates(): void {
+    if (progressInterval !== null) {
+      window.clearInterval(progressInterval);
+      progressInterval = null;
+    }
+  }
+
   volumeEl.addEventListener('input', () => {
     const vol = Number.parseFloat(volumeEl.value);
     motifEngine.setVolume(vol);
@@ -105,8 +138,17 @@ async function main(): Promise<void> {
   stopBtn.addEventListener('click', () => {
     motifEngine.stop();
     setUiPlaying(false);
+    stopProgressUpdates();
     statusEl.textContent = 'Stopped.';
   });
+
+  const seekHandler = (e: Event) => {
+    const p = Number.parseFloat((e.target as HTMLInputElement).value) / 100;
+    motifEngine.seek(p);
+    updateProgress();
+  };
+  progressBar.addEventListener('input', seekHandler);
+  progressBar.addEventListener('change', seekHandler);
 
   playBtn.addEventListener('click', async () => {
     if (!events || isPlaying) return;
@@ -117,11 +159,19 @@ async function main(): Promise<void> {
       // Match main page "Generate & Play": procedural role-mapping → existing SynthesisEngine.
       await motifEngine.generateFromMIDI(events, 'procedural');
       motifEngine.setVolume(Number.parseFloat(volumeEl.value));
+      durationSec = motifEngine.getDuration();
+      durationEl.textContent = formatTime(durationSec);
+      currentTimeEl.textContent = '0:00';
+      progressBar.value = '0';
+      progressFill.style.width = '0%';
+      progressContainer.style.display = 'block';
 
       statusEl.textContent = 'Playing…';
       await motifEngine.play();
+      startProgressUpdates();
     } catch (e) {
       setUiPlaying(false);
+      stopProgressUpdates();
       statusEl.textContent = `Play error: ${e instanceof Error ? e.message : 'Unknown error'}`;
     }
   });
