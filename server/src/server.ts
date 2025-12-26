@@ -33,6 +33,8 @@ type SharePayload =
     };
 
 const localShareStore = new Map<string, SharePayload>();
+const isVercel = Boolean(process.env.VERCEL);
+const hasKvEnv = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
 function base62(bytes: Uint8Array): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -50,22 +52,39 @@ async function shareSet(code: string, payload: SharePayload): Promise<void> {
   const key = `share:${code}`;
   // 30 days TTL
   const exSec = 60 * 60 * 24 * 30;
-  try {
-    await kv.set(key, payload, { ex: exSec });
-  } catch {
-    // Local dev / KV not configured: best-effort in-memory store.
-    localShareStore.set(code, payload);
+  if (isVercel && !hasKvEnv) {
+    throw new Error('Vercel KV is not configured for this project.');
   }
+
+  try {
+    if (hasKvEnv) {
+      await kv.set(key, payload, { ex: exSec });
+      return;
+    }
+  } catch {
+    // fall through to local store (dev only)
+  }
+
+  // Local dev: best-effort in-memory store.
+  localShareStore.set(code, payload);
 }
 
 async function shareGet(code: string): Promise<SharePayload | null> {
   const key = `share:${code}`;
-  try {
-    const val = await kv.get<SharePayload>(key);
-    return val ?? null;
-  } catch {
-    return localShareStore.get(code) ?? null;
+  if (isVercel && !hasKvEnv) {
+    throw new Error('Vercel KV is not configured for this project.');
   }
+
+  try {
+    if (hasKvEnv) {
+      const val = await kv.get<SharePayload>(key);
+      return val ?? null;
+    }
+  } catch {
+    // fall through to local store (dev only)
+  }
+
+  return localShareStore.get(code) ?? null;
 }
 
 // Search for MIDI files
@@ -118,7 +137,8 @@ app.post('/api/share', async (req, res) => {
     });
   } catch (error) {
     console.error('Share create error:', error);
-    res.status(500).json({ error: 'Share create failed' });
+    const msg = error instanceof Error ? error.message : 'Share create failed';
+    res.status(msg.includes('KV') ? 503 : 500).json({ error: msg });
   }
 });
 
@@ -148,7 +168,8 @@ app.get('/s/:code', async (req, res) => {
     res.redirect(302, dest);
   } catch (error) {
     console.error('Share resolve error:', error);
-    res.status(500).send('Resolve failed');
+    const msg = error instanceof Error ? error.message : 'Resolve failed';
+    res.status(msg.includes('KV') ? 503 : 500).send(msg);
   }
 });
 
