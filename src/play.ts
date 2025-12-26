@@ -111,6 +111,8 @@ async function main(): Promise<void> {
   let progressInterval: number | null = null;
   let durationSec = 0;
   let resumeProgress = 0;
+  let playStartMs: number | null = null; // performance.now() at audio time=0 (minus offset)
+  let playOffsetSec = 0; // last known playback position in seconds
 
   try {
     const buf = await midiService.fetchMIDI(u);
@@ -133,16 +135,25 @@ async function main(): Promise<void> {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
+  function getLocalCurrentTime(): number {
+    if (!durationSec) return 0;
+    if (!isPlaying || playStartMs === null) return Math.max(0, Math.min(durationSec, playOffsetSec));
+    const t = (performance.now() - playStartMs) / 1000;
+    return Math.max(0, Math.min(durationSec, t));
+  }
+
   function updateProgress(): void {
-    const progress = motifEngine.getProgress();
-    const current = motifEngine.getCurrentTime();
+    const current = getLocalCurrentTime();
+    const progress = durationSec > 0 ? current / durationSec : 0;
     progressBar.value = (progress * 100).toString();
     progressFill.style.width = `${progress * 100}%`;
     currentTimeEl.textContent = formatTime(current);
 
     // Auto-pause at end
-    if (durationSec > 0 && progress >= 0.999) {
+    if (durationSec > 0 && current >= durationSec - 0.05) {
       resumeProgress = 0;
+      playOffsetSec = 0;
+      playStartMs = null;
       motifEngine.stop();
       setUiPlaying(false);
       stopProgressUpdates();
@@ -174,14 +185,17 @@ async function main(): Promise<void> {
     if (!isGenerated) {
       resumeProgress = p;
       progressFill.style.width = `${p * 100}%`;
-      currentTimeEl.textContent = formatTime(p * Math.max(0, durationSec));
+      currentTimeEl.textContent = durationSec > 0 ? formatTime(p * durationSec) : '0:00';
       return;
     }
     if (isPlaying) {
+      playOffsetSec = p * durationSec;
+      playStartMs = performance.now() - playOffsetSec * 1000;
       motifEngine.seek(p);
       updateProgress();
     } else {
       resumeProgress = p;
+      playOffsetSec = p * durationSec;
       progressFill.style.width = `${p * 100}%`;
       currentTimeEl.textContent = formatTime(p * durationSec);
     }
@@ -194,7 +208,10 @@ async function main(): Promise<void> {
 
     // Pause (implemented as stop + remembered position)
     if (isPlaying) {
-      resumeProgress = motifEngine.getProgress();
+      const current = getLocalCurrentTime();
+      resumeProgress = durationSec > 0 ? current / durationSec : 0;
+      playOffsetSec = current;
+      playStartMs = null;
       motifEngine.stop();
       setUiPlaying(false);
       stopProgressUpdates();
@@ -215,15 +232,23 @@ async function main(): Promise<void> {
         durationEl.textContent = formatTime(durationSec);
         progressContainer.style.display = 'block';
         isGenerated = true;
+        // If user scrubbed before play, carry that into seconds now that we know duration.
+        playOffsetSec = resumeProgress * durationSec;
       }
 
       setUiPlaying(true);
       await motifEngine.play();
       // Seek to remembered position (for pause/resume and scrub-before-play)
+      if (durationSec > 0 && playOffsetSec > 0) {
+        resumeProgress = playOffsetSec / durationSec;
+      }
       if (resumeProgress > 0) motifEngine.seek(resumeProgress);
+      // Local progress tracking
+      playStartMs = performance.now() - playOffsetSec * 1000;
       startProgressUpdates();
     } catch (e) {
       setUiPlaying(false);
+      playStartMs = null;
       stopProgressUpdates();
     }
   });
