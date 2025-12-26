@@ -27,13 +27,11 @@ class MotifApp {
   private selectedMeta!: HTMLElement;
   private selectedDetails!: HTMLElement;
 
-  // Preview player controls
-  private soundfontVolumeSlider!: HTMLInputElement;
+  // Preview player (no UI volume)
 
   // Motif controls
   private motifBtn!: HTMLButtonElement;
   private motifStopBtn!: HTMLButtonElement;
-  private motifVolumeSlider!: HTMLInputElement;
   private motifProgressContainer!: HTMLElement;
   private motifProgressBar!: HTMLInputElement;
   private motifProgressFill!: HTMLElement;
@@ -71,8 +69,8 @@ class MotifApp {
     this.initializeUI();
     this.setupEventListeners();
 
-    // Apply initial volume immediately (slider default set in HTML)
-    this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value));
+    // Always play at 100%
+    this.motifEngine.setVolume(1);
   }
 
   /**
@@ -83,7 +81,7 @@ class MotifApp {
     const audioContext = await unlockAudio();
     if (!this.soundfontPlayer) {
       this.soundfontPlayer = new SoundfontMIDIPlayer(audioContext);
-      this.soundfontPlayer.setVolume(parseFloat(this.soundfontVolumeSlider.value));
+      this.soundfontPlayer.setVolume(1);
     }
     return this.soundfontPlayer;
   }
@@ -101,13 +99,9 @@ class MotifApp {
     this.selectedMeta = document.getElementById('selectedMeta')!;
     this.selectedDetails = document.getElementById('selectedDetails')!;
 
-    // Preview player controls
-    this.soundfontVolumeSlider = document.getElementById('soundfontVolume') as HTMLInputElement;
-
     // Motif controls
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
     this.motifStopBtn = document.getElementById('motifStopBtn') as HTMLButtonElement;
-    this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
     this.motifProgressContainer = document.getElementById('motifProgressContainer')!;
     this.motifProgressBar = document.getElementById('motifProgressBar') as HTMLInputElement;
     this.motifProgressFill = document.getElementById('motifProgressFill')!;
@@ -143,18 +137,10 @@ class MotifApp {
     });
 
     // Preview MIDI (verification only) — controlled from results table rows
-    this.soundfontVolumeSlider.addEventListener('input', (e) => {
-      const volume = parseFloat((e.target as HTMLInputElement).value);
-      this.soundfontPlayer?.setVolume(volume);
-    });
 
     // Motif
     this.motifBtn.addEventListener('click', () => this.handleMotif());
     this.motifStopBtn.addEventListener('click', () => this.handleMotifStop());
-    this.motifVolumeSlider.addEventListener('input', (e) => {
-      const volume = parseFloat((e.target as HTMLInputElement).value);
-      this.motifEngine.setVolume(volume);
-    });
     // Use both input and change for iOS compatibility
     const seekHandler = (e: Event) => {
       const progress = parseFloat((e.target as HTMLInputElement).value) / 100;
@@ -369,7 +355,7 @@ class MotifApp {
       }
 
       await player.load(events);
-      player.setVolume(parseFloat(this.soundfontVolumeSlider.value));
+      player.setVolume(1);
       await player.play();
 
       this.playingPreviewIndex = index;
@@ -493,6 +479,7 @@ class MotifApp {
 
       // Generate a variation using the procedural role-mapping mode
       await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'procedural');
+      this.motifEngine.setVolume(1);
 
       await this.motifEngine.play();
 

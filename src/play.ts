@@ -128,7 +128,6 @@ async function main(): Promise<void> {
   const titleEl = qs('songTitle');
   const artistEl = qs('songArtist');
   const playBtn = qs('playToggleBtn') as HTMLButtonElement;
-  const volumeEl = qs('volume') as HTMLInputElement;
   const generateOwn = qs('generateOwn') as HTMLAnchorElement;
   const progressContainer = qs('playProgressContainer') as HTMLElement;
   const progressBar = qs('playProgressBar') as HTMLInputElement;
@@ -235,11 +234,6 @@ async function main(): Promise<void> {
     }
   }
 
-  volumeEl.addEventListener('input', () => {
-    const vol = Number.parseFloat(volumeEl.value);
-    motifEngine.setVolume(vol);
-  });
-
   const seekHandler = (e: Event) => {
     showTimeRow();
     const p = Number.parseFloat((e.target as HTMLInputElement).value) / 100;
@@ -289,7 +283,7 @@ async function main(): Promise<void> {
       if (!isGenerated) {
         // Match main page "Generate & Play": procedural role-mapping → existing SynthesisEngine.
         await motifEngine.generateFromMIDI(events, 'procedural');
-        motifEngine.setVolume(Number.parseFloat(volumeEl.value));
+        motifEngine.setVolume(1);
         durationSec = motifEngine.getDuration();
         durationEl.textContent = formatTime(durationSec);
         progressContainer.style.display = 'block';
@@ -300,6 +294,7 @@ async function main(): Promise<void> {
       }
 
       setUiPlaying(true);
+      motifEngine.setVolume(1);
       await motifEngine.play();
       // Seek to remembered position (for pause/resume and scrub-before-play)
       if (durationSec > 0 && playOffsetSec > 0) {

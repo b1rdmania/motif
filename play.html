@@ -320,14 +320,7 @@
         max-width: 72ch;
       }
 
-      .volume-row {
-        margin-top: 14px;
-        opacity: 0.6;
-      }
-      .volume-row label {
-        font-size: 12px;
-        color: rgba(255,255,255,0.5);
-      }
+      /* No volume control on share page */
     </style>
   </head>
   <body>
@@ -368,12 +361,6 @@
           <div class="meta-block" id="metaBlock">
             Procedural playback from MIDI structure.<br />
             Rendered using Motif’s Wario game-console engine.
-          </div>
-
-          <!-- Optional volume (acceptable) -->
-          <div class="volume-control volume-row" style="min-width: 0;">
-            <label for="volume" style="min-width: auto;">Volume</label>
-            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
           </div>
 
           <!-- 7. Primary CTA (single) -->
