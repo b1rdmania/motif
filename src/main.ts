@@ -775,10 +775,13 @@ class MotifApp {
     // collapse results when selected/generated
     this.resultsSection.classList.toggle('collapsed', state === 'selected');
 
-    // Search affordances: hidden after generation (no choice)
-    const hideSearch = state === 'generated';
-    this.controlsEl.style.display = hideSearch ? 'none' : '';
-    this.status.style.display = hideSearch ? 'none' : '';
+    // Keep search visible so you can scroll back up, but lock it during generated mode.
+    const lockSearch = state === 'generated';
+    this.controlsEl.classList.toggle('locked', lockSearch);
+    this.songInput.disabled = lockSearch;
+    this.searchBtn.disabled = lockSearch;
+    // Keep status visible for layout continuity; just de-emphasize content in generated mode.
+    if (lockSearch) this.status.textContent = '';
 
     // Selected pre-generation content
     const showPreGen = state === 'selected';
