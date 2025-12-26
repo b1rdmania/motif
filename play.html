@@ -30,8 +30,13 @@
         --color-text-dim: #999;
         --color-accent-primary: #00ff88;
         --color-accent-secondary: #ffaa44;
-        --radius: 10px;
-        --shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+        --spacing-unit: 8px;
+        --radius: 8px;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+        --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+        --glow-primary: 0 0 20px rgba(0, 255, 136, 0.3);
+        --glow-secondary: 0 0 20px rgba(255, 170, 68, 0.3);
       }
 
       * {
@@ -40,169 +45,249 @@
 
       body {
         margin: 0;
-        padding: 22px 16px;
+        padding: calc(var(--spacing-unit) * 3);
         background:
           radial-gradient(1000px 600px at 50% -150px, rgba(0, 255, 136, 0.12), transparent 60%),
           radial-gradient(800px 600px at 110% 20%, rgba(255, 170, 68, 0.08), transparent 55%),
           var(--color-bg);
         color: var(--color-text);
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
       }
 
       .container {
-        max-width: 720px;
+        max-width: 960px;
         margin: 0 auto;
       }
 
-      header {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .brand {
-        font-weight: 800;
-        letter-spacing: 0.08em;
+      h1.page-title {
         color: var(--color-accent-primary);
-        text-shadow: 0 0 20px rgba(0, 255, 136, 0.25);
-      }
-
-      .sub {
-        color: var(--color-text-dim);
-        font-size: 13px;
-      }
-
-      .card {
-        background: rgba(20, 20, 20, 0.92);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 16px;
-      }
-
-      h1 {
-        margin: 0 0 6px 0;
-        font-size: 18px;
+        text-align: center;
+        margin: 0 0 calc(var(--spacing-unit) * 3) 0;
+        font-size: 2em;
         font-weight: 700;
+        letter-spacing: 0.05em;
+        text-shadow: var(--glow-primary);
+      }
+
+      .tagline {
+        text-align: center;
+        margin: 0 0 calc(var(--spacing-unit) * 3) 0;
+        color: var(--color-text-dim);
+      }
+
+      .section {
+        margin-top: calc(var(--spacing-unit) * 5);
+      }
+
+      .section-header {
+        margin: 0 0 calc(var(--spacing-unit) * 2) 0;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text);
+      }
+
+      .section-subtitle {
+        margin: calc(var(--spacing-unit) / 2) 0 0 0;
+        font-size: 13px;
+        color: var(--color-text-dim);
+      }
+
+      .divider {
+        height: 1px;
+        margin: 0 0 calc(var(--spacing-unit) * 3) 0;
+        background: linear-gradient(90deg, transparent, var(--color-border), transparent);
       }
 
       #status {
-        margin-top: 10px;
-        font-size: 13px;
-        color: var(--color-text-dim);
-        min-height: 18px;
-      }
-
-      .controls {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 14px;
-      }
-
-      button, a.button {
-        appearance: none;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--color-text);
-        padding: 12px 14px;
-        border-radius: 12px;
-        cursor: pointer;
-        font-weight: 650;
+        margin: calc(var(--spacing-unit) * 2) 0 0 0;
+        padding: calc(var(--spacing-unit) * 2);
+        background: var(--color-surface);
+        border-left: 3px solid var(--color-accent-primary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
         font-size: 14px;
-        transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        flex: 1;
-        min-width: 140px;
+        min-height: 24px;
+      }
+
+      button {
+        background: var(--color-surface);
+        color: var(--color-text);
+        border: 1px solid var(--color-border);
+        padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-sm);
+      }
+
+      button:hover:not(:disabled) {
+        background: var(--color-surface-elevated);
+        transform: translateY(-1px);
+        border-color: #444;
+        box-shadow: var(--shadow-md);
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: var(--shadow-sm);
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
 
       button.primary {
         background: var(--color-accent-secondary);
-        border-color: rgba(255, 170, 68, 0.6);
         color: #000;
+        border-color: rgba(255, 170, 68, 0.6);
+        font-weight: 700;
       }
 
-      button:hover:not(:disabled), a.button:hover {
-        transform: translateY(-1px);
-        border-color: rgba(255, 255, 255, 0.22);
-        box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
+      button.primary:hover:not(:disabled) {
+        box-shadow: var(--glow-secondary), var(--shadow-md);
       }
 
-      button:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
+      .motif-stage {
+        background: var(--color-surface-elevated);
+        padding: calc(var(--spacing-unit) * 3);
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 170, 68, 0.2);
+        box-shadow: var(--shadow-lg), var(--glow-secondary);
       }
 
-      .row {
+      .motif-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .motif-header {
+        margin-bottom: 6px;
+      }
+
+      .motif-title {
+        margin: 0;
+        color: var(--color-accent-secondary);
+        text-shadow: 0 0 18px rgba(255, 170, 68, 0.15);
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .motif-kicker {
+        font-size: 0.85em;
+        color: #b6b6b6;
+        margin: 6px 0 0 0;
+        max-width: 70ch;
+      }
+
+      .motif-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .motif-controls button.primary {
+        flex: 1;
+        min-width: 180px;
+        padding: 12px 16px;
+      }
+
+      .volume-control {
+        margin-top: 0;
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-top: 14px;
+        gap: 10px;
+        flex: 1;
+        min-width: 200px;
       }
 
-      label {
-        font-size: 12px;
-        color: var(--color-text-dim);
-        min-width: 54px;
+      .volume-control label {
+        font-size: 0.85em;
+        color: #aaa;
+        min-width: 55px;
       }
 
       input[type="range"] {
         flex: 1;
+        margin: 0;
       }
 
-      footer {
-        margin-top: 14px;
+      .actions {
+        margin-top: calc(var(--spacing-unit) * 2);
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: space-between;
+        gap: 12px;
         align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
       }
 
-      footer a {
+      .actions a {
         color: rgba(0, 255, 136, 0.85);
         text-decoration: none;
         font-size: 13px;
       }
 
-      footer a:hover {
+      .actions a:hover {
         text-decoration: underline;
+      }
+
+      .backpill {
+        margin-left: auto;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.65);
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <header>
-        <div>
-          <div class="brand">MOTIF</div>
-          <div class="sub">Shared chiptune player</div>
-        </div>
-        <div class="sub" id="shareHint">/play</div>
-      </header>
+      <h1 class="page-title">MOTIF</h1>
+      <p class="tagline">Shared chiptune player</p>
 
-      <div class="card">
-        <h1 id="title">Loading…</h1>
-        <div class="controls">
-          <button id="playBtn" class="primary" disabled>Play</button>
-          <button id="stopBtn" disabled>Stop</button>
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title">Synthesis Engine</h3>
+          <p class="section-subtitle">The same Game Boy/NES render you hear on the main page.</p>
         </div>
-        <div class="row">
-          <label for="volume">Volume</label>
-          <input id="volume" type="range" min="0" max="1" step="0.01" value="0.35" />
+        <div class="divider"></div>
+
+        <div class="motif-stage">
+          <div class="motif-grid">
+            <div class="motif-header">
+              <h2 class="motif-title" id="title">Loading…</h2>
+              <p class="motif-kicker">Tap play to run the shared MIDI through MOTIF’s synth engine.</p>
+            </div>
+
+            <div class="motif-controls">
+              <button id="playBtn" class="primary" disabled>Play</button>
+              <button id="stopBtn" disabled>Stop</button>
+              <div class="volume-control">
+                <label for="volume">Volume</label>
+                <input id="volume" type="range" min="0" max="1" step="0.01" value="0.35" />
+              </div>
+              <span class="backpill" id="shareHint">/play</span>
+            </div>
+
+            <div id="status">Loading…</div>
+
+            <div class="actions">
+              <a id="generateOwn" href="/">Generate your own</a>
+              <a href="/" aria-label="Back to MOTIF home">Home</a>
+            </div>
+          </div>
         </div>
-        <div id="status"></div>
-        <footer>
-          <a id="generateOwn" href="/">Generate your own</a>
-          <a href="/" aria-label="Back to MOTIF home">Home</a>
-        </footer>
       </div>
     </div>
 
