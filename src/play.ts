@@ -30,32 +30,60 @@ function buildMidiUrlFromParams(): { midiUrl: string | null; title: string } {
   return { midiUrl: null, title };
 }
 
-async function copyToClipboard(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
+function titleCase(input: string): string {
+  const small = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'via', 'with']);
+  const words = input
+    .split(/\s+/g)
+    .filter(Boolean)
+    .map((w) => w.trim());
+  return words
+    .map((word, idx) => {
+      if (/^[A-Z0-9]+$/.test(word)) return word; // keep acronyms/IDs
+      const lower = word.toLowerCase();
+      if (idx !== 0 && small.has(lower)) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(' ');
+}
+
+function cleanLooseTitle(raw: string): string {
+  return (raw || '')
+    .replace(/\.mid$/i, '')
+    .replace(/[_]+/g, ' ')
+    .replace(/[.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatDisplayTitle(raw: string): { display: string; prefill: string } {
+  const cleaned = cleanLooseTitle(raw);
+  // If we have common separators "Artist - Title" or "Artist — Title", invert to "Title — Artist"
+  const sepMatch = cleaned.match(/^(.+?)\s*(?:—|-)\s*(.+)$/);
+  if (sepMatch) {
+    const left = titleCase(sepMatch[1].trim());
+    const right = titleCase(sepMatch[2].trim());
+    // Heuristic: if left looks like an artist, invert (most common file naming)
+    const display = `${right} — ${left}`;
+    return { display, prefill: `${right} ${left}`.trim() };
   }
 
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  ta.style.top = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
+  // Dot-prefix heuristic: "ARTIST.Title" becomes "Title — Artist"
+  const dotPrefix = raw.match(/^([A-Za-z]{2,20})[._\s]+(.+)$/);
+  if (dotPrefix && dotPrefix[1] && dotPrefix[2]) {
+    const artist = titleCase(cleanLooseTitle(dotPrefix[1]));
+    const title = titleCase(cleanLooseTitle(dotPrefix[2]));
+    if (artist && title) return { display: `${title} — ${artist}`, prefill: `${title} ${artist}`.trim() };
+  }
+
+  const t = titleCase(cleaned || 'Shared Motif');
+  return { display: t, prefill: t };
 }
 
 async function main(): Promise<void> {
-  const titleEl = qs('title');
-  const statusEl = qs('status');
-  const playBtn = qs('playBtn') as HTMLButtonElement;
-  const stopBtn = qs('stopBtn') as HTMLButtonElement;
+  const titleEl = qs('songTitle');
+  const playBtn = qs('playToggleBtn') as HTMLButtonElement;
   const volumeEl = qs('volume') as HTMLInputElement;
   const generateOwn = qs('generateOwn') as HTMLAnchorElement;
-  const shareHint = qs('shareHint');
   const progressContainer = qs('playProgressContainer') as HTMLElement;
   const progressBar = qs('playProgressBar') as HTMLInputElement;
   const progressFill = qs('playProgressFill') as HTMLElement;
@@ -64,16 +92,14 @@ async function main(): Promise<void> {
 
   const { midiUrl: u, title } = buildMidiUrlFromParams();
 
-  titleEl.textContent = title;
-  shareHint.textContent = u ? 'Ready' : 'Missing MIDI URL';
+  const formatted = formatDisplayTitle(title);
+  titleEl.textContent = formatted.display;
 
   // Set CTA back to home, prefilling search if we have a title.
-  generateOwn.href = title ? `/?song=${encodeURIComponent(title)}` : '/';
+  generateOwn.href = formatted.prefill ? `/?song=${encodeURIComponent(formatted.prefill)}` : '/';
 
   if (!u) {
-    statusEl.textContent = 'Missing link data (u=...).';
     playBtn.disabled = true;
-    stopBtn.disabled = true;
     return;
   }
 
@@ -81,27 +107,24 @@ async function main(): Promise<void> {
   const motifEngine = new MotifEngine();
   let events: NoteEvent[] | null = null;
   let isPlaying = false;
+  let isGenerated = false;
   let progressInterval: number | null = null;
   let durationSec = 0;
+  let resumeProgress = 0;
 
-  statusEl.textContent = 'Loading MIDI…';
   try {
     const buf = await midiService.fetchMIDI(u);
     if (!buf) throw new Error('Failed to fetch MIDI');
     events = MIDIParser.parseMIDI(buf);
-    statusEl.textContent = 'Ready. Tap Play.';
     playBtn.disabled = false;
   } catch (e) {
-    statusEl.textContent = `Load error: ${e instanceof Error ? e.message : 'Unknown error'}`;
     playBtn.disabled = true;
-    stopBtn.disabled = true;
     return;
   }
 
   function setUiPlaying(playing: boolean): void {
     isPlaying = playing;
-    playBtn.disabled = playing;
-    stopBtn.disabled = !playing;
+    playBtn.textContent = playing ? 'Pause' : 'Play';
   }
 
   function formatTime(seconds: number): string {
@@ -116,6 +139,17 @@ async function main(): Promise<void> {
     progressBar.value = (progress * 100).toString();
     progressFill.style.width = `${progress * 100}%`;
     currentTimeEl.textContent = formatTime(current);
+
+    // Auto-pause at end
+    if (durationSec > 0 && progress >= 0.999) {
+      resumeProgress = 0;
+      motifEngine.stop();
+      setUiPlaying(false);
+      stopProgressUpdates();
+      progressBar.value = '100';
+      progressFill.style.width = '100%';
+      currentTimeEl.textContent = formatTime(durationSec);
+    }
   }
 
   function startProgressUpdates(): void {
@@ -135,59 +169,64 @@ async function main(): Promise<void> {
     motifEngine.setVolume(vol);
   });
 
-  stopBtn.addEventListener('click', () => {
-    motifEngine.stop();
-    setUiPlaying(false);
-    stopProgressUpdates();
-    statusEl.textContent = 'Stopped.';
-  });
-
   const seekHandler = (e: Event) => {
     const p = Number.parseFloat((e.target as HTMLInputElement).value) / 100;
-    motifEngine.seek(p);
-    updateProgress();
+    if (!isGenerated) {
+      resumeProgress = p;
+      progressFill.style.width = `${p * 100}%`;
+      currentTimeEl.textContent = formatTime(p * Math.max(0, durationSec));
+      return;
+    }
+    if (isPlaying) {
+      motifEngine.seek(p);
+      updateProgress();
+    } else {
+      resumeProgress = p;
+      progressFill.style.width = `${p * 100}%`;
+      currentTimeEl.textContent = formatTime(p * durationSec);
+    }
   };
   progressBar.addEventListener('input', seekHandler);
   progressBar.addEventListener('change', seekHandler);
 
   playBtn.addEventListener('click', async () => {
-    if (!events || isPlaying) return;
+    if (!events) return;
+
+    // Pause (implemented as stop + remembered position)
+    if (isPlaying) {
+      resumeProgress = motifEngine.getProgress();
+      motifEngine.stop();
+      setUiPlaying(false);
+      stopProgressUpdates();
+      // Keep progress UI where it was
+      progressBar.value = (resumeProgress * 100).toString();
+      progressFill.style.width = `${resumeProgress * 100}%`;
+      currentTimeEl.textContent = formatTime(resumeProgress * durationSec);
+      return;
+    }
+
     try {
+      // First play generates the artifact (deterministically from MIDI structure).
+      if (!isGenerated) {
+        // Match main page "Generate & Play": procedural role-mapping → existing SynthesisEngine.
+        await motifEngine.generateFromMIDI(events, 'procedural');
+        motifEngine.setVolume(Number.parseFloat(volumeEl.value));
+        durationSec = motifEngine.getDuration();
+        durationEl.textContent = formatTime(durationSec);
+        progressContainer.style.display = 'block';
+        isGenerated = true;
+      }
+
       setUiPlaying(true);
-      statusEl.textContent = 'Generating…';
-
-      // Match main page "Generate & Play": procedural role-mapping → existing SynthesisEngine.
-      await motifEngine.generateFromMIDI(events, 'procedural');
-      motifEngine.setVolume(Number.parseFloat(volumeEl.value));
-      durationSec = motifEngine.getDuration();
-      durationEl.textContent = formatTime(durationSec);
-      currentTimeEl.textContent = '0:00';
-      progressBar.value = '0';
-      progressFill.style.width = '0%';
-      progressContainer.style.display = 'block';
-
-      statusEl.textContent = 'Playing…';
       await motifEngine.play();
+      // Seek to remembered position (for pause/resume and scrub-before-play)
+      if (resumeProgress > 0) motifEngine.seek(resumeProgress);
       startProgressUpdates();
     } catch (e) {
       setUiPlaying(false);
       stopProgressUpdates();
-      statusEl.textContent = `Play error: ${e instanceof Error ? e.message : 'Unknown error'}`;
     }
   });
-
-  // Small quality-of-life: let user click the header “Ready” to copy link.
-  shareHint.addEventListener('click', async () => {
-    try {
-      await copyToClipboard(window.location.href);
-      shareHint.textContent = 'Link copied';
-      window.setTimeout(() => (shareHint.textContent = 'Ready'), 900);
-    } catch {
-      // ignore
-    }
-  });
-  shareHint.style.cursor = 'pointer';
-  shareHint.title = 'Click to copy link';
 }
 
 void main();

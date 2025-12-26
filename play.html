@@ -106,16 +106,7 @@
         background: linear-gradient(90deg, transparent, var(--color-border), transparent);
       }
 
-      #status {
-        margin: calc(var(--spacing-unit) * 2) 0 0 0;
-        padding: calc(var(--spacing-unit) * 2);
-        background: var(--color-surface);
-        border-left: 3px solid var(--color-accent-primary);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-md);
-        font-size: 14px;
-        min-height: 24px;
-      }
+      /* Share page: no status box */
 
       button {
         background: var(--color-surface);
@@ -225,30 +216,7 @@
         margin: 0;
       }
 
-      .actions {
-        margin-top: calc(var(--spacing-unit) * 2);
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-      }
-
-      .actions a {
-        color: rgba(0, 255, 136, 0.85);
-        text-decoration: none;
-        font-size: 13px;
-      }
-
-      .actions a:hover {
-        text-decoration: underline;
-      }
-
-      .backpill {
-        margin-left: auto;
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.65);
-      }
+      /* Share page: single CTA only */
 
       /* Progress (matches main page style) */
       .progress-container {
@@ -343,50 +311,59 @@
   </head>
   <body>
     <div class="container">
-      <h1 class="page-title">MOTIF</h1>
-      <p class="tagline">Shared chiptune player</p>
+      <div class="motif-stage" style="border-color: rgba(255, 255, 255, 0.08); box-shadow: var(--shadow-lg);">
+        <div class="motif-grid" style="gap: 14px;">
+          <!-- 1. Source Song Title -->
+          <h1 id="songTitle" style="margin:0; font-size: 28px; line-height: 1.15; font-weight: 800; color: var(--color-text); letter-spacing: 0.01em;">
+            Loading…
+          </h1>
 
-      <div class="section">
-        <div class="section-header">
-          <h3 class="section-title">Wario synthesis engine</h3>
-          <p class="section-subtitle">The same Game Boy/NES render you hear on the main page.</p>
-        </div>
-        <div class="divider"></div>
+          <!-- 2. Transformation Description -->
+          <p id="transformLine" style="margin:0; color: rgba(255,255,255,0.72); font-size: 14px;">
+            Re-synthesised as NES-era chiptune using Motif
+          </p>
 
-        <div class="motif-stage">
-          <div class="motif-grid">
-            <div class="motif-header">
-              <h2 class="motif-title" id="title">Loading…</h2>
-              <p class="motif-kicker">Tap play to run the shared MIDI through the Wario engine.</p>
+          <!-- 3. Single Play/Pause Control -->
+          <div style="display:flex; justify-content:center; margin-top: 6px;">
+            <button id="playToggleBtn" class="primary" disabled style="min-width: 220px; padding: 14px 18px; font-size: 15px;">
+              Play
+            </button>
+          </div>
+
+          <!-- 4. Progress Bar -->
+          <div class="progress-container" id="playProgressContainer" style="display:block; margin-top: 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="progress-time">
+              <span id="playCurrentTime">0:00</span>
+              <span id="playDuration">0:00</span>
             </div>
-
-            <div class="motif-controls">
-              <button id="playBtn" class="primary" disabled>Play</button>
-              <button id="stopBtn" disabled>Stop</button>
-              <div class="volume-control">
-                <label for="volume">Volume</label>
-                <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
-              </div>
-              <span class="backpill" id="shareHint">/play</span>
+            <div class="progress-bar-wrapper" style="padding: 10px 0;">
+              <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
+              <div id="playProgressFill" class="progress-fill"></div>
             </div>
+          </div>
 
-            <div id="status">Loading…</div>
+          <!-- 5. Status Text Replacement (static, non-interactive) -->
+          <div style="margin-top: 2px; font-size: 13px; color: rgba(255,255,255,0.72);">
+            Procedural playback · No samples · Deterministic
+          </div>
 
-            <div class="progress-container" id="playProgressContainer">
-              <div class="progress-time">
-                <span id="playCurrentTime">0:00</span>
-                <span id="playDuration">0:00</span>
-              </div>
-              <div class="progress-bar-wrapper">
-                <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
-                <div id="playProgressFill" class="progress-fill"></div>
-              </div>
-            </div>
+          <!-- 6. Minimal metadata line (secondary, low contrast) -->
+          <div style="font-size: 12px; color: rgba(255,255,255,0.52); display:flex; gap: 14px; flex-wrap: wrap;">
+            <span>Engine: Wario (Game Boy / NES)</span>
+            <span>Source: MIDI structure</span>
+          </div>
 
-            <div class="actions">
-              <a id="generateOwn" href="/">Generate your own</a>
-              <a href="/" aria-label="Back to MOTIF home">Home</a>
-            </div>
+          <!-- Optional volume (acceptable) -->
+          <div class="volume-control" style="min-width: 0; margin-top: 4px; opacity: 0.85;">
+            <label for="volume" style="min-width: auto;">Volume</label>
+            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
+          </div>
+
+          <!-- 7. Primary CTA (single) -->
+          <div style="margin-top: 10px;">
+            <a id="generateOwn" href="/" style="display:inline-block; color: rgba(0,255,136,0.92); text-decoration:none; font-weight: 650;">
+              Generate your own →
+            </a>
           </div>
         </div>
       </div>
