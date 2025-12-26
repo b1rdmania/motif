@@ -114,8 +114,8 @@ async function main(): Promise<void> {
       setUiPlaying(true);
       statusEl.textContent = 'Generating…';
 
-      // Match main page output: passthrough → existing SynthesisEngine.
-      await motifEngine.generateFromMIDI(events, 'passthrough');
+      // Match main page "Generate & Play": procedural role-mapping → existing SynthesisEngine.
+      await motifEngine.generateFromMIDI(events, 'procedural');
       motifEngine.setVolume(Number.parseFloat(volumeEl.value));
 
       statusEl.textContent = 'Playing…';
