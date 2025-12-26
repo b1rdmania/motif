@@ -659,7 +659,7 @@
 
         async function copyShareLink() {
             if (!currentMidiUrl) return;
-            const url = buildShareUrl();
+            const url = await buildShortShareUrl();
             try {
                 if (navigator.clipboard?.writeText) {
                     await navigator.clipboard.writeText(url);
@@ -704,14 +704,45 @@
             return `${window.location.origin}/play?u=${encodeURIComponent(currentMidiUrl)}&title=${encodeURIComponent(title)}`;
         }
 
+        async function buildShortShareUrl() {
+            const title = cleanTitleForShare(currentTitle);
+
+            // Prefer creating a backend short link for sharing on X.
+            try {
+                let payload = null;
+                if (currentSource === 'bitmidi') {
+                    const m = String(currentMidiUrl).match(/\/uploads\/(\d+)\.mid/i);
+                    if (m && m[1]) payload = { src: 'bitmidi', id: m[1], title };
+                }
+                if (!payload) {
+                    payload = { u: currentMidiUrl, title };
+                }
+
+                const resp = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!resp.ok) throw new Error(`share:${resp.status}`);
+                const data = await resp.json();
+                if (data && data.url) return `${window.location.origin}${data.url}`;
+            } catch (e) {
+                // fall back
+            }
+
+            return buildShareUrl();
+        }
+
         function shareOnX() {
             if (!currentMidiUrl) return;
-            const url = buildShareUrl();
-            const niceTitle = cleanTitleForShare(currentTitle);
-            // Keep tweet text clean; URL is passed separately.
-            const text = niceTitle ? `MOTIF chiptune: ${niceTitle}` : 'MOTIF chiptune';
-            const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-            window.open(intent, '_blank', 'noopener,noreferrer');
+            (async () => {
+                const url = await buildShortShareUrl();
+                const niceTitle = cleanTitleForShare(currentTitle);
+                // Keep tweet text clean; URL is passed separately.
+                const text = niceTitle ? `MOTIF chiptune: ${niceTitle}` : 'MOTIF chiptune';
+                const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+                window.open(intent, '_blank', 'noopener,noreferrer');
+            })();
         }
 
         function setStatus(msg, isError = false) {

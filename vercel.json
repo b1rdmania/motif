@@ -23,6 +23,10 @@
       "dest": "server/src/server.ts"
     },
     {
+      "src": "/s/(.*)",
+      "dest": "server/src/server.ts"
+    },
+    {
       "src": "/embed",
       "dest": "/embed.html"
     },

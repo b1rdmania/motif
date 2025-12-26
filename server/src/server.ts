@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import crypto from 'node:crypto';
+import { kv } from '@vercel/kv';
 import { MIDISearchService } from './services/MIDISearchService.js';
 import { MIDIFetchService } from './services/MIDIFetchService.js';
 import { MIDIParseService } from './services/MIDIParseService.js';
@@ -13,6 +15,58 @@ app.use(express.json());
 const searchService = new MIDISearchService();
 const fetchService = new MIDIFetchService();
 const parseService = new MIDIParseService();
+
+type SharePayload =
+  | {
+      kind: 'bitmidi';
+      id: string;
+      title?: string;
+      createdAt: string;
+      v: number;
+    }
+  | {
+      kind: 'url';
+      u: string;
+      title?: string;
+      createdAt: string;
+      v: number;
+    };
+
+const localShareStore = new Map<string, SharePayload>();
+
+function base62(bytes: Uint8Array): string {
+  const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  let out = '';
+  for (const b of bytes) out += alphabet[b % alphabet.length];
+  return out;
+}
+
+function newCode(): string {
+  // 8 chars base62-ish from random bytes (sufficient for our scale)
+  return base62(crypto.randomBytes(8));
+}
+
+async function shareSet(code: string, payload: SharePayload): Promise<void> {
+  const key = `share:${code}`;
+  // 30 days TTL
+  const exSec = 60 * 60 * 24 * 30;
+  try {
+    await kv.set(key, payload, { ex: exSec });
+  } catch {
+    // Local dev / KV not configured: best-effort in-memory store.
+    localShareStore.set(code, payload);
+  }
+}
+
+async function shareGet(code: string): Promise<SharePayload | null> {
+  const key = `share:${code}`;
+  try {
+    const val = await kv.get<SharePayload>(key);
+    return val ?? null;
+  } catch {
+    return localShareStore.get(code) ?? null;
+  }
+}
 
 // Search for MIDI files
 app.get('/api/midi/search', async (req, res) => {
@@ -28,6 +82,73 @@ app.get('/api/midi/search', async (req, res) => {
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Create a short share link
+app.post('/api/share', async (req, res) => {
+  try {
+    const body = (req.body || {}) as any;
+    const now = new Date().toISOString();
+    const title = typeof body.title === 'string' ? body.title.slice(0, 200) : undefined;
+
+    let payload: SharePayload | null = null;
+    if (body.src === 'bitmidi' && typeof body.id === 'string' && /^\d+$/.test(body.id)) {
+      payload = { kind: 'bitmidi', id: body.id, title, createdAt: now, v: 1 };
+    } else if (typeof body.u === 'string' && body.u.startsWith('http')) {
+      payload = { kind: 'url', u: body.u, title, createdAt: now, v: 1 };
+    }
+
+    if (!payload) {
+      return res.status(400).json({ error: 'Invalid payload. Expected {src:\"bitmidi\",id:\"123\"} or {u:\"https://...\"}.' });
+    }
+
+    // Avoid collisions (extremely unlikely, but cheap to check a few times)
+    let code = newCode();
+    for (let i = 0; i < 3; i++) {
+      const existing = await shareGet(code);
+      if (!existing) break;
+      code = newCode();
+    }
+
+    await shareSet(code, payload);
+    res.json({
+      code,
+      url: `/s/${code}`,
+    });
+  } catch (error) {
+    console.error('Share create error:', error);
+    res.status(500).json({ error: 'Share create failed' });
+  }
+});
+
+// Resolve a short share link and redirect to /play
+app.get('/s/:code', async (req, res) => {
+  try {
+    const code = String(req.params.code || '').trim();
+    if (!code) return res.status(400).send('Missing code');
+
+    const payload = await shareGet(code);
+    if (!payload) return res.status(404).send('Not found');
+
+    let dest = '/play';
+    if (payload.kind === 'bitmidi') {
+      const sp = new URLSearchParams();
+      sp.set('src', 'bitmidi');
+      sp.set('id', payload.id);
+      if (payload.title) sp.set('title', payload.title);
+      dest = `/play?${sp.toString()}`;
+    } else if (payload.kind === 'url') {
+      const sp = new URLSearchParams();
+      sp.set('u', payload.u);
+      if (payload.title) sp.set('title', payload.title);
+      dest = `/play?${sp.toString()}`;
+    }
+
+    res.redirect(302, dest);
+  } catch (error) {
+    console.error('Share resolve error:', error);
+    res.status(500).send('Resolve failed');
   }
 });
 
