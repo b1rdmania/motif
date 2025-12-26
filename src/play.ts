@@ -55,32 +55,78 @@ function cleanLooseTitle(raw: string): string {
     .trim();
 }
 
-function formatDisplayTitle(raw: string): { display: string; prefill: string } {
+function stripJunkTokens(s: string): string {
+  const tokens = (s || '').split(/\s+/g).filter(Boolean);
+  const drop = new Set(['MID', 'MIDI', 'K']);
+  const out: string[] = [];
+  for (const t of tokens) {
+    const up = t.toUpperCase();
+    if (drop.has(up)) continue;
+    // drop single-letter suffix tokens (common filename artefacts)
+    if (/^[A-Z]$/i.test(t)) continue;
+    out.push(t);
+  }
+  return out.join(' ');
+}
+
+function scoreTitleLike(part: string): number {
+  const words = (part || '').split(/\s+/g).filter(Boolean);
+  let score = 0;
+  for (const w of words) {
+    const isCaps = w.length >= 3 && w === w.toUpperCase() && /[A-Z]/.test(w);
+    const isWordy = w.length >= 3;
+    if (isWordy && !isCaps) score += 2;
+    if (isCaps) score -= 2;
+    if (w.length === 1) score -= 1;
+  }
+  score += Math.min(6, words.length);
+  return score;
+}
+
+function splitOnSeparators(raw: string): string[] {
+  const normalized = (raw || '')
+    .replace(/[–—]/g, '-') // normalize en/em-dash to hyphen
+    .replace(/\s*-\s*/g, ' - ');
+  return normalized
+    .split(/\s+-\s+/g)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+function pickShareTitle(raw: string): { title: string; artist: string | null; prefill: string } {
   const cleaned = cleanLooseTitle(raw);
-  // If we have common separators "Artist - Title" or "Artist — Title", invert to "Title — Artist"
-  const sepMatch = cleaned.match(/^(.+?)\s*(?:—|-)\s*(.+)$/);
-  if (sepMatch) {
-    const left = titleCase(sepMatch[1].trim());
-    const right = titleCase(sepMatch[2].trim());
-    // Heuristic: if left looks like an artist, invert (most common file naming)
-    const display = `${right} — ${left}`;
-    return { display, prefill: `${right} ${left}`.trim() };
+  const parts = splitOnSeparators(cleaned);
+
+  // Default: use best-looking part and avoid guessing artist unless very confident.
+  let chosen = cleaned;
+  let artist: string | null = null;
+
+  if (parts.length >= 2) {
+    const a = parts[0];
+    const b = parts.slice(1).join(' - ');
+    const scoreA = scoreTitleLike(a);
+    const scoreB = scoreTitleLike(b);
+    chosen = scoreB > scoreA ? b : a;
+    if (scoreA === scoreB) chosen = b; // default to "Artist - Title" pattern
+
+    // Only show artist if the other side looks confidently like a human name/titlecase.
+    const other = chosen === a ? b : a;
+    const otherTC = titleCase(stripJunkTokens(other));
+    const chosenTC = titleCase(stripJunkTokens(chosen));
+    const looksLikeName = otherTC.split(/\s+/).length >= 2 && otherTC !== otherTC.toUpperCase();
+    if (looksLikeName && chosenTC && chosenTC.length >= 3) {
+      // Only accept if other isn't screaming filename (no digits, no extensions)
+      if (!/[0-9]/.test(otherTC)) artist = otherTC;
+    }
   }
 
-  // Dot-prefix heuristic: "ARTIST.Title" becomes "Title — Artist"
-  const dotPrefix = raw.match(/^([A-Za-z]{2,20})[._\s]+(.+)$/);
-  if (dotPrefix && dotPrefix[1] && dotPrefix[2]) {
-    const artist = titleCase(cleanLooseTitle(dotPrefix[1]));
-    const title = titleCase(cleanLooseTitle(dotPrefix[2]));
-    if (artist && title) return { display: `${title} — ${artist}`, prefill: `${title} ${artist}`.trim() };
-  }
-
-  const t = titleCase(cleaned || 'Shared Motif');
-  return { display: t, prefill: t };
+  const title = titleCase(stripJunkTokens(chosen)).trim();
+  return { title: title || 'Shared Motif', artist, prefill: title || cleaned || 'Shared Motif' };
 }
 
 async function main(): Promise<void> {
   const titleEl = qs('songTitle');
+  const artistEl = qs('songArtist');
   const playBtn = qs('playToggleBtn') as HTMLButtonElement;
   const volumeEl = qs('volume') as HTMLInputElement;
   const generateOwn = qs('generateOwn') as HTMLAnchorElement;
@@ -89,14 +135,21 @@ async function main(): Promise<void> {
   const progressFill = qs('playProgressFill') as HTMLElement;
   const currentTimeEl = qs('playCurrentTime') as HTMLElement;
   const durationEl = qs('playDuration') as HTMLElement;
+  const timeRow = qs('playTimeRow') as HTMLElement;
 
   const { midiUrl: u, title } = buildMidiUrlFromParams();
 
-  const formatted = formatDisplayTitle(title);
-  titleEl.textContent = formatted.display;
+  const picked = pickShareTitle(title);
+  titleEl.textContent = picked.title;
+  if (picked.artist) {
+    artistEl.textContent = picked.artist;
+    (artistEl as HTMLElement).style.display = 'block';
+  } else {
+    (artistEl as HTMLElement).style.display = 'none';
+  }
 
   // Set CTA back to home, prefilling search if we have a title.
-  generateOwn.href = formatted.prefill ? `/?song=${encodeURIComponent(formatted.prefill)}` : '/';
+  generateOwn.href = picked.prefill ? `/?song=${encodeURIComponent(picked.prefill)}` : '/';
 
   if (!u) {
     playBtn.disabled = true;
@@ -113,6 +166,7 @@ async function main(): Promise<void> {
   let resumeProgress = 0;
   let playStartMs: number | null = null; // performance.now() at audio time=0 (minus offset)
   let playOffsetSec = 0; // last known playback position in seconds
+  let timeRowTimeout: number | null = null;
 
   try {
     const buf = await midiService.fetchMIDI(u);
@@ -163,6 +217,12 @@ async function main(): Promise<void> {
     }
   }
 
+  function showTimeRow(): void {
+    timeRow.classList.add('active');
+    if (timeRowTimeout) window.clearTimeout(timeRowTimeout);
+    timeRowTimeout = window.setTimeout(() => timeRow.classList.remove('active'), 900);
+  }
+
   function startProgressUpdates(): void {
     stopProgressUpdates();
     progressInterval = window.setInterval(updateProgress, 100);
@@ -181,6 +241,7 @@ async function main(): Promise<void> {
   });
 
   const seekHandler = (e: Event) => {
+    showTimeRow();
     const p = Number.parseFloat((e.target as HTMLInputElement).value) / 100;
     if (!isGenerated) {
       resumeProgress = p;
@@ -208,6 +269,7 @@ async function main(): Promise<void> {
 
     // Pause (implemented as stop + remembered position)
     if (isPlaying) {
+      showTimeRow();
       const current = getLocalCurrentTime();
       resumeProgress = durationSec > 0 ? current / durationSec : 0;
       playOffsetSec = current;
@@ -234,6 +296,7 @@ async function main(): Promise<void> {
         isGenerated = true;
         // If user scrubbed before play, carry that into seconds now that we know duration.
         playOffsetSec = resumeProgress * durationSec;
+        showTimeRow();
       }
 
       setUiPlaying(true);
@@ -246,6 +309,7 @@ async function main(): Promise<void> {
       // Local progress tracking
       playStartMs = performance.now() - playOffsetSec * 1000;
       startProgressUpdates();
+      showTimeRow();
     } catch (e) {
       setUiPlaying(false);
       playStartMs = null;

@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <title>Check out this Gameboy tune — MOTIF</title>
-    <meta name="description" content="Someone shared a song with you. Tap play to run it through the Wario synthesis engine — then generate your own." />
+    <meta name="description" content="Someone shared a song with you. Press play to hear it reimagined as classic game-console music — then generate your own." />
 
     <!-- OpenGraph / Social Media Preview -->
     <meta property="og:title" content="Check out this Gameboy tune" />
-    <meta property="og:description" content="Someone shared a song with you. Tap play to run it through the Wario synthesis engine — then generate your own." />
+    <meta property="og:description" content="Someone shared a song with you. Press play to hear it reimagined as classic game-console music — then generate your own." />
     <meta property="og:image" content="https://motif-self.vercel.app/chiptune_blog_piece_1000x.webp" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -18,7 +18,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Check out this Gameboy tune" />
-    <meta name="twitter:description" content="Someone shared a song with you. Tap play to run it through the Wario synthesis engine — then generate your own." />
+    <meta name="twitter:description" content="Someone shared a song with you. Press play to hear it reimagined as classic game-console music — then generate your own." />
     <meta name="twitter:image" content="https://motif-self.vercel.app/chiptune_blog_piece_1000x.webp" />
     <style>
       :root {
@@ -140,22 +140,22 @@
       }
 
       button.primary {
-        background: var(--color-accent-secondary);
+        background: var(--color-accent-primary);
         color: #000;
-        border-color: rgba(255, 170, 68, 0.6);
+        border-color: rgba(0, 255, 136, 0.55);
         font-weight: 700;
       }
 
       button.primary:hover:not(:disabled) {
-        box-shadow: var(--glow-secondary), var(--shadow-md);
+        box-shadow: var(--glow-primary), var(--shadow-md);
       }
 
       .motif-stage {
         background: var(--color-surface-elevated);
         padding: calc(var(--spacing-unit) * 3);
         border-radius: var(--radius);
-        border: 1px solid rgba(255, 170, 68, 0.2);
-        box-shadow: var(--shadow-lg), var(--glow-secondary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: var(--shadow-lg);
       }
 
       .motif-grid {
@@ -222,7 +222,7 @@
       .progress-container {
         margin-top: 8px;
         padding-top: 16px;
-        border-top: 1px solid rgba(255, 170, 68, 0.15);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         display: none;
       }
 
@@ -231,7 +231,11 @@
         justify-content: space-between;
         margin-bottom: 8px;
         font-size: 0.85em;
-        color: #8f8f8f;
+        color: rgba(255,255,255,0.22);
+        transition: color 120ms ease;
+      }
+      .progress-time.active {
+        color: rgba(255,255,255,0.55);
       }
 
       .progress-bar-wrapper {
@@ -267,9 +271,9 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--color-accent-secondary);
+        background: var(--color-accent-primary);
         cursor: pointer;
-        box-shadow: 0 0 8px rgba(255, 170, 68, 0.6), var(--shadow-sm);
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.28), var(--shadow-sm);
         margin-top: -7px;
         transition: transform 100ms ease;
       }
@@ -288,10 +292,10 @@
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--color-accent-secondary);
+        background: var(--color-accent-primary);
         cursor: pointer;
         border: none;
-        box-shadow: 0 0 8px rgba(255, 170, 68, 0.6), var(--shadow-sm);
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.28), var(--shadow-sm);
       }
 
       .progress-fill {
@@ -300,41 +304,59 @@
         top: 50%;
         transform: translateY(-50%);
         height: 6px;
-        background: linear-gradient(90deg, var(--color-accent-secondary), rgba(255, 170, 68, 0.5));
+        background: linear-gradient(90deg, rgba(0,255,136,0.95), rgba(0,255,136,0.45));
         border-radius: 3px;
         pointer-events: none;
         z-index: 1;
         width: 0%;
         transition: width 0.1s linear;
       }
+
+      .meta-block {
+        margin-top: 8px;
+        font-size: 13px;
+        color: rgba(255,255,255,0.58);
+        line-height: 1.45;
+        max-width: 72ch;
+      }
+
+      .volume-row {
+        margin-top: 14px;
+        opacity: 0.6;
+      }
+      .volume-row label {
+        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="motif-stage" style="border-color: rgba(255, 255, 255, 0.08); box-shadow: var(--shadow-lg);">
+      <div class="motif-stage">
         <div class="motif-grid" style="gap: 14px;">
           <!-- 1. Source Song Title -->
           <h1 id="songTitle" style="margin:0; font-size: 28px; line-height: 1.15; font-weight: 800; color: var(--color-text); letter-spacing: 0.01em;">
             Loading…
           </h1>
+          <div id="songArtist" style="display:none; margin-top: -4px; font-size: 14px; color: rgba(255,255,255,0.62);"></div>
 
           <!-- 2. Transformation Description -->
           <p id="transformLine" style="margin:0; color: rgba(255,255,255,0.72); font-size: 14px;">
-            Re-synthesised as NES-era chiptune using Motif
+            Reimagined as classic game-console music
           </p>
 
           <!-- 3. Single Play/Pause Control -->
-          <div style="display:flex; justify-content:center; margin-top: 6px;">
-            <button id="playToggleBtn" class="primary" disabled style="min-width: 220px; padding: 14px 18px; font-size: 15px;">
+          <div style="display:flex; justify-content:center; margin-top: 16px; margin-bottom: 16px;">
+            <button id="playToggleBtn" class="primary" disabled style="min-width: 240px; padding: 14px 18px; font-size: 15px;">
               Play
             </button>
           </div>
 
           <!-- 4. Progress Bar -->
-          <div class="progress-container" id="playProgressContainer" style="display:block; margin-top: 0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-            <div class="progress-time">
+          <div class="progress-container" id="playProgressContainer" style="display:block; margin-top: 0; padding-top: 12px;">
+            <div class="progress-time" id="playTimeRow">
               <span id="playCurrentTime">0:00</span>
-              <span id="playDuration">0:00</span>
+              <span id="playDuration"></span>
             </div>
             <div class="progress-bar-wrapper" style="padding: 10px 0;">
               <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
@@ -342,25 +364,20 @@
             </div>
           </div>
 
-          <!-- 5. Status Text Replacement (static, non-interactive) -->
-          <div style="margin-top: 2px; font-size: 13px; color: rgba(255,255,255,0.72);">
-            Procedural playback · No samples · Deterministic
-          </div>
-
-          <!-- 6. Minimal metadata line (secondary, low contrast) -->
-          <div style="font-size: 12px; color: rgba(255,255,255,0.52); display:flex; gap: 14px; flex-wrap: wrap;">
-            <span>Engine: Wario (Game Boy / NES)</span>
-            <span>Source: MIDI structure</span>
+          <!-- 5/6. Metadata (quiet block) -->
+          <div class="meta-block" id="metaBlock">
+            Procedural playback from MIDI structure.<br />
+            Rendered using Motif’s Wario game-console engine.
           </div>
 
           <!-- Optional volume (acceptable) -->
-          <div class="volume-control" style="min-width: 0; margin-top: 4px; opacity: 0.85;">
+          <div class="volume-control volume-row" style="min-width: 0;">
             <label for="volume" style="min-width: auto;">Volume</label>
             <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" />
           </div>
 
           <!-- 7. Primary CTA (single) -->
-          <div style="margin-top: 10px;">
+          <div style="margin-top: 18px;">
             <a id="generateOwn" href="/" style="display:inline-block; color: rgba(0,255,136,0.92); text-decoration:none; font-weight: 650;">
               Generate your own →
             </a>
