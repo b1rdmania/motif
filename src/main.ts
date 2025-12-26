@@ -512,7 +512,8 @@ class MotifApp {
 
       this.updateStatus('');
       this.hasGenerated = true;
-      // keep generated state
+      // Refresh generated state now that generation succeeded (enables Copy link, etc.)
+      this.setState('generated');
     } catch (error) {
       this.updateStatus(`Motif error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.motifBtn.disabled = false;

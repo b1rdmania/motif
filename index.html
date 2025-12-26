@@ -532,6 +532,20 @@
             color: rgba(255,255,255,0.55);
             display: none;
         }
+
+        /* Generated-state share button: more prominent, still secondary to Play */
+        #copyLinkBtn {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,255,136,0.35);
+            background: rgba(0,0,0,0.18);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            font-weight: 700;
+        }
+        #copyLinkBtn:hover:not(:disabled) {
+            border-color: rgba(0,255,136,0.55);
+            box-shadow: var(--glow-primary), 0 12px 34px rgba(0,0,0,0.45);
+        }
         .engine-line {
             margin-top: 14px;
             color: rgba(255,255,255,0.72);
