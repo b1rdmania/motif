@@ -332,6 +332,29 @@
         .results-section.collapsed:hover {
             opacity: 1;
         }
+
+        .chooser-helper {
+            margin-top: calc(var(--spacing-unit) * 2);
+            padding: calc(var(--spacing-unit) * 2);
+            background: rgba(0,0,0,0.18);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+        .chooser-helper h4 {
+            margin: 0 0 6px 0;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.85);
+        }
+        .chooser-helper p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255,255,255,0.68);
+            line-height: 1.45;
+            max-width: 72ch;
+        }
         
         .results-table {
             width: 100%;
@@ -486,11 +509,28 @@
             flex-wrap: wrap;
             margin-top: 12px;
         }
-        .selected-support .volume-control {
-            margin-top: 0;
-            flex: 1;
-            min-width: 220px;
-            opacity: 0.85;
+        .selected-support .linklike {
+            background: transparent;
+            border: none;
+            padding: 0;
+            box-shadow: none;
+            color: rgba(0,255,136,0.9);
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .selected-support .linklike:hover {
+            text-decoration: underline;
+        }
+        .preview-inline {
+            display: inline-flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .preview-state {
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            display: none;
         }
         .engine-line {
             margin-top: 14px;
@@ -957,6 +997,14 @@
         <div id="status">Ready. Enter a song name to search for MIDI files.</div>
         
         <div id="resultsSection" class="results-section">
+            <div id="chooseHelper" class="chooser-helper" style="display:none;">
+                <h4>Choosing a MIDI source</h4>
+                <p>
+                    Different MIDI files capture songs differently. Some will produce better results than others.<br />
+                    Pick a source, generate, and if it sounds off, try another.
+                </p>
+            </div>
+
             <div class="results-header">
                 <h3>Search Results</h3>
             </div>
@@ -978,14 +1026,23 @@
             <div id="selectedCard" class="selected-card">
                 <h2 id="selectedTitle" class="selected-title">No source selected</h2>
                 <div id="selectedMeta" class="selected-meta">Search for a song, then choose a source to use.</div>
+                <div id="selectedExpectation" class="selected-meta" style="margin-top: 8px; color: rgba(255,255,255,0.62);">
+                    Some MIDI files work better than others. If the result sounds off, try another source.
+                </div>
 
                 <div class="selected-actions">
-                    <button id="motifBtn" class="primary" disabled>Generate</button>
+                    <button id="motifBtn" class="primary" disabled>Generate music</button>
                 </div>
 
                 <div class="selected-support">
                     <button id="motifStopBtn" type="button" disabled>Stop</button>
-                    <button id="copyLinkBtn" type="button" disabled>Copy link</button>
+                    <button id="copyLinkBtn" type="button" disabled style="display:none;">Copy link</button>
+                    <div class="preview-inline">
+                        <button id="previewBtn" type="button" class="linklike" disabled>Preview original MIDI</button>
+                        <span id="previewState" class="preview-state">Previewing…</span>
+                        <button id="previewStopBtn" type="button" class="linklike" style="display:none;">Stop preview</button>
+                    </div>
+                    <button id="chooseDifferentBtn" type="button" class="linklike">Choose a different source</button>
                 </div>
 
                 <div class="engine-line">Reimagined as classic game-console music using Motif’s Wario engine.</div>
