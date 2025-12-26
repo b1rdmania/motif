@@ -17,6 +17,23 @@ const searchService = new MIDISearchService();
 const fetchService = new MIDIFetchService();
 const parseService = new MIDIParseService();
 
+function escapeHtml(s: string): string {
+  return s
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function getOrigin(req: express.Request): string {
+  const xfProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+  const proto = xfProto || (req.secure ? 'https' : 'http');
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').trim();
+  if (!host) return '';
+  return `${proto}://${host}`;
+}
+
 type SharePayload =
   | {
       kind: 'bitmidi';
@@ -195,7 +212,55 @@ app.get('/s/:code', async (req, res) => {
       dest = `/play?${sp.toString()}`;
     }
 
-    res.redirect(302, dest);
+    // Social crawlers (Telegram, X, etc.) need HTML with OG/Twitter tags.
+    // Serve a tiny landing document that redirects humans to /play.
+    const origin = getOrigin(req);
+    const shortUrl = origin ? `${origin}/s/${encodeURIComponent(code)}` : `/s/${encodeURIComponent(code)}`;
+    const playUrl = origin ? `${origin}${dest}` : dest;
+    const imageUrl = origin ? `${origin}/chiptune_blog_piece_1000x.webp` : '/chiptune_blog_piece_1000x.webp';
+
+    const sharedTitle = (payload.title || '').trim();
+    const ogTitle = sharedTitle ? `Check out this Gameboy tune: ${sharedTitle}` : 'Check out this Gameboy tune';
+    const ogDescription = sharedTitle
+      ? `Someone shared “${sharedTitle}” with you. Tap to play it through the Wario synthesis engine — then generate your own.`
+      : 'Someone shared a song with you. Tap to play it through the Wario synthesis engine — then generate your own.';
+
+    const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(ogTitle)}</title>
+    <meta name="description" content="${escapeHtml(ogDescription)}" />
+
+    <meta property="og:title" content="${escapeHtml(ogTitle)}" />
+    <meta property="og:description" content="${escapeHtml(ogDescription)}" />
+    <meta property="og:image" content="${escapeHtml(imageUrl)}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${escapeHtml(shortUrl)}" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(ogTitle)}" />
+    <meta name="twitter:description" content="${escapeHtml(ogDescription)}" />
+    <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />
+
+    <meta http-equiv="refresh" content="0;url=${escapeHtml(playUrl)}" />
+    <link rel="canonical" href="${escapeHtml(playUrl)}" />
+    <style>
+      body { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#0a0a0a; color:#e8e8e8; margin:0; padding:24px; }
+      a { color:#00ff88; }
+    </style>
+  </head>
+  <body>
+    Redirecting to the player… <a href="${escapeHtml(playUrl)}">Tap here</a>
+    <script>location.replace(${JSON.stringify(playUrl)});</script>
+  </body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.status(200).send(html);
   } catch (error) {
     console.error('Share resolve error:', error);
     const msg = error instanceof Error ? error.message : 'Resolve failed';
