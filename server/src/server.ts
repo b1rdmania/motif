@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import crypto from 'node:crypto';
 import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 import { MIDISearchService } from './services/MIDISearchService.js';
 import { MIDIFetchService } from './services/MIDIFetchService.js';
 import { MIDIParseService } from './services/MIDIParseService.js';
@@ -35,6 +36,28 @@ type SharePayload =
 const localShareStore = new Map<string, SharePayload>();
 const isVercel = Boolean(process.env.VERCEL);
 const hasKvEnv = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+const redisUrl = process.env.REDIS_URL;
+const hasRedisEnv = Boolean(redisUrl);
+
+let redisClient: ReturnType<typeof createClient> | null = null;
+let redisConnectPromise: Promise<void> | null = null;
+
+async function getRedis(): Promise<ReturnType<typeof createClient>> {
+  if (!redisUrl) throw new Error('REDIS_URL is not configured for this project.');
+  if (!redisClient) {
+    redisClient = createClient({ url: redisUrl });
+    redisClient.on('error', (err) => console.error('Redis error:', err));
+  }
+  if (!redisClient.isOpen) {
+    if (!redisConnectPromise) {
+      redisConnectPromise = redisClient.connect().then(() => {}).finally(() => {
+        redisConnectPromise = null;
+      });
+    }
+    await redisConnectPromise;
+  }
+  return redisClient;
+}
 
 function base62(bytes: Uint8Array): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -52,36 +75,43 @@ async function shareSet(code: string, payload: SharePayload): Promise<void> {
   const key = `share:${code}`;
   // 30 days TTL
   const exSec = 60 * 60 * 24 * 30;
-  if (isVercel && !hasKvEnv) {
-    throw new Error('Vercel KV is not configured for this project.');
+  if (isVercel && !hasRedisEnv && !hasKvEnv) {
+    throw new Error('No storage configured (need REDIS_URL or Vercel KV env vars).');
   }
 
-  try {
-    if (hasKvEnv) {
-      await kv.set(key, payload, { ex: exSec });
-      return;
-    }
-  } catch {
-    // fall through to local store (dev only)
+  // Prefer Redis integration if present (your project has REDIS_URL).
+  if (hasRedisEnv) {
+    const r = await getRedis();
+    await r.set(key, JSON.stringify(payload), { EX: exSec });
+    return;
   }
 
-  // Local dev: best-effort in-memory store.
+  // Fallback: Vercel KV REST (Upstash)
+  if (hasKvEnv) {
+    await kv.set(key, payload, { ex: exSec });
+    return;
+  }
+
+  // Local dev only: best-effort in-memory store.
   localShareStore.set(code, payload);
 }
 
 async function shareGet(code: string): Promise<SharePayload | null> {
   const key = `share:${code}`;
-  if (isVercel && !hasKvEnv) {
-    throw new Error('Vercel KV is not configured for this project.');
+  if (isVercel && !hasRedisEnv && !hasKvEnv) {
+    throw new Error('No storage configured (need REDIS_URL or Vercel KV env vars).');
   }
 
-  try {
-    if (hasKvEnv) {
-      const val = await kv.get<SharePayload>(key);
-      return val ?? null;
-    }
-  } catch {
-    // fall through to local store (dev only)
+  if (hasRedisEnv) {
+    const r = await getRedis();
+    const val = await r.get(key);
+    if (!val) return null;
+    return JSON.parse(val) as SharePayload;
+  }
+
+  if (hasKvEnv) {
+    const val = await kv.get<SharePayload>(key);
+    return val ?? null;
   }
 
   return localShareStore.get(code) ?? null;
