@@ -64,28 +64,24 @@
             margin: 0 auto;
         }
 
-        h1 {
-            color: var(--color-accent-primary);
+        .hero {
             text-align: center;
             margin: 0 0 calc(var(--spacing-unit) * 4) 0;
+        }
+        .hero h1 {
+            color: var(--color-accent-primary);
+            margin: 0;
             font-size: 2em;
-            font-weight: 700;
-            letter-spacing: 0.05em;
+            font-weight: 800;
+            letter-spacing: 0.08em;
             text-shadow: var(--glow-primary);
         }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: calc(var(--spacing-unit) * 2);
-            margin-bottom: calc(var(--spacing-unit) * 2);
-        }
-        .topbar h1 {
-            margin: 0;
+        .hero .tagline {
+            margin: calc(var(--spacing-unit) * 1.5) 0 0 0;
+            color: rgba(255,255,255,0.72);
+            font-size: 14px;
         }
         .faq-link {
-            margin-left: auto;
             background: transparent;
             border: 1px solid rgba(255,255,255,0.14);
             color: rgba(255,255,255,0.85);
@@ -230,8 +226,12 @@
             color: rgba(255,255,255,0.85);
         }
         .controls {
-            margin: calc(var(--spacing-unit) * 3) 0;
-            text-align: center;
+            margin: calc(var(--spacing-unit) * 3) auto calc(var(--spacing-unit) * 2) auto;
+            display: flex;
+            gap: calc(var(--spacing-unit) * 1.5);
+            align-items: stretch;
+            justify-content: center;
+            max-width: 720px;
         }
 
         button {
@@ -268,13 +268,19 @@
         button.primary {
             background: var(--color-accent-primary);
             color: #000;
-            border-color: var(--color-accent-primary);
-            font-weight: 600;
+            border-color: rgba(0,255,136,0.4);
+            font-weight: 800;
         }
 
         button.primary:hover:not(:disabled) {
             background: #00dd77;
             box-shadow: var(--glow-primary), var(--shadow-md);
+        }
+
+        /* Make Search the primary CTA */
+        #searchBtn {
+            padding: 14px 18px;
+            border-radius: 12px;
         }
 
         #status {
@@ -289,11 +295,12 @@
         }
 
         input[type="text"] {
-            background: var(--color-surface);
+            flex: 1;
+            background: rgba(0,0,0,0.25);
             color: var(--color-text);
-            border: 1px solid var(--color-border);
-            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
-            border-radius: var(--radius);
+            border: 1px solid rgba(255,255,255,0.14);
+            padding: 14px 14px;
+            border-radius: 12px;
             font-family: inherit;
             font-size: 16px;
             transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -301,8 +308,8 @@
 
         input[type="text"]:focus {
             outline: none;
-            border-color: var(--color-accent-primary);
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+            border-color: rgba(0,255,136,0.45);
+            box-shadow: 0 0 0 3px rgba(0,255,136,0.18);
         }
         
         .results-section {
@@ -311,6 +318,13 @@
         }
         .results-section.visible {
             display: block;
+        }
+        .results-section.collapsed {
+            opacity: 0.55;
+            transition: opacity 160ms ease;
+        }
+        .results-section.collapsed:hover {
+            opacity: 1;
         }
         
         .results-table {
@@ -346,11 +360,11 @@
 
         .results-table .duration-col {
             width: 80px;
-            text-align: center;
+            text-align: right;
         }
-        .results-table .preview-col {
-            width: 110px;
-            text-align: center;
+        .results-table .action-col {
+            width: 120px;
+            text-align: right;
         }
 
         .results-table tbody tr {
@@ -394,30 +408,12 @@
                 width: 60px;
             }
 
-            .results-table .preview-col {
-                width: 84px;
+            .results-table .action-col {
+                width: 100px;
             }
         }
 
-        .results-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: calc(var(--spacing-unit) * 2);
-            flex-wrap: wrap;
-            margin: 0 0 calc(var(--spacing-unit) * 2) 0;
-        }
-        .results-header h3 {
-            margin: 0;
-        }
-        .results-header .volume-control {
-            margin-top: 0;
-            min-width: 260px;
-            flex: 0 1 360px;
-        }
-        .results-header .volume-control label {
-            font-size: 12px;
-        }
+        .results-header h3 { margin: 0; }
         
         .confidence-bar {
             width: 60px;
@@ -430,6 +426,83 @@
             height: 100%;
             background: linear-gradient(90deg, #ff4444, #ffaa44, #00ff88);
             transition: width 0.2s;
+        }
+
+        /* Selected source card */
+        .selected-card {
+            margin-top: calc(var(--spacing-unit) * 3);
+            padding: calc(var(--spacing-unit) * 3);
+            background: var(--color-surface-elevated);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+        .selected-title {
+            margin: 0;
+            font-size: 22px;
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            color: var(--color-text);
+        }
+        .selected-meta {
+            margin: 10px 0 0 0;
+            font-size: 13px;
+            color: rgba(255,255,255,0.62);
+        }
+        .selected-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .selected-actions .primary {
+            flex: 1;
+            min-width: 180px;
+            padding: 12px 16px;
+        }
+        .selected-actions button:not(.primary) {
+            flex: 1;
+            min-width: 160px;
+        }
+        .selected-support {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .selected-support .volume-control {
+            margin-top: 0;
+            flex: 1;
+            min-width: 220px;
+            opacity: 0.85;
+        }
+        .engine-line {
+            margin-top: 14px;
+            color: rgba(255,255,255,0.72);
+            font-size: 13px;
+        }
+        details.details-toggle {
+            margin-top: 12px;
+        }
+        details.details-toggle summary {
+            cursor: pointer;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            list-style: none;
+        }
+        details.details-toggle summary::-webkit-details-marker { display: none; }
+        .selected-details {
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.58);
+        }
+
+        .footer {
+            margin-top: calc(var(--spacing-unit) * 6);
+            display: flex;
+            justify-content: center;
         }
         
         .player-section {
@@ -856,15 +929,14 @@
 </head>
 <body>
     <div class="container">
-        <div class="topbar">
-            <h1>🎵 MOTIF</h1>
-            <button id="faqBtn" class="faq-link" type="button">FAQ</button>
+        <div class="hero">
+            <h1>MOTIF</h1>
+            <p class="tagline"><strong>Procedural music generated from MIDI structure</strong></p>
         </div>
-        <p>Procedural Music Synthesis from MIDI Structure</p>
         
         <div class="controls">
-            <input type="text" id="songInput" placeholder="Enter song name..." />
-            <button id="searchBtn">Search</button>
+            <input type="text" id="songInput" placeholder="Search for a song…" />
+            <button id="searchBtn" class="primary">Search</button>
         </div>
         
         <div id="status">Ready. Enter a song name to search for MIDI files.</div>
@@ -872,18 +944,14 @@
         <div id="resultsSection" class="results-section">
             <div class="results-header">
                 <h3>Search Results</h3>
-                <div class="volume-control">
-                    <label for="soundfontVolume">Preview volume</label>
-                    <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.7" />
-                </div>
             </div>
             <table id="resultsTable" class="results-table">
                 <thead>
                     <tr>
-                        <th>Title</th>
+                        <th>Song</th>
                         <th class="source-col">Source</th>
-                        <th class="duration-col">Duration</th>
-                        <th class="preview-col">Preview</th>
+                        <th class="duration-col">Length</th>
+                        <th class="action-col">Action</th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody">
@@ -892,57 +960,55 @@
         </div>
         
         <div id="playerSection" class="player-section">
-            <div id="selectedInfo" class="player-info">
-                <h4 id="selectedTitle">No MIDI selected</h4>
-                <p id="selectedMeta">Select a MIDI file from search results to enable playback</p>
-            </div>
+            <div id="selectedCard" class="selected-card">
+                <h2 id="selectedTitle" class="selected-title">No source selected</h2>
+                <div id="selectedMeta" class="selected-meta">Search for a song, then choose a source to use.</div>
 
-            <div class="section">
-                <div class="section-header">
-                    <h3 class="section-title">Synthesis Engine</h3>
-                    <p class="section-subtitle">Run it through the Gameboy emulator.</p>
+                <div class="selected-actions">
+                    <button id="previewBtn" type="button" disabled>Preview MIDI</button>
+                    <button id="motifBtn" class="primary" disabled>Generate</button>
                 </div>
-                <div class="divider"></div>
 
-                <div class="motif-stage">
-                    <div class="motif-grid">
-                        <div class="motif-header">
-                            <h4 style="margin:0; color:#ffaa44; text-shadow: 0 0 18px rgba(255,170,68,0.15);">Run the engine</h4>
-                            <p class="motif-kicker">Gameboy MIDI synthesis. Triangle, square, and sawtooth waveforms. Polyphonic 8-bit chiptune generation.</p>
-                        </div>
-
-                        <div class="motif-controls">
-                            <button id="motifBtn" class="primary" disabled>Generate & Play</button>
-                            <button id="motifStopBtn" disabled>Stop</button>
-                            <button id="copyLinkBtn" type="button" disabled>Copy link</button>
-                            <div class="volume-control">
-                                <label for="motifVolume">Volume</label>
-                                <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.7" />
-                            </div>
-                        </div>
-
-                        <div id="iosAudioBanner" class="ios-audio-banner" aria-live="polite">
-                            <div class="row">
-                                <div class="copy">
-                                    <strong>iOS Safari:</strong> tap once to enable audio, then press <strong>Generate &amp; Play</strong>.
-                                </div>
-                                <button id="enableAudioBtn" type="button">Enable Audio</button>
-                            </div>
-                            <div id="iosAudioState" class="state">Audio: …</div>
-                        </div>
-
-                        <div class="motif-progress-container" id="motifProgressContainer" style="display: none;">
-                            <div class="progress-time">
-                                <span id="motifCurrentTime">0:00</span>
-                                <span id="motifDuration">0:00</span>
-                            </div>
-                            <div class="progress-bar-wrapper">
-                                <input type="range" id="motifProgressBar" class="progress-bar" min="0" max="100" value="0" step="0.1" />
-                                <div class="progress-fill" id="motifProgressFill"></div>
-                            </div>
-                        </div>
+                <div class="selected-support">
+                    <button id="motifStopBtn" type="button" disabled>Stop</button>
+                    <button id="copyLinkBtn" type="button" disabled>Copy link</button>
+                    <div class="volume-control">
+                        <label for="motifVolume">Output</label>
+                        <input type="range" id="motifVolume" min="0" max="1" step="0.01" value="0.7" />
+                    </div>
+                    <div class="volume-control">
+                        <label for="soundfontVolume">Preview</label>
+                        <input type="range" id="soundfontVolume" min="0" max="1" step="0.01" value="0.7" />
                     </div>
                 </div>
+
+                <div class="engine-line">Reimagined as classic game-console music using Motif’s Wario engine.</div>
+
+                <div id="iosAudioBanner" class="ios-audio-banner" aria-live="polite">
+                    <div class="row">
+                        <div class="copy">
+                            <strong>iOS Safari:</strong> tap once to enable audio, then press <strong>Generate</strong>.
+                        </div>
+                        <button id="enableAudioBtn" type="button">Enable Audio</button>
+                    </div>
+                    <div id="iosAudioState" class="state">Audio: …</div>
+                </div>
+
+                <div class="motif-progress-container" id="motifProgressContainer" style="display: none;">
+                    <div class="progress-time">
+                        <span id="motifCurrentTime">0:00</span>
+                        <span id="motifDuration">0:00</span>
+                    </div>
+                    <div class="progress-bar-wrapper">
+                        <input type="range" id="motifProgressBar" class="progress-bar" min="0" max="100" value="0" step="0.1" />
+                        <div class="progress-fill" id="motifProgressFill"></div>
+                    </div>
+                </div>
+
+                <details class="details-toggle">
+                    <summary>Details</summary>
+                    <div id="selectedDetails" class="selected-details"></div>
+                </details>
             </div>
 
             <div class="section" id="embedSection" data-not-live="true" style="display:none;">
@@ -967,6 +1033,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="footer">
+        <button id="faqBtn" class="faq-link" type="button">FAQ</button>
     </div>
 
     <div id="faqModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
