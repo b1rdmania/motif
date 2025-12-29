@@ -696,15 +696,38 @@ class MotifApp {
       }
     }
 
-    // Try to copy to clipboard first (works on desktop)
+    // Try to copy to clipboard
     let copied = false;
+
+    // Method 1: Modern Clipboard API
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareUrl);
         copied = true;
       }
     } catch {
-      // Clipboard failed, fall through to text box
+      // Clipboard API failed, try fallback
+    }
+
+    // Method 2: execCommand fallback (works better on iOS Safari)
+    if (!copied) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = shareUrl;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        textarea.setAttribute('readonly', ''); // Prevent zoom on iOS
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        // iOS needs setSelectionRange
+        textarea.setSelectionRange(0, shareUrl.length);
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {
+        // execCommand failed too
+      }
     }
 
     if (copied) {
@@ -714,10 +737,13 @@ class MotifApp {
       setTimeout(() => {
         this.copyLinkBtn.textContent = originalText;
       }, 1500);
+      // Hide the text box if it was showing from a previous attempt
+      this.shareLinkBox.style.display = 'none';
     } else {
-      // Fallback: show text box for manual copy (iOS)
+      // Last resort: show text box for manual copy
       this.shareLinkInput.value = shareUrl;
       this.shareLinkBox.style.display = 'block';
+      this.shareLinkInput.focus();
       this.shareLinkInput.select();
     }
   }
