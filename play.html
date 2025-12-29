@@ -28,18 +28,19 @@
 
     <style>
       :root {
-        /* Game Boy LCD palette */
-        --gb-lightest: #9BBC0F;
-        --gb-light: #8BAC0F;
-        --gb-dark: #306230;
-        --gb-darkest: #0F380F;
+        /* Game Boy palette - light mode (authentic LCD) */
+        --gb-lightest: #E0E8C8;  /* Screen background */
+        --gb-light: #A8B89A;     /* Surface/cards */
+        --gb-medium: #6B7B5A;    /* Dim text, borders */
+        --gb-dark: #3A4A2A;      /* Text */
+        --gb-darkest: #1D2A1D;   /* Darkest accents */
 
-        /* Semantic mapping */
-        --color-bg: var(--gb-darkest);
-        --color-surface: var(--gb-dark);
-        --color-border: var(--gb-light);
-        --color-text: var(--gb-lightest);
-        --color-text-dim: var(--gb-light);
+        /* Semantic mapping - LIGHT background, DARK text */
+        --color-bg: #C8D8B0;
+        --color-surface: #A8B89A;
+        --color-border: var(--gb-dark);
+        --color-text: var(--gb-darkest);
+        --color-text-dim: var(--gb-medium);
 
         --spacing-unit: 8px;
         --pixel-border: 4px;
@@ -62,15 +63,15 @@
         -moz-osx-font-smoothing: unset;
       }
 
-      /* LCD Screen Effect */
+      /* LCD Screen Effect - subtle on light bg */
       body::before {
         content: '';
         position: fixed;
         inset: 0;
         background: repeating-linear-gradient(
           0deg,
-          rgba(0, 0, 0, 0.1) 0px,
-          rgba(0, 0, 0, 0.1) 2px,
+          rgba(0, 0, 0, 0.03) 0px,
+          rgba(0, 0, 0, 0.03) 2px,
           transparent 2px,
           transparent 4px
         );
@@ -88,12 +89,12 @@
         text-align: center;
         margin: 0 0 calc(var(--spacing-unit) * 3) 0;
         padding: calc(var(--spacing-unit) * 2);
-        border: var(--pixel-border) solid var(--gb-light);
-        background: var(--gb-dark);
+        border: var(--pixel-border) solid var(--gb-dark);
+        background: var(--color-surface);
       }
 
       .hero h1 {
-        color: var(--gb-lightest);
+        color: var(--gb-darkest);
         margin: 0;
         font-size: 16px;
         font-weight: normal;
@@ -105,7 +106,7 @@
       .player-card {
         background: var(--gb-dark);
         padding: calc(var(--spacing-unit) * 3);
-        border: var(--pixel-border) solid var(--gb-light);
+        border: var(--pixel-border) solid var(--gb-darkest);
       }
 
       /* Song title */
@@ -123,15 +124,15 @@
         margin-top: calc(var(--spacing-unit) * -1);
         margin-bottom: calc(var(--spacing-unit) * 2);
         font-size: 8px;
-        color: var(--gb-light);
+        color: var(--gb-medium);
       }
 
 
       /* Buttons */
       button {
-        background: var(--gb-dark);
-        color: var(--gb-lightest);
-        border: var(--pixel-border) solid var(--gb-light);
+        background: var(--color-surface);
+        color: var(--color-text);
+        border: var(--pixel-border) solid var(--gb-dark);
         padding: 12px 16px;
         border-radius: 0;
         cursor: pointer;
@@ -139,21 +140,18 @@
         font-size: 8px;
         text-transform: uppercase;
         box-shadow:
-          inset -4px -4px 0 var(--gb-darkest),
-          inset 4px 4px 0 var(--gb-light);
+          inset -3px -3px 0 var(--gb-medium),
+          inset 3px 3px 0 var(--gb-lightest);
         transition: none;
       }
 
       button:hover:not(:disabled) {
-        background: var(--gb-light);
+        background: var(--gb-lightest);
         color: var(--gb-darkest);
-        box-shadow:
-          inset 4px 4px 0 var(--gb-darkest),
-          inset -4px -4px 0 var(--gb-lightest);
       }
 
       button:active:not(:disabled) {
-        box-shadow: inset 4px 4px 0 var(--gb-darkest);
+        box-shadow: inset 3px 3px 0 var(--gb-medium);
       }
 
       button:disabled {
@@ -162,17 +160,17 @@
       }
 
       button.primary {
-        background: var(--gb-lightest);
-        color: var(--gb-darkest);
-        border-color: var(--gb-lightest);
+        background: var(--gb-dark);
+        color: var(--gb-lightest);
+        border-color: var(--gb-darkest);
         box-shadow:
-          inset -4px -4px 0 var(--gb-light),
-          inset 4px 4px 0 #c5d82f;
+          inset -3px -3px 0 var(--gb-darkest),
+          inset 3px 3px 0 var(--gb-medium);
       }
 
       button.primary:hover:not(:disabled) {
-        background: var(--gb-light);
-        color: var(--gb-darkest);
+        background: var(--gb-darkest);
+        color: var(--gb-lightest);
       }
 
       /* Play button container */
@@ -192,7 +190,7 @@
       .progress-container {
         margin-top: calc(var(--spacing-unit) * 2);
         padding-top: calc(var(--spacing-unit) * 2);
-        border-top: 2px solid var(--gb-darkest);
+        border-top: 2px solid var(--gb-light);
       }
 
       .progress-time {
@@ -260,7 +258,7 @@
         top: 50%;
         transform: translateY(-50%);
         height: 8px;
-        background: var(--gb-lightest);
+        background: var(--gb-light);
         pointer-events: none;
         z-index: 1;
         width: 0%;
@@ -270,7 +268,7 @@
       .cta-link-inline {
         margin-top: calc(var(--spacing-unit) * 2);
         padding-top: calc(var(--spacing-unit) * 2);
-        border-top: 2px solid var(--gb-darkest);
+        border-top: 2px solid var(--gb-light);
         text-align: center;
       }
 
@@ -283,16 +281,13 @@
         border: var(--pixel-border) solid var(--gb-light);
         background: var(--gb-dark);
         box-shadow:
-          inset -4px -4px 0 var(--gb-darkest),
-          inset 4px 4px 0 var(--gb-light);
+          inset -3px -3px 0 var(--gb-darkest),
+          inset 3px 3px 0 var(--gb-medium);
       }
 
       .cta-link-inline a:hover {
-        background: var(--gb-light);
-        color: var(--gb-darkest);
-        box-shadow:
-          inset 4px 4px 0 var(--gb-darkest),
-          inset -4px -4px 0 var(--gb-lightest);
+        background: var(--gb-darkest);
+        color: var(--gb-lightest);
       }
 
       /* Footer */
@@ -300,11 +295,11 @@
         margin-top: calc(var(--spacing-unit) * 4);
         text-align: center;
         font-size: 8px;
-        color: var(--gb-light);
+        color: var(--gb-dark);
       }
 
       .footer a {
-        color: var(--gb-lightest);
+        color: var(--gb-darkest);
         text-decoration: underline;
       }
     </style>

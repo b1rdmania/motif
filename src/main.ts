@@ -16,7 +16,6 @@ class MotifApp {
   private searchBtn!: HTMLButtonElement;
   private songInput!: HTMLInputElement;
   private status!: HTMLElement;
-  private controlsEl!: HTMLElement;
   
   private resultsSection!: HTMLElement;
   private resultsBody!: HTMLElement;
@@ -106,8 +105,7 @@ class MotifApp {
     this.searchBtn = document.getElementById('searchBtn') as HTMLButtonElement;
     this.songInput = document.getElementById('songInput') as HTMLInputElement;
     this.status = document.getElementById('status')!;
-    this.controlsEl = document.querySelector('.controls') as HTMLElement;
-    
+
     this.resultsSection = document.getElementById('resultsSection')!;
     this.resultsBody = document.getElementById('resultsBody')!;
     this.playerSection = document.getElementById('playerSection')!;
@@ -767,16 +765,10 @@ class MotifApp {
     this.copyLinkBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
     this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
 
-    // collapse results when selected/generated
-    this.resultsSection.classList.toggle('collapsed', state === 'selected');
+    // Dim results when selected/generated, but keep them interactive
+    this.resultsSection.classList.toggle('collapsed', state === 'selected' || state === 'generated');
 
-    // Keep search visible so you can scroll back up, but lock it during generated mode.
-    const lockSearch = state === 'generated';
-    this.controlsEl.classList.toggle('locked', lockSearch);
-    this.songInput.disabled = lockSearch;
-    this.searchBtn.disabled = lockSearch;
-    // Keep status visible for layout continuity; just de-emphasize content in generated mode.
-    if (lockSearch) this.status.textContent = '';
+    // Never lock search - users should always be able to search or pick different results
 
     // Selected pre-generation content
     const showPreGen = state === 'selected';

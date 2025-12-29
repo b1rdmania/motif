@@ -29,29 +29,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
     <style>
-        /* Design System: Game Boy DMG - Classic LCD greens */
+        /* Design System: Game Boy DMG - Authentic light LCD look */
         :root {
-            /* Game Boy LCD palette */
-            --gb-lightest: #9BBC0F;
-            --gb-light: #8BAC0F;
-            --gb-dark: #306230;
-            --gb-darkest: #0F380F;
+            /* Game Boy palette - light mode (authentic LCD) */
+            --gb-lightest: #E0E8C8;  /* Screen background */
+            --gb-light: #A8B89A;     /* Surface/cards */
+            --gb-medium: #6B7B5A;    /* Dim text, borders */
+            --gb-dark: #3A4A2A;      /* Text */
+            --gb-darkest: #1D2A1D;   /* Darkest accents */
 
-            /* Console colors */
+            /* Console shell colors */
             --gb-shell: #C4CFA1;
             --gb-shell-dark: #8B956D;
-            --gb-purple: #442176;
-            --gb-red: #AB2E41;
 
-            /* Semantic mapping */
-            --color-bg: var(--gb-darkest);
-            --color-surface: var(--gb-dark);
-            --color-surface-elevated: #1a3a1a;
-            --color-border: var(--gb-light);
-            --color-text: var(--gb-lightest);
-            --color-text-dim: var(--gb-light);
-            --color-accent-primary: var(--gb-lightest);
-            --color-accent-secondary: var(--gb-light);
+            /* Semantic mapping - LIGHT background, DARK text */
+            --color-bg: #C8D8B0;
+            --color-surface: #A8B89A;
+            --color-surface-elevated: #B8C8A8;
+            --color-border: var(--gb-dark);
+            --color-text: var(--gb-darkest);
+            --color-text-dim: var(--gb-medium);
+            --color-accent-primary: var(--gb-dark);
+            --color-accent-secondary: var(--gb-medium);
 
             --spacing-unit: 8px;
             --radius: 0px; /* Pixel-perfect, no rounding */
@@ -75,15 +74,15 @@
             -moz-osx-font-smoothing: unset;
         }
 
-        /* LCD Screen Effect */
+        /* LCD Screen Effect - subtle on light bg */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
             background: repeating-linear-gradient(
                 0deg,
-                rgba(0, 0, 0, 0.1) 0px,
-                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.03) 0px,
+                rgba(0, 0, 0, 0.03) 2px,
                 transparent 2px,
                 transparent 4px
             );
@@ -101,11 +100,11 @@
             margin: 0 0 calc(var(--spacing-unit) * 4) 0;
             position: relative;
             padding: calc(var(--spacing-unit) * 2);
-            border: var(--pixel-border) solid var(--gb-light);
-            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-dark);
+            background: var(--color-surface);
         }
         .hero h1 {
-            color: var(--gb-lightest);
+            color: var(--gb-darkest);
             margin: 0;
             font-size: 20px;
             font-weight: normal;
@@ -114,22 +113,22 @@
         }
         .hero .tagline {
             margin: calc(var(--spacing-unit) * 2) 0 0 0;
-            color: var(--gb-light);
+            color: var(--gb-dark);
             font-size: 8px;
         }
         .faq-link {
-            background: var(--gb-dark);
-            border: var(--pixel-border) solid var(--gb-light);
-            color: var(--gb-lightest);
+            background: var(--gb-lightest);
+            border: var(--pixel-border) solid var(--gb-dark);
+            color: var(--gb-darkest);
             padding: 8px 12px;
             border-radius: 0;
             box-shadow:
-                inset -4px -4px 0 var(--gb-darkest),
-                inset 4px 4px 0 var(--gb-light);
+                inset -3px -3px 0 var(--gb-medium),
+                inset 3px 3px 0 #fff;
             font-size: 8px;
         }
         .faq-link:hover:not(:disabled) {
-            background: var(--gb-light);
+            background: #fff;
             color: var(--gb-darkest);
         }
         .faq-top {
@@ -282,9 +281,9 @@
 
         /* Chunky 8-bit buttons */
         button {
-            background: var(--gb-dark);
-            color: var(--gb-lightest);
-            border: var(--pixel-border) solid var(--gb-light);
+            background: var(--color-surface);
+            color: var(--color-text);
+            border: var(--pixel-border) solid var(--gb-dark);
             padding: 12px 16px;
             border-radius: 0;
             cursor: pointer;
@@ -292,22 +291,19 @@
             font-size: 8px;
             text-transform: uppercase;
             box-shadow:
-                inset -4px -4px 0 var(--gb-darkest),
-                inset 4px 4px 0 var(--gb-light);
+                inset -3px -3px 0 var(--gb-medium),
+                inset 3px 3px 0 var(--gb-lightest);
             transition: none;
         }
 
         button:hover:not(:disabled) {
-            background: var(--gb-light);
+            background: var(--gb-lightest);
             color: var(--gb-darkest);
-            box-shadow:
-                inset 4px 4px 0 var(--gb-darkest),
-                inset -4px -4px 0 var(--gb-lightest);
         }
 
         button:active:not(:disabled) {
             box-shadow:
-                inset 4px 4px 0 var(--gb-darkest);
+                inset 3px 3px 0 var(--gb-medium);
         }
 
         button:disabled {
@@ -316,17 +312,17 @@
         }
 
         button.primary {
-            background: var(--gb-lightest);
-            color: var(--gb-darkest);
-            border-color: var(--gb-lightest);
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
+            border-color: var(--gb-darkest);
             box-shadow:
-                inset -4px -4px 0 var(--gb-light),
-                inset 4px 4px 0 #c5d82f;
+                inset -3px -3px 0 var(--gb-darkest),
+                inset 3px 3px 0 var(--gb-medium);
         }
 
         button.primary:hover:not(:disabled) {
-            background: var(--gb-light);
-            color: var(--gb-darkest);
+            background: var(--gb-darkest);
+            color: var(--gb-lightest);
         }
 
         /* Search button */
@@ -339,8 +335,9 @@
         #status {
             margin: calc(var(--spacing-unit) * 3) 0;
             padding: calc(var(--spacing-unit) * 2);
-            background: var(--gb-dark);
-            border: var(--pixel-border) solid var(--gb-light);
+            background: var(--gb-lightest);
+            border: var(--pixel-border) solid var(--gb-dark);
+            color: var(--gb-darkest);
             font-size: 8px;
             min-height: 24px;
         }
@@ -348,24 +345,24 @@
         /* Text input - Game Boy style */
         input[type="text"] {
             flex: 1;
-            background: var(--gb-darkest);
-            color: var(--gb-lightest);
-            border: var(--pixel-border) solid var(--gb-light);
+            background: var(--gb-lightest);
+            color: var(--gb-darkest);
+            border: var(--pixel-border) solid var(--gb-dark);
             padding: 12px 14px;
             border-radius: 0;
             font-family: 'Press Start 2P', monospace;
             font-size: 10px;
-            box-shadow: inset 4px 4px 0 rgba(0,0,0,0.3);
+            box-shadow: inset 3px 3px 0 var(--gb-medium);
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: var(--gb-lightest);
-            background: var(--gb-dark);
+            border-color: var(--gb-darkest);
+            background: #fff;
         }
 
         input[type="text"]::placeholder {
-            color: var(--gb-dark);
+            color: var(--gb-medium);
         }
         
         .results-section {
@@ -386,19 +383,19 @@
         .chooser-helper {
             margin-top: calc(var(--spacing-unit) * 2);
             padding: calc(var(--spacing-unit) * 2);
-            background: var(--gb-dark);
-            border: var(--pixel-border) solid var(--gb-light);
+            background: var(--color-surface);
+            border: var(--pixel-border) solid var(--gb-dark);
         }
         .chooser-helper h4 {
             margin: 0 0 8px 0;
             font-size: 8px;
             text-transform: uppercase;
-            color: var(--gb-lightest);
+            color: var(--gb-darkest);
         }
         .chooser-helper p {
             margin: 0;
             font-size: 8px;
-            color: var(--gb-light);
+            color: var(--gb-dark);
             line-height: 2;
         }
 
@@ -407,20 +404,21 @@
             width: 100%;
             border-collapse: collapse;
             margin: calc(var(--spacing-unit) * 2) 0;
-            background: var(--gb-dark);
-            border: var(--pixel-border) solid var(--gb-light);
+            background: var(--color-surface);
+            border: var(--pixel-border) solid var(--gb-dark);
         }
 
         .results-table th,
         .results-table td {
             padding: 12px 16px;
             text-align: left;
-            border-bottom: 2px solid var(--gb-darkest);
+            border-bottom: 2px solid var(--gb-medium);
             font-size: 8px;
+            color: var(--gb-darkest);
         }
 
         .results-table th {
-            background: var(--gb-darkest);
+            background: var(--gb-dark);
             color: var(--gb-lightest);
             font-weight: normal;
             text-transform: uppercase;
@@ -445,7 +443,7 @@
         }
 
         .results-table tbody tr:hover {
-            background: var(--gb-darkest);
+            background: var(--gb-lightest);
         }
 
         .results-table tbody tr:last-child td {
@@ -453,12 +451,12 @@
         }
 
         .results-table tr.selected {
-            background: var(--gb-light);
-            color: var(--gb-darkest);
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
         }
 
         .results-table tr.selected td {
-            color: var(--gb-darkest);
+            color: var(--gb-lightest);
         }
 
         .results-table tr.selected td:first-child {
@@ -587,23 +585,23 @@
         }
         .engine-line {
             margin-top: 14px;
-            color: rgba(255,255,255,0.72);
-            font-size: 13px;
+            color: var(--gb-light);
+            font-size: 8px;
         }
         details.details-toggle {
             margin-top: 12px;
         }
         details.details-toggle summary {
             cursor: pointer;
-            color: rgba(255,255,255,0.7);
-            font-size: 12px;
+            color: var(--gb-light);
+            font-size: 8px;
             list-style: none;
         }
         details.details-toggle summary::-webkit-details-marker { display: none; }
         .selected-details {
             margin-top: 8px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.58);
+            font-size: 8px;
+            color: var(--gb-light);
         }
 
         .footer {
@@ -631,27 +629,24 @@
         .player-box {
             background: var(--color-surface);
             padding: calc(var(--spacing-unit) * 3);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
-            transition: transform 150ms ease, box-shadow 150ms ease;
+            border: var(--pixel-border) solid var(--gb-dark);
+            border-radius: 0;
         }
 
         .player-box:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+            background: var(--gb-lightest);
         }
 
         .player-box h4 {
             margin: 0 0 calc(var(--spacing-unit)) 0;
-            color: var(--color-accent-primary);
+            color: var(--gb-darkest);
             font-size: 15px;
             font-weight: 600;
         }
 
         .player-box p {
             font-size: 13px;
-            color: var(--color-text-dim);
+            color: var(--gb-dark);
             margin: 0 0 calc(var(--spacing-unit) * 2) 0;
         }
 
@@ -766,8 +761,7 @@
             background: var(--color-surface-elevated);
             padding: calc(var(--spacing-unit) * 3);
             border-radius: var(--radius);
-            border: 1px solid rgba(255, 170, 68, 0.2);
-            box-shadow: var(--shadow-lg), var(--glow-secondary);
+            border: var(--pixel-border) solid var(--gb-dark);
         }
         .motif-grid {
             display: flex;
@@ -793,8 +787,7 @@
             font-weight: 700;
         }
         .motif-controls button.primary:hover {
-            box-shadow: 0 16px 60px rgba(255, 170, 68, 0.15);
-            border-color: rgba(255, 170, 68, 0.55);
+            background: var(--gb-darkest);
         }
         .motif-controls .volume-control {
             flex: 1;
@@ -810,10 +803,8 @@
         .ios-audio-banner {
             margin-top: calc(var(--spacing-unit) * 2);
             padding: calc(var(--spacing-unit) * 2);
-            border-radius: var(--radius);
-            border: 1px solid rgba(255, 170, 68, 0.22);
-            background: rgba(0, 0, 0, 0.25);
-            box-shadow: var(--shadow-sm);
+            border: var(--pixel-border) solid var(--gb-dark);
+            background: var(--gb-lightest);
             display: none; /* toggled by JS */
         }
         .ios-audio-banner .row {
@@ -823,38 +814,24 @@
             flex-wrap: wrap;
         }
         .ios-audio-banner .copy {
-            font-size: 12px;
-            color: var(--color-text-dim);
-            line-height: 1.35;
+            font-size: 8px;
+            color: var(--gb-dark);
+            line-height: 2;
             flex: 1;
             min-width: 220px;
         }
         .ios-audio-banner .copy strong {
-            color: var(--color-text);
-            font-weight: 600;
+            color: var(--gb-darkest);
         }
         .ios-audio-banner .state {
             margin-top: calc(var(--spacing-unit) * 1);
-            font-size: 12px;
-            color: rgba(255, 170, 68, 0.85);
+            font-size: 8px;
+            color: var(--gb-dark);
             display: none;
         }
-        .ios-audio-banner button {
-            padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2);
-            border-radius: var(--radius);
-            border: 1px solid rgba(255, 170, 68, 0.35);
-            background: rgba(255, 170, 68, 0.12);
-            color: var(--color-text);
-            box-shadow: var(--shadow-sm);
-            font-weight: 600;
-        }
-        .ios-audio-banner button:hover:not(:disabled) {
-            border-color: rgba(255, 170, 68, 0.55);
-            box-shadow: var(--glow-secondary), var(--shadow-md);
-        }
         .motif-kicker {
-            font-size: 0.85em;
-            color: #b6b6b6;
+            font-size: 8px;
+            color: var(--gb-dark);
             margin: 0 0 10px 0;
             max-width: 70ch;
         }
@@ -874,8 +851,8 @@
             position: relative;
         }
         .volume-control label {
-            font-size: 0.9em;
-            color: #aaa;
+            font-size: 8px;
+            color: var(--gb-dark);
         }
         .volume-control input[type="range"] {
             flex: 1;
@@ -885,14 +862,14 @@
         .motif-progress-container {
             margin-top: 8px;
             padding-top: 16px;
-            border-top: 1px solid rgba(255, 170, 68, 0.15);
+            border-top: 2px solid var(--gb-light);
         }
         .progress-time {
             display: flex;
             justify-content: space-between;
             margin-bottom: 8px;
-            font-size: 0.85em;
-            color: #8f8f8f;
+            font-size: 8px;
+            color: var(--gb-light);
         }
         .progress-bar-wrapper {
             position: relative;
@@ -904,11 +881,11 @@
 
         .progress-bar {
             width: 100%;
-            height: 6px;
+            height: 8px;
             -webkit-appearance: none;
             appearance: none;
             background: transparent;
-            border-radius: 3px;
+            border-radius: 0;
             outline: none;
             cursor: pointer;
             position: relative;
@@ -916,42 +893,40 @@
         }
 
         .progress-bar::-webkit-slider-runnable-track {
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            height: 8px;
+            background: var(--gb-darkest);
+            border-radius: 0;
         }
 
         .progress-bar::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--color-accent-secondary);
+            width: 16px;
+            height: 16px;
+            border-radius: 0;
+            background: var(--gb-lightest);
+            border: 2px solid var(--gb-light);
             cursor: pointer;
-            box-shadow: 0 0 8px rgba(255, 170, 68, 0.6), var(--shadow-sm);
-            margin-top: -7px;
-            transition: transform 100ms ease;
+            margin-top: -4px;
         }
 
         .progress-bar:active::-webkit-slider-thumb {
-            transform: scale(1.15);
+            background: #fff;
         }
 
         .progress-bar::-moz-range-track {
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            height: 8px;
+            background: var(--gb-darkest);
+            border-radius: 0;
         }
 
         .progress-bar::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--color-accent-secondary);
+            width: 16px;
+            height: 16px;
+            border-radius: 0;
+            background: var(--gb-lightest);
+            border: 2px solid var(--gb-light);
             cursor: pointer;
-            border: none;
-            box-shadow: 0 0 8px rgba(255, 170, 68, 0.6), var(--shadow-sm);
         }
 
         .progress-fill {
@@ -959,9 +934,9 @@
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            height: 6px;
-            background: linear-gradient(90deg, var(--color-accent-secondary), rgba(255, 170, 68, 0.5));
-            border-radius: 3px;
+            height: 8px;
+            background: var(--gb-light);
+            border-radius: 0;
             pointer-events: none;
             z-index: 1;
             width: 0%;
@@ -971,10 +946,8 @@
         /* Use on your website */
         .embed-card {
             background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius);
+            border: var(--pixel-border) solid var(--gb-dark);
             padding: calc(var(--spacing-unit) * 3);
-            box-shadow: var(--shadow-md);
         }
         .embed-row {
             display: flex;
@@ -990,48 +963,46 @@
             min-width: 260px;
             margin: 0;
             padding: calc(var(--spacing-unit) * 2);
-            border-radius: calc(var(--radius) + 2px);
-            background: rgba(0,0,0,0.35);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: var(--gb-lightest);
+            border: 2px solid var(--gb-medium);
             overflow: auto;
-            box-shadow: var(--shadow-sm);
         }
         .codeblock code {
-            font-size: 12px;
-            color: rgba(255,255,255,0.85);
+            font-size: 8px;
+            color: var(--gb-darkest);
             white-space: pre;
         }
         .embed-hint {
             margin-top: calc(var(--spacing-unit) * 1.5);
-            color: var(--color-text-dim);
-            font-size: 12px;
+            color: var(--gb-dark);
+            font-size: 8px;
         }
         .embed-hint strong {
-            color: var(--color-text);
-            font-weight: 600;
+            color: var(--gb-darkest);
         }
         .copy-toast {
             margin-left: auto;
-            font-size: 12px;
-            color: rgba(0,255,136,0.85);
+            font-size: 8px;
+            color: var(--gb-darkest);
             display: none;
         }
 
         .engine-selector {
             margin-top: 10px;
-            font-size: 0.9em;
+            font-size: 8px;
         }
         .engine-selector label {
-            color: #aaa;
+            color: var(--gb-dark);
             display: block;
             margin-bottom: 5px;
         }
         .engine-selector select {
-            background: #333;
-            color: #e0e0e0;
-            border: 1px solid #555;
-            padding: 5px 10px;
-            font-family: inherit;
+            background: var(--gb-lightest);
+            color: var(--gb-darkest);
+            border: 2px solid var(--gb-dark);
+            padding: 8px 12px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
             width: 100%;
         }
     </style>
@@ -1083,7 +1054,7 @@
                 <div id="selectedMeta" class="selected-meta">Search for a song, then choose a source to use.</div>
 
                 <!-- selected_pre_generate only -->
-                <div id="selectedExpectation" class="selected-meta" style="margin-top: 8px; color: rgba(255,255,255,0.62);">
+                <div id="selectedExpectation" class="selected-meta" style="margin-top: 8px;">
                     Some MIDI files work better than others. If the result sounds off, try another source.
                 </div>
 
