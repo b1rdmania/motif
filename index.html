@@ -120,6 +120,61 @@
             color: var(--gb-dark);
             font-size: 8px;
         }
+        .version-history {
+            margin: calc(var(--spacing-unit) * 2) 0 calc(var(--spacing-unit) * 3) 0;
+            text-align: center;
+        }
+        .version-history details {
+            display: inline-block;
+            max-width: 600px;
+        }
+        .version-history summary {
+            cursor: pointer;
+            font-size: 8px;
+            color: var(--gb-medium);
+            list-style: none;
+            padding: 8px 16px;
+            border: 2px solid var(--gb-medium);
+            background: var(--color-surface);
+            transition: all 0.15s ease;
+        }
+        .version-history summary::-webkit-details-marker { display: none; }
+        .version-history summary:hover {
+            color: var(--gb-darkest);
+            border-color: var(--gb-dark);
+            background: var(--gb-lightest);
+        }
+        .version-history details[open] summary {
+            border-bottom: none;
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
+            border-color: var(--gb-dark);
+        }
+        .version-content {
+            padding: calc(var(--spacing-unit) * 2);
+            background: var(--gb-dark);
+            border: 2px solid var(--gb-dark);
+            border-top: none;
+            text-align: left;
+        }
+        .version-item {
+            font-size: 8px;
+            color: var(--gb-light);
+            line-height: 2;
+            margin-bottom: 8px;
+        }
+        .version-item:last-child {
+            margin-bottom: 0;
+        }
+        .version-item strong {
+            color: var(--gb-lightest);
+        }
+        .version-divider {
+            height: 2px;
+            background: var(--gb-medium);
+            margin: calc(var(--spacing-unit) * 2) 0;
+            opacity: 0.5;
+        }
         .faq-link {
             background: var(--gb-lightest);
             border: var(--pixel-border) solid var(--gb-dark);
@@ -616,7 +671,7 @@
         }
 
         .wario-sprite {
-            width: 64px;
+            width: 192px;
             height: auto;
             mix-blend-mode: multiply;
             opacity: 0.7;
@@ -1069,7 +1124,28 @@
             <h1>WARIO SYNTH</h1>
             <p class="tagline"><strong>Turn any song into retro game console music</strong></p>
         </div>
-        
+
+        <div class="version-history">
+            <details>
+                <summary>v1.3 - Version History</summary>
+                <div class="version-content">
+                    <div class="version-item">
+                        <strong>v1.3</strong> - Share to X, light Game Boy palette, iOS audio fixes, local font hosting
+                    </div>
+                    <div class="version-item">
+                        <strong>v1.2</strong> - Short share links with dynamic previews, copy link button, improved MIDI selection
+                    </div>
+                    <div class="version-item">
+                        <strong>v1.1</strong> - Search MIDI files, generate Game Boy style music, basic playback with progress bar
+                    </div>
+                    <div class="version-divider"></div>
+                    <div class="version-item">
+                        <strong>How it works:</strong> The Wario Synthesis Engine analyses MIDI files to identify melody, bass, and chord tracks. It then resynthesises each part using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip: two pulse wave channels, one wave channel, and one noise channel. All processing runs client-side in your browser - no server-side audio generation. Built with TypeScript, Vite, and Claude Code.
+                    </div>
+                </div>
+            </details>
+        </div>
+
         <div class="controls">
             <input type="text" id="songInput" placeholder="Search for a song…" />
             <button id="searchBtn" class="primary">Search</button>
@@ -1165,27 +1241,6 @@
                 </details>
             </div>
 
-            <div class="section" id="embedSection" data-not-live="true" style="display:none;">
-                <div class="section-header">
-                    <h3 class="section-title">Use on your website <span style="color: rgba(255,255,255,0.5); font-weight: 500;">(Coming soon)</span></h3>
-                    <p class="section-subtitle">Embeddable widget + multiple synth engines.</p>
-                </div>
-                <div class="divider"></div>
-
-                <div class="embed-card" style="opacity:0.55; filter: grayscale(20%); position:relative;">
-                    <div style="position:absolute; inset:0; background: linear-gradient(90deg, rgba(0,0,0,0.35), rgba(0,0,0,0)); pointer-events:none;"></div>
-                    <div class="embed-row">
-                        <pre class="codeblock"><code id="embedCode">&lt;iframe src=&quot;...&quot;&gt;&lt;/iframe&gt;</code></pre>
-                        <div style="display:flex; flex-direction:column; gap: calc(var(--spacing-unit) * 1.5);">
-                            <button id="copyEmbedBtn" class="primary" type="button" disabled>Copy embed</button>
-                            <span id="copyToast" class="copy-toast">Copied</span>
-                        </div>
-                    </div>
-                    <div class="embed-hint">
-                        <strong>Note:</strong> This is not live yet. We’ll ship a dedicated <code>/embed</code> widget + style presets next.
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
