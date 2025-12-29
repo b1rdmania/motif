@@ -789,7 +789,7 @@ class MotifApp {
     }
 
     // Compose tweet text - URL will be inserted by Twitter between the two parts
-    const tweetText = `I made ${title} Game Boy version.\n\nMade in Wario Synth by @b1rdmania`;
+    const tweetText = `I made ${title} Game Boy version.\n\n16-Bit Midi Wario Synth by @b1rdmania`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
 
     window.open(twitterUrl, '_blank', 'width=550,height=420');
