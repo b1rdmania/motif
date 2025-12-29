@@ -220,8 +220,8 @@ app.get('/s/:code', async (req, res) => {
     const imageUrl = origin ? `${origin}/wario-sprite.png` : '/wario-sprite.png';
 
     const sharedTitle = (payload.title || '').trim();
-    const ogTitle = sharedTitle ? `${sharedTitle} - WARIO SYNTH` : 'WARIO SYNTH';
-    const ogDescription = sharedTitle ? 'I made this in WARIO SYNTH' : 'Tap to play this Gameboy tune';
+    const ogTitle = sharedTitle || 'WARIO SYNTH';
+    const ogDescription = 'I made this in WARIO SYNTH';
 
     const html = `<!doctype html>
 <html lang="en">
