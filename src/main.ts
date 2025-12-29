@@ -58,7 +58,8 @@ class MotifApp {
   private iosAudioState!: HTMLElement;
 
   private copyLinkBtn!: HTMLButtonElement;
-  private copyLinkConfirm!: HTMLElement;
+  private shareLinkBox!: HTMLElement;
+  private shareLinkInput!: HTMLInputElement;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -135,7 +136,8 @@ class MotifApp {
     this.motifDuration = document.getElementById('motifDuration')!;
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
-    this.copyLinkConfirm = document.getElementById('copyLinkConfirm') as HTMLElement;
+    this.shareLinkBox = document.getElementById('shareLinkBox') as HTMLElement;
+    this.shareLinkInput = document.getElementById('shareLinkInput') as HTMLInputElement;
 
     // iOS audio unlock UI (Motif)
     this.iosAudioBanner = document.getElementById('iosAudioBanner')!;
@@ -183,7 +185,7 @@ class MotifApp {
     this.motifProgressBar.addEventListener('input', seekHandler);
     this.motifProgressBar.addEventListener('change', seekHandler);
 
-    this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
+    this.copyLinkBtn.addEventListener('click', () => this.handleCopyLink());
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
@@ -737,14 +739,12 @@ class MotifApp {
     }
   }
 
-  private async handleCopyLink(): Promise<void> {
+  private handleCopyLink(): void {
     if (!this.hasGenerated) return;
     const result = this.searchResults[this.selectedResultIndex];
     if (!result?.midiUrl) return;
 
-    const title = this.cleanTitleForShare(result.title || 'WARIO SYNTH');
-
-    // Build share URL immediately (no async before copy/share!)
+    // Build share URL
     let shareUrl: string;
     if (result.source === 'bitmidi') {
       const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
@@ -757,42 +757,10 @@ class MotifApp {
       shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}`;
     }
 
-    // On mobile: use native share sheet (better UX)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${title} - WARIO SYNTH`,
-          url: shareUrl
-        });
-        this.copyLinkConfirm.style.display = 'inline';
-        this.copyLinkConfirm.textContent = 'Shared!';
-        window.setTimeout(() => {
-          this.copyLinkConfirm.style.display = 'none';
-        }, 2000);
-        return;
-      } catch {
-        // User cancelled or share failed - fall through to clipboard
-      }
-    }
-
-    // Desktop: copy to clipboard
-    try {
-      this.copyLinkBtn.disabled = true;
-      await navigator.clipboard.writeText(shareUrl);
-      this.copyLinkConfirm.style.display = 'inline';
-      this.copyLinkConfirm.textContent = 'Link copied!';
-      window.setTimeout(() => {
-        this.copyLinkConfirm.style.display = 'none';
-      }, 3000);
-    } catch (err) {
-      this.copyLinkConfirm.style.display = 'inline';
-      this.copyLinkConfirm.textContent = 'Copy failed';
-      window.setTimeout(() => {
-        this.copyLinkConfirm.style.display = 'none';
-      }, 3000);
-    } finally {
-      this.copyLinkBtn.disabled = false;
-    }
+    // Show the link in a text box for easy copying
+    this.shareLinkInput.value = shareUrl;
+    this.shareLinkBox.style.display = 'block';
+    this.shareLinkInput.select();
   }
 
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
