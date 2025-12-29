@@ -292,7 +292,11 @@ class MotifApp {
 
   private async handleSearch(): Promise<void> {
     const songName = this.songInput.value.trim();
-    if (!songName) return;
+    if (!songName) {
+      this.updateStatus('Enter a song name to search.');
+      this.songInput.focus();
+      return;
+    }
 
     // Stop any playing Motif audio
     this.handleMotifStop();
