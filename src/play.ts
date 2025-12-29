@@ -1,6 +1,7 @@
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { MotifEngine } from './core/MotifEngine';
+import { unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
 
 function qs(id: string): HTMLElement {
@@ -279,6 +280,9 @@ async function main(): Promise<void> {
     }
 
     try {
+      // Unlock audio for iOS - must be called from user gesture
+      await unlockAudio();
+
       // First play generates the artifact (deterministically from MIDI structure).
       if (!isGenerated) {
         // Match main page "Generate & Play": procedural role-mapping → existing SynthesisEngine.
