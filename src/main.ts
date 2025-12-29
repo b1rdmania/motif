@@ -147,20 +147,22 @@ class MotifApp {
   }
 
   private setupEventListeners(): void {
-    this.searchBtn.addEventListener('click', () => {
-      console.log('[MotifApp] Search button clicked');
+    const doSearch = () => {
+      console.log('[MotifApp] Search triggered');
+      // Immediately show feedback so user knows click registered
+      this.status.textContent = 'Starting search...';
       this.handleSearch().catch(err => {
         console.error('[MotifApp] Search error:', err);
         this.updateStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
       });
-    });
+    };
+
+    // Use both click and touchend for iOS compatibility
+    this.searchBtn.addEventListener('click', doSearch);
 
     this.songInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        this.handleSearch().catch(err => {
-          console.error('[MotifApp] Search error:', err);
-          this.updateStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        });
+        doSearch();
       }
     });
 
