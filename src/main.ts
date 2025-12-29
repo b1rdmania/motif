@@ -327,7 +327,7 @@ class MotifApp {
 
       this.displayResults();
       this.setState('results');
-      this.updateStatus('Pick a source to use.');
+      this.updateStatus('Pick a midi source. Try another if it sounds bad, some work better than others.');
       this.updateIOSAudioBanner();
 
     } catch (error) {
@@ -786,7 +786,7 @@ class MotifApp {
     // results - keep visible in all states except idle so user can pick a different source
     const hasResults = state === 'results' || state === 'selected' || state === 'generated';
     this.resultsSection.classList.toggle('visible', hasResults);
-    this.chooseHelper.style.display = state === 'results' ? 'block' : 'none';
+    this.chooseHelper.style.display = 'none';
 
     // selected card
     const hasSelection = state === 'selected' || state === 'generated';
