@@ -69,6 +69,7 @@ class MotifApp {
   private copyToast: HTMLElement | null = null;
 
   // FAQ modal
+  private faqBtnTop: HTMLButtonElement | null = null;
   private faqBtnFooter: HTMLButtonElement | null = null;
   private newSearchBtn: HTMLButtonElement | null = null;
   private faqBackdrop!: HTMLElement;
@@ -152,6 +153,7 @@ class MotifApp {
     this.copyToast = document.getElementById('copyToast');
 
     // FAQ modal
+    this.faqBtnTop = document.getElementById('faqBtnTop') as HTMLButtonElement | null;
     this.faqBtnFooter = document.getElementById('faqBtnFooter') as HTMLButtonElement | null;
     this.newSearchBtn = document.getElementById('newSearchBtn') as HTMLButtonElement | null;
     this.faqBackdrop = document.getElementById('faqModalBackdrop')!;
@@ -197,6 +199,7 @@ class MotifApp {
     this.enableAudioBtn.addEventListener('touchend', enable, { passive: true });
 
     // FAQ
+    this.faqBtnTop?.addEventListener('click', () => this.openFaq());
     this.faqBtnFooter?.addEventListener('click', () => this.openFaq());
     this.newSearchBtn?.addEventListener('click', () => this.resetToNewSearch());
     this.faqCloseBtn.addEventListener('click', () => this.closeFaq());

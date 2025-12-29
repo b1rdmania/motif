@@ -115,6 +115,21 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
         }
+        .hero-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing-unit) * 2);
+            flex-wrap: wrap;
+        }
+        .hero-top h1 {
+            margin: 0;
+        }
+        .version-tag {
+            font-size: 10px;
+            color: var(--gb-medium);
+            font-weight: normal;
+        }
         .hero .tagline {
             margin: calc(var(--spacing-unit) * 2) 0 0 0;
             color: var(--gb-dark);
@@ -1121,38 +1136,20 @@
 <body>
     <div class="container">
         <div class="hero">
-            <h1>WARIO SYNTH</h1>
+            <div class="hero-top">
+                <h1>WARIO SYNTH <span class="version-tag">v1.3</span></h1>
+                <button id="faqBtnTop" class="faq-link" type="button">FAQ</button>
+            </div>
             <p class="tagline"><strong>Turn any song into retro game console music</strong></p>
-        </div>
-
-        <div class="version-history">
-            <details>
-                <summary>v1.3 - Version History</summary>
-                <div class="version-content">
-                    <div class="version-item">
-                        <strong>v1.3</strong> - Share to X, light Game Boy palette, iOS audio fixes, local font hosting
-                    </div>
-                    <div class="version-item">
-                        <strong>v1.2</strong> - Short share links with dynamic previews, copy link button, improved MIDI selection
-                    </div>
-                    <div class="version-item">
-                        <strong>v1.1</strong> - Search MIDI files, generate Game Boy style music, basic playback with progress bar
-                    </div>
-                    <div class="version-divider"></div>
-                    <div class="version-item">
-                        <strong>How it works:</strong> The Wario Synthesis Engine analyses MIDI files to identify melody, bass, and chord tracks. It then resynthesises each part using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip: two pulse wave channels, one wave channel, and one noise channel. All processing runs client-side in your browser - no server-side audio generation. Built with TypeScript, Vite, and Claude Code.
-                    </div>
-                </div>
-            </details>
         </div>
 
         <div class="controls">
             <input type="text" id="songInput" placeholder="Search for a song…" />
             <button id="searchBtn" class="primary">Search</button>
         </div>
-        
+
         <div id="status">Ready. Enter a song name to search for MIDI files.</div>
-        
+
         <div id="resultsSection" class="results-section">
             <div id="chooseHelper" class="chooser-helper" style="display:none;">
                 <p>Pick a source and generate. If it sounds off, try another.</p>
@@ -1249,6 +1246,27 @@
         <button id="newSearchBtn" class="faq-link" type="button">New search</button>
     </div>
 
+    <div class="version-history">
+        <details>
+            <summary>Version History</summary>
+            <div class="version-content">
+                <div class="version-item">
+                    <strong>v1.3</strong> - Share to X, light Game Boy palette, iOS audio fixes, local font hosting
+                </div>
+                <div class="version-item">
+                    <strong>v1.2</strong> - Short share links with dynamic previews, copy link button, improved MIDI selection
+                </div>
+                <div class="version-item">
+                    <strong>v1.1</strong> - Search MIDI files, generate Game Boy style music, basic playback with progress bar
+                </div>
+                <div class="version-divider"></div>
+                <div class="version-item">
+                    <strong>How it works:</strong> The Wario Synthesis Engine analyses MIDI files to identify melody, bass, and chord tracks. It then resynthesises each part using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip: two pulse wave channels, one wave channel, and one noise channel. All processing runs client-side in your browser - no server-side audio generation. Built with TypeScript, Vite, and Claude Code.
+                </div>
+            </div>
+        </details>
+    </div>
+
     <div class="footer-mascot">
         <img src="/wario-sprite.png" alt="Wario" class="wario-sprite" />
     </div>
@@ -1277,8 +1295,8 @@
                         <p>Turn any song into retro Gameboy-style synth. Search a track, preview the MIDI, hit Generate.</p>
                     </div>
                     <div class="faq-item">
-                        <h4>How does it work?</h4>
-                        <p>We scrape MIDI files from the web, analyse the structure (melody, bass, chords), then resynthesise with the Wario Synthesis Engine via Web Audio.</p>
+                        <h4>The Wario Synthesis Engine</h4>
+                        <p>Analyses MIDI files to identify melody, bass, and chord tracks. It then resynthesises each part using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip: two pulse wave channels, one wave channel, and one noise channel. All processing runs client-side in your browser.</p>
                     </div>
                     <div class="faq-item">
                         <h4>Why "Enable Audio" on iPhone?</h4>
