@@ -55,6 +55,8 @@ class MotifApp {
 
   private copyLinkBtn!: HTMLButtonElement;
   private shareToXBtn!: HTMLButtonElement;
+  private shareFallback!: HTMLElement;
+  private shareFallbackInput!: HTMLInputElement;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -127,6 +129,8 @@ class MotifApp {
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
     this.shareToXBtn = document.getElementById('shareToXBtn') as HTMLButtonElement;
+    this.shareFallback = document.getElementById('shareFallback')!;
+    this.shareFallbackInput = document.getElementById('shareFallbackInput') as HTMLInputElement;
 
     // iOS audio unlock UI (Motif)
     this.iosAudioBanner = document.getElementById('iosAudioBanner')!;
@@ -745,11 +749,21 @@ class MotifApp {
     }
 
     // Show feedback
-    const originalText = this.copyLinkBtn.textContent;
-    this.copyLinkBtn.textContent = copied ? 'Copied!' : 'Failed';
-    setTimeout(() => {
-      this.copyLinkBtn.textContent = originalText;
-    }, 1500);
+    if (copied) {
+      const originalText = this.copyLinkBtn.textContent;
+      this.copyLinkBtn.textContent = 'Copied!';
+      this.shareFallback.style.display = 'none';
+      setTimeout(() => {
+        this.copyLinkBtn.textContent = originalText;
+      }, 1500);
+    } else {
+      // Show fallback with the link for manual copying
+      this.shareFallbackInput.value = shareUrl;
+      this.shareFallback.style.display = 'block';
+      // Select the text so user can easily copy
+      this.shareFallbackInput.focus();
+      this.shareFallbackInput.select();
+    }
   }
 
   private async handleShareToX(): Promise<void> {
@@ -818,6 +832,8 @@ class MotifApp {
     this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
     this.shareToXBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
     this.shareToXBtn.disabled = !(state === 'generated' && this.hasGenerated);
+    // Hide share fallback when state changes
+    this.shareFallback.style.display = 'none';
 
     // New search button only after generation
     if (this.newSearchBtn) {
