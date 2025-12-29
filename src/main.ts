@@ -742,55 +742,49 @@ class MotifApp {
     const result = this.searchResults[this.selectedResultIndex];
     if (!result?.midiUrl) return;
 
-    const title = this.cleanTitleForShare(result.title || 'MOTIF');
+    const title = this.cleanTitleForShare(result.title || 'WARIO SYNTH');
 
-    // Prefer backend shortlink /s/<code>
-    let shareUrl: string | null = null;
-    try {
-      let payload: any = null;
-      if (result.source === 'bitmidi') {
-        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
-        if (m?.[1]) payload = { src: 'bitmidi', id: m[1], title };
-      }
-      if (!payload) payload = { u: result.midiUrl, title };
-
-      const resp = await fetch('/api/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data?.url) shareUrl = `${window.location.origin}${data.url}`;
-      }
-    } catch {
-      // fall through
-    }
-
-    // Fallback: direct /play link (still works, just longer)
-    if (!shareUrl) {
-      if (result.source === 'bitmidi') {
-        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
-        if (m?.[1]) {
-          shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}`;
-        }
-      }
-      if (!shareUrl) {
+    // Build share URL immediately (no async before copy/share!)
+    let shareUrl: string;
+    if (result.source === 'bitmidi') {
+      const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
+      if (m?.[1]) {
+        shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}`;
+      } else {
         shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}`;
       }
+    } else {
+      shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}`;
     }
 
+    // On mobile: use native share sheet (better UX)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${title} - WARIO SYNTH`,
+          url: shareUrl
+        });
+        this.copyLinkConfirm.style.display = 'inline';
+        this.copyLinkConfirm.textContent = 'Shared!';
+        window.setTimeout(() => {
+          this.copyLinkConfirm.style.display = 'none';
+        }, 2000);
+        return;
+      } catch {
+        // User cancelled or share failed - fall through to clipboard
+      }
+    }
+
+    // Desktop: copy to clipboard
     try {
       this.copyLinkBtn.disabled = true;
-      await this.copyToClipboard(shareUrl);
-      // Show confirmation
+      await navigator.clipboard.writeText(shareUrl);
       this.copyLinkConfirm.style.display = 'inline';
       this.copyLinkConfirm.textContent = 'Link copied!';
       window.setTimeout(() => {
         this.copyLinkConfirm.style.display = 'none';
       }, 3000);
     } catch (err) {
-      // Show error feedback
       this.copyLinkConfirm.style.display = 'inline';
       this.copyLinkConfirm.textContent = 'Copy failed';
       window.setTimeout(() => {
