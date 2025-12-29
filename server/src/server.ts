@@ -217,7 +217,7 @@ app.get('/s/:code', async (req, res) => {
     const origin = getOrigin(req);
     const shortUrl = origin ? `${origin}/s/${encodeURIComponent(code)}` : `/s/${encodeURIComponent(code)}`;
     const playUrl = origin ? `${origin}${dest}` : dest;
-    const imageUrl = origin ? `${origin}/wario-sprite.png` : '/wario-sprite.png';
+    const imageUrl = origin ? `${origin}/wario-synth.png` : '/wario-synth.png';
 
     const sharedTitle = (payload.title || '').trim();
     const ogTitle = sharedTitle || 'WARIO SYNTH';
@@ -234,8 +234,8 @@ app.get('/s/:code', async (req, res) => {
     <meta property="og:title" content="${escapeHtml(ogTitle)}" />
     <meta property="og:description" content="${escapeHtml(ogDescription)}" />
     <meta property="og:image" content="${escapeHtml(imageUrl)}" />
-    <meta property="og:image:width" content="160" />
-    <meta property="og:image:height" content="160" />
+    <meta property="og:image:width" content="1472" />
+    <meta property="og:image:height" content="704" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${escapeHtml(shortUrl)}" />
 
