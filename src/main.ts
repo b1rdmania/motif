@@ -509,8 +509,11 @@ class MotifApp {
       await unlockAudio();
       this.updateIOSAudioBanner();
 
+      // Preserve scroll position during state change
+      const scrollY = window.scrollY;
       // Once generation starts: lock into generated experience mode.
       this.setState('generated');
+      window.scrollTo(0, scrollY);
       this.updateStatus('Generating…');
       this.motifBtn.disabled = true;
       this.playPauseBtn.disabled = true;
@@ -538,7 +541,9 @@ class MotifApp {
       this.updateStatus('');
       this.hasGenerated = true;
       // Refresh generated state now that generation succeeded (enables Copy link, etc.)
+      const scrollYEnd = window.scrollY;
       this.setState('generated');
+      window.scrollTo(0, scrollYEnd);
     } catch (error) {
       this.updateStatus(`Motif error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.motifBtn.disabled = false;
