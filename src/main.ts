@@ -345,7 +345,6 @@ class MotifApp {
       row.innerHTML = `
         <td>${this.cleanSongTitle(result.title)}</td>
         <td class="source-col">${this.formatSourceLabel(result.source)}</td>
-        <td class="duration-col">${this.formatDuration(result.parsed?.durationSec)}</td>
         <td class="action-col">
           <div style="display:flex; gap: 10px; justify-content: flex-end; align-items:center;">
             <button type="button" class="row-use-btn">Use</button>
