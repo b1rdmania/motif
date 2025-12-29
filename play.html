@@ -20,239 +20,211 @@
     <meta name="twitter:title" content="Check out this Gameboy tune — WARIO SYNTH" />
     <meta name="twitter:description" content="Someone shared a song with you. Press play to hear it through the Wario Synthesis Engine — then generate your own." />
     <meta name="twitter:image" content="https://motif-self.vercel.app/wario.png" />
+
+    <!-- Pixel Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
     <style>
       :root {
-        --color-bg: #0a0a0a;
-        --color-surface: #141414;
-        --color-surface-elevated: #1a1a1a;
-        --color-border: #2a2a2a;
-        --color-text: #e8e8e8;
-        --color-text-dim: #999;
-        --color-accent-primary: #00ff88;
-        --color-accent-secondary: #ffaa44;
+        /* Game Boy LCD palette */
+        --gb-lightest: #9BBC0F;
+        --gb-light: #8BAC0F;
+        --gb-dark: #306230;
+        --gb-darkest: #0F380F;
+
+        /* Semantic mapping */
+        --color-bg: var(--gb-darkest);
+        --color-surface: var(--gb-dark);
+        --color-border: var(--gb-light);
+        --color-text: var(--gb-lightest);
+        --color-text-dim: var(--gb-light);
+
         --spacing-unit: 8px;
-        --radius: 8px;
-        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
-        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
-        --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
-        --glow-primary: 0 0 20px rgba(0, 255, 136, 0.3);
-        --glow-secondary: 0 0 20px rgba(255, 170, 68, 0.3);
+        --pixel-border: 4px;
       }
 
       * {
         box-sizing: border-box;
+        image-rendering: pixelated;
       }
 
       body {
         margin: 0;
         padding: calc(var(--spacing-unit) * 3);
-        background:
-          radial-gradient(1000px 600px at 50% -150px, rgba(0, 255, 136, 0.12), transparent 60%),
-          radial-gradient(800px 600px at 110% 20%, rgba(255, 170, 68, 0.08), transparent 55%),
-          var(--color-bg);
+        background: var(--color-bg);
         color: var(--color-text);
-        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
+        font-family: 'Press Start 2P', monospace;
+        line-height: 2;
+        font-size: 10px;
+        -webkit-font-smoothing: none;
+        -moz-osx-font-smoothing: unset;
+      }
+
+      /* LCD Screen Effect */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.1) 0px,
+          rgba(0, 0, 0, 0.1) 2px,
+          transparent 2px,
+          transparent 4px
+        );
+        pointer-events: none;
+        z-index: 9999;
       }
 
       .container {
-        max-width: 960px;
+        max-width: 600px;
         margin: 0 auto;
       }
 
-      h1.page-title {
-        color: var(--color-accent-primary);
+      /* Hero header */
+      .hero {
         text-align: center;
         margin: 0 0 calc(var(--spacing-unit) * 3) 0;
-        font-size: 2em;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        text-shadow: var(--glow-primary);
+        padding: calc(var(--spacing-unit) * 2);
+        border: var(--pixel-border) solid var(--gb-light);
+        background: var(--gb-dark);
       }
 
-      .tagline {
-        text-align: center;
-        margin: 0 0 calc(var(--spacing-unit) * 3) 0;
-        color: var(--color-text-dim);
-      }
-
-      .section {
-        margin-top: calc(var(--spacing-unit) * 5);
-      }
-
-      .section-header {
-        margin: 0 0 calc(var(--spacing-unit) * 2) 0;
-      }
-
-      .section-title {
+      .hero h1 {
+        color: var(--gb-lightest);
         margin: 0;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
+        font-size: 16px;
+        font-weight: normal;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--color-text);
       }
 
-      .section-subtitle {
-        margin: calc(var(--spacing-unit) / 2) 0 0 0;
-        font-size: 13px;
-        color: var(--color-text-dim);
+      /* Main card */
+      .player-card {
+        background: var(--gb-dark);
+        padding: calc(var(--spacing-unit) * 3);
+        border: var(--pixel-border) solid var(--gb-light);
       }
 
-      .divider {
-        height: 1px;
-        margin: 0 0 calc(var(--spacing-unit) * 3) 0;
-        background: linear-gradient(90deg, transparent, var(--color-border), transparent);
-      }
-
-      /* Share page: no status box */
-
-      button {
-        background: var(--color-surface);
-        color: var(--color-text);
-        border: 1px solid var(--color-border);
-        padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
-        border-radius: var(--radius);
-        cursor: pointer;
-        font-family: inherit;
+      /* Song title */
+      .song-title {
+        margin: 0 0 calc(var(--spacing-unit) * 2) 0;
         font-size: 14px;
-        font-weight: 500;
-        transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: var(--shadow-sm);
+        line-height: 1.8;
+        font-weight: normal;
+        color: var(--gb-lightest);
+        word-break: break-word;
+      }
+
+      .song-artist {
+        display: none;
+        margin-top: calc(var(--spacing-unit) * -1);
+        margin-bottom: calc(var(--spacing-unit) * 2);
+        font-size: 8px;
+        color: var(--gb-light);
+      }
+
+      /* Transform description */
+      .transform-line {
+        margin: 0 0 calc(var(--spacing-unit) * 3) 0;
+        color: var(--gb-light);
+        font-size: 8px;
+      }
+
+      /* Buttons */
+      button {
+        background: var(--gb-dark);
+        color: var(--gb-lightest);
+        border: var(--pixel-border) solid var(--gb-light);
+        padding: 12px 16px;
+        border-radius: 0;
+        cursor: pointer;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        text-transform: uppercase;
+        box-shadow:
+          inset -4px -4px 0 var(--gb-darkest),
+          inset 4px 4px 0 var(--gb-light);
+        transition: none;
       }
 
       button:hover:not(:disabled) {
-        background: var(--color-surface-elevated);
-        transform: translateY(-1px);
-        border-color: #444;
-        box-shadow: var(--shadow-md);
+        background: var(--gb-light);
+        color: var(--gb-darkest);
+        box-shadow:
+          inset 4px 4px 0 var(--gb-darkest),
+          inset -4px -4px 0 var(--gb-lightest);
       }
 
       button:active:not(:disabled) {
-        transform: translateY(0);
-        box-shadow: var(--shadow-sm);
+        box-shadow: inset 4px 4px 0 var(--gb-darkest);
       }
 
       button:disabled {
-        opacity: 0.4;
+        opacity: 0.5;
         cursor: not-allowed;
       }
 
       button.primary {
-        background: var(--color-accent-primary);
-        color: #000;
-        border-color: rgba(0, 255, 136, 0.55);
-        font-weight: 700;
+        background: var(--gb-lightest);
+        color: var(--gb-darkest);
+        border-color: var(--gb-lightest);
+        box-shadow:
+          inset -4px -4px 0 var(--gb-light),
+          inset 4px 4px 0 #c5d82f;
       }
 
       button.primary:hover:not(:disabled) {
-        box-shadow: var(--glow-primary), var(--shadow-md);
+        background: var(--gb-light);
+        color: var(--gb-darkest);
       }
 
-      .motif-stage {
-        background: var(--color-surface-elevated);
-        padding: calc(var(--spacing-unit) * 3);
-        border-radius: var(--radius);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: var(--shadow-lg);
-      }
-
-      .motif-grid {
+      /* Play button container */
+      .play-container {
         display: flex;
-        flex-direction: column;
-        gap: 16px;
+        justify-content: center;
+        margin: calc(var(--spacing-unit) * 2) 0;
       }
 
-      .motif-header {
-        margin-bottom: 6px;
-      }
-
-      .motif-title {
-        margin: 0;
-        color: var(--color-accent-secondary);
-        text-shadow: 0 0 18px rgba(255, 170, 68, 0.15);
-        font-size: 16px;
-        font-weight: 700;
-      }
-
-      .motif-kicker {
-        font-size: 0.85em;
-        color: #b6b6b6;
-        margin: 6px 0 0 0;
-        max-width: 70ch;
-      }
-
-      .motif-controls {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .motif-controls button.primary {
-        flex: 1;
-        min-width: 180px;
-        padding: 12px 16px;
-      }
-
-      .volume-control {
-        margin-top: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 1;
+      .play-container button {
         min-width: 200px;
+        padding: 14px 20px;
+        font-size: 10px;
       }
 
-      .volume-control label {
-        font-size: 0.85em;
-        color: #aaa;
-        min-width: 55px;
-      }
-
-      input[type="range"] {
-        flex: 1;
-        margin: 0;
-      }
-
-      /* Share page: single CTA only */
-
-      /* Progress (matches main page style) */
+      /* Progress bar */
       .progress-container {
-        margin-top: 8px;
-        padding-top: 16px;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        display: none;
+        margin-top: calc(var(--spacing-unit) * 2);
+        padding-top: calc(var(--spacing-unit) * 2);
+        border-top: 2px solid var(--gb-darkest);
       }
 
       .progress-time {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 0.85em;
-        color: rgba(255,255,255,0.22);
-        transition: color 120ms ease;
-      }
-      .progress-time.active {
-        color: rgba(255,255,255,0.55);
+        margin-bottom: calc(var(--spacing-unit));
+        font-size: 8px;
+        color: var(--gb-light);
       }
 
       .progress-bar-wrapper {
         position: relative;
-        height: 44px;
+        height: 20px;
         display: flex;
         align-items: center;
-        padding: calc(var(--spacing-unit) * 2) 0;
+        background: var(--gb-darkest);
+        border: 2px solid var(--gb-light);
+        padding: 4px;
       }
 
       .progress-bar {
         width: 100%;
-        height: 6px;
+        height: 8px;
         -webkit-appearance: none;
         appearance: none;
         background: transparent;
-        border-radius: 3px;
         outline: none;
         cursor: pointer;
         position: relative;
@@ -260,121 +232,150 @@
       }
 
       .progress-bar::-webkit-slider-runnable-track {
-        height: 6px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
+        height: 8px;
+        background: var(--gb-darkest);
       }
 
       .progress-bar::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--color-accent-primary);
+        width: 12px;
+        height: 12px;
+        background: var(--gb-lightest);
         cursor: pointer;
-        box-shadow: 0 0 10px rgba(0, 255, 136, 0.28), var(--shadow-sm);
-        margin-top: -7px;
-        transition: transform 100ms ease;
-      }
-
-      .progress-bar:active::-webkit-slider-thumb {
-        transform: scale(1.15);
+        border: none;
       }
 
       .progress-bar::-moz-range-track {
-        height: 6px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
+        height: 8px;
+        background: var(--gb-darkest);
       }
 
       .progress-bar::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--color-accent-primary);
+        width: 12px;
+        height: 12px;
+        background: var(--gb-lightest);
         cursor: pointer;
         border: none;
-        box-shadow: 0 0 10px rgba(0, 255, 136, 0.28), var(--shadow-sm);
+        border-radius: 0;
       }
 
       .progress-fill {
         position: absolute;
-        left: 0;
+        left: 4px;
         top: 50%;
         transform: translateY(-50%);
-        height: 6px;
-        background: linear-gradient(90deg, rgba(0,255,136,0.95), rgba(0,255,136,0.45));
-        border-radius: 3px;
+        height: 8px;
+        background: var(--gb-lightest);
         pointer-events: none;
         z-index: 1;
         width: 0%;
-        transition: width 0.1s linear;
       }
 
+      /* Meta block */
       .meta-block {
-        margin-top: 8px;
-        font-size: 13px;
-        color: rgba(255,255,255,0.58);
-        line-height: 1.45;
-        max-width: 72ch;
+        margin-top: calc(var(--spacing-unit) * 2);
+        padding-top: calc(var(--spacing-unit) * 2);
+        border-top: 2px solid var(--gb-darkest);
+        font-size: 8px;
+        color: var(--gb-light);
+        line-height: 2.2;
       }
 
-      /* No volume control on share page */
+      /* CTA link */
+      .cta-link {
+        display: block;
+        margin-top: calc(var(--spacing-unit) * 3);
+        text-align: center;
+      }
+
+      .cta-link a {
+        display: inline-block;
+        color: var(--gb-lightest);
+        text-decoration: none;
+        font-size: 10px;
+        padding: 12px 16px;
+        border: var(--pixel-border) solid var(--gb-light);
+        background: var(--gb-dark);
+        box-shadow:
+          inset -4px -4px 0 var(--gb-darkest),
+          inset 4px 4px 0 var(--gb-light);
+      }
+
+      .cta-link a:hover {
+        background: var(--gb-light);
+        color: var(--gb-darkest);
+        box-shadow:
+          inset 4px 4px 0 var(--gb-darkest),
+          inset -4px -4px 0 var(--gb-lightest);
+      }
+
+      /* Footer */
+      .footer {
+        margin-top: calc(var(--spacing-unit) * 4);
+        text-align: center;
+        font-size: 8px;
+        color: var(--gb-light);
+      }
+
+      .footer a {
+        color: var(--gb-lightest);
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="motif-stage">
-        <div class="motif-grid" style="gap: 14px;">
-          <!-- 1. Source Song Title -->
-          <h1 id="songTitle" style="margin:0; font-size: 28px; line-height: 1.15; font-weight: 800; color: var(--color-text); letter-spacing: 0.01em;">
-            Loading…
-          </h1>
-          <div id="songArtist" style="display:none; margin-top: -4px; font-size: 14px; color: rgba(255,255,255,0.62);"></div>
+      <div class="hero">
+        <h1>WARIO SYNTH</h1>
+      </div>
 
-          <!-- 2. Transformation Description -->
-          <p id="transformLine" style="margin:0; color: rgba(255,255,255,0.72); font-size: 14px;">
-            Reimagined as classic game-console music
-          </p>
+      <div class="player-card">
+        <!-- Song Title -->
+        <h2 id="songTitle" class="song-title">Loading...</h2>
+        <div id="songArtist" class="song-artist"></div>
 
-          <!-- 3. Single Play/Pause Control -->
-          <div style="display:flex; justify-content:center; margin-top: 16px; margin-bottom: 16px;">
-            <button id="playToggleBtn" class="primary" disabled style="min-width: 240px; padding: 14px 18px; font-size: 15px;">
-              Play
-            </button>
+        <!-- Transformation Description -->
+        <p id="transformLine" class="transform-line">
+          Reimagined as classic game-console music
+        </p>
+
+        <!-- Play/Pause Control -->
+        <div class="play-container">
+          <button id="playToggleBtn" class="primary" disabled>
+            Play
+          </button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container" id="playProgressContainer">
+          <div class="progress-time" id="playTimeRow">
+            <span id="playCurrentTime">0:00</span>
+            <span id="playDuration"></span>
           </div>
-
-          <!-- 4. Progress Bar -->
-          <div class="progress-container" id="playProgressContainer" style="display:block; margin-top: 0; padding-top: 12px;">
-            <div class="progress-time" id="playTimeRow">
-              <span id="playCurrentTime">0:00</span>
-              <span id="playDuration"></span>
-            </div>
-            <div class="progress-bar-wrapper" style="padding: 10px 0;">
-              <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
-              <div id="playProgressFill" class="progress-fill"></div>
-            </div>
-          </div>
-
-          <!-- 5/6. Metadata (quiet block) -->
-          <div class="meta-block" id="metaBlock">
-            Procedural playback from MIDI structure.<br />
-            Rendered using the Wario Synthesis Engine.
-          </div>
-
-          <!-- 7. Primary CTA (single) -->
-          <div style="margin-top: 18px;">
-            <a id="generateOwn" href="/" style="display:inline-block; color: rgba(0,255,136,0.92); text-decoration:none; font-weight: 650;">
-              Generate your own →
-            </a>
+          <div class="progress-bar-wrapper">
+            <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
+            <div id="playProgressFill" class="progress-fill"></div>
           </div>
         </div>
+
+        <!-- Metadata -->
+        <div class="meta-block" id="metaBlock">
+          Procedural playback from MIDI structure.<br />
+          Rendered using the Wario Synthesis Engine.
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-link">
+        <a id="generateOwn" href="/">Generate your own</a>
+      </div>
+
+      <div class="footer">
+        <a href="/">WARIO SYNTH</a> — Turn any song into retro game console music
       </div>
     </div>
 
     <script type="module" src="/src/play.ts"></script>
   </body>
 </html>
-
-
