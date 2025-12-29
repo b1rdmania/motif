@@ -266,6 +266,10 @@ async function main(): Promise<void> {
   playBtn.addEventListener('click', async () => {
     if (!events) return;
 
+    // CRITICAL: On iOS, we must interact with AudioContext synchronously
+    // in the user gesture before any async work. Fire off unlock immediately.
+    const unlockPromise = unlockAudio();
+
     // Pause (implemented as stop + remembered position)
     if (isPlaying) {
       showTimeRow();
@@ -284,8 +288,8 @@ async function main(): Promise<void> {
     }
 
     try {
-      // Unlock audio for iOS - must be called from user gesture
-      await unlockAudio();
+      // Wait for unlock to complete
+      await unlockPromise;
 
       // First play generates the artifact (deterministically from MIDI structure).
       if (!isGenerated) {

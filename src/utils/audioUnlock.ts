@@ -60,17 +60,14 @@ async function doUnlock(): Promise<AudioContext> {
     return ctx;
   }
 
-  // Try to resume
+  // CRITICAL for iOS: Call resume() synchronously in user gesture context.
+  // Don't await - just fire it off immediately to register the user intent.
   if (ctx.state === 'suspended') {
-    try {
-      await ctx.resume();
-    } catch (e) {
-      console.warn('AudioContext.resume() failed:', e);
-    }
+    ctx.resume().catch(() => {});
   }
 
-  // Play a silent buffer to fully unlock on older iOS
-  // This is a no-op on modern browsers but essential for iOS < 14
+  // Play a silent buffer IMMEDIATELY to fully unlock on iOS.
+  // This must happen synchronously in the user gesture.
   try {
     const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
     const source = ctx.createBufferSource();
@@ -80,6 +77,15 @@ async function doUnlock(): Promise<AudioContext> {
     source.stop(0.001);
   } catch (e) {
     // Ignore - this is just a fallback unlock
+  }
+
+  // Now try resume again and wait for it
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume();
+    } catch (e) {
+      console.warn('AudioContext.resume() failed:', e);
+    }
   }
 
   // Wait briefly for state to update (cast to string to avoid TS narrowing issues)
