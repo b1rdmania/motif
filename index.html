@@ -22,41 +22,73 @@
 
     <!-- General Meta -->
     <meta name="description" content="WARIO SYNTH - Transform any song into retro Gameboy-style game console music. Search, preview MIDI, and generate chiptune versions.">
+
+    <!-- Pixel Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
     <style>
-        /* Design System: Synthwave - 8px grid, consistent neon accents */
+        /* Design System: Game Boy DMG - Classic LCD greens */
         :root {
-            --color-bg: #0a0a0a;
-            --color-surface: #141414;
-            --color-surface-elevated: #1a1a1a;
-            --color-border: #2a2a2a;
-            --color-text: #e8e8e8;
-            --color-text-dim: #999;
-            --color-accent-primary: #00ff88;
-            --color-accent-secondary: #ffaa44;
+            /* Game Boy LCD palette */
+            --gb-lightest: #9BBC0F;
+            --gb-light: #8BAC0F;
+            --gb-dark: #306230;
+            --gb-darkest: #0F380F;
+
+            /* Console colors */
+            --gb-shell: #C4CFA1;
+            --gb-shell-dark: #8B956D;
+            --gb-purple: #442176;
+            --gb-red: #AB2E41;
+
+            /* Semantic mapping */
+            --color-bg: var(--gb-darkest);
+            --color-surface: var(--gb-dark);
+            --color-surface-elevated: #1a3a1a;
+            --color-border: var(--gb-light);
+            --color-text: var(--gb-lightest);
+            --color-text-dim: var(--gb-light);
+            --color-accent-primary: var(--gb-lightest);
+            --color-accent-secondary: var(--gb-light);
+
             --spacing-unit: 8px;
-            --radius: 8px;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
-            --glow-primary: 0 0 20px rgba(0, 255, 136, 0.3);
-            --glow-secondary: 0 0 20px rgba(255, 170, 68, 0.3);
+            --radius: 0px; /* Pixel-perfect, no rounding */
+            --pixel-border: 4px;
         }
 
         * {
             box-sizing: border-box;
+            image-rendering: pixelated;
         }
 
         body {
-            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-            background:
-                radial-gradient(1000px 600px at 50% -150px, rgba(0, 255, 136, 0.12), transparent 60%),
-                radial-gradient(800px 600px at 110% 20%, rgba(255, 170, 68, 0.08), transparent 55%),
-                var(--color-bg);
+            font-family: 'Press Start 2P', monospace;
+            background: var(--color-bg);
             color: var(--color-text);
             margin: 0;
             padding: calc(var(--spacing-unit) * 3);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
+            line-height: 2;
+            font-size: 10px;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+        }
+
+        /* LCD Screen Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1) 0px,
+                rgba(0, 0, 0, 0.1) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
         }
 
         .container {
@@ -68,37 +100,42 @@
             text-align: center;
             margin: 0 0 calc(var(--spacing-unit) * 4) 0;
             position: relative;
+            padding: calc(var(--spacing-unit) * 2);
+            border: var(--pixel-border) solid var(--gb-light);
+            background: var(--gb-dark);
         }
         .hero h1 {
-            color: var(--color-accent-primary);
+            color: var(--gb-lightest);
             margin: 0;
-            font-size: 2em;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-shadow: var(--glow-primary);
+            font-size: 20px;
+            font-weight: normal;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
         .hero .tagline {
-            margin: calc(var(--spacing-unit) * 1.5) 0 0 0;
-            color: rgba(255,255,255,0.72);
-            font-size: 14px;
+            margin: calc(var(--spacing-unit) * 2) 0 0 0;
+            color: var(--gb-light);
+            font-size: 8px;
         }
         .faq-link {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.14);
-            color: rgba(255,255,255,0.85);
-            padding: 8px 10px;
-            border-radius: var(--radius);
-            box-shadow: none;
-            font-size: 13px;
+            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-light);
+            color: var(--gb-lightest);
+            padding: 8px 12px;
+            border-radius: 0;
+            box-shadow:
+                inset -4px -4px 0 var(--gb-darkest),
+                inset 4px 4px 0 var(--gb-light);
+            font-size: 8px;
         }
         .faq-link:hover:not(:disabled) {
-            box-shadow: var(--shadow-sm);
-            border-color: rgba(255,255,255,0.22);
+            background: var(--gb-light);
+            color: var(--gb-darkest);
         }
         .faq-top {
             position: absolute;
-            top: 0;
-            right: 0;
+            top: calc(var(--spacing-unit) * 2);
+            right: calc(var(--spacing-unit) * 2);
         }
 
         /* FAQ modal */
@@ -243,82 +280,92 @@
             opacity: 0.35;
         }
 
+        /* Chunky 8-bit buttons */
         button {
-            background: var(--color-surface);
-            color: var(--color-text);
-            border: 1px solid var(--color-border);
-            padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
-            border-radius: var(--radius);
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
+            border: var(--pixel-border) solid var(--gb-light);
+            padding: 12px 16px;
+            border-radius: 0;
             cursor: pointer;
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: var(--shadow-sm);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            box-shadow:
+                inset -4px -4px 0 var(--gb-darkest),
+                inset 4px 4px 0 var(--gb-light);
+            transition: none;
         }
 
         button:hover:not(:disabled) {
-            background: var(--color-surface-elevated);
-            transform: translateY(-1px);
-            border-color: #444;
-            box-shadow: var(--shadow-md);
+            background: var(--gb-light);
+            color: var(--gb-darkest);
+            box-shadow:
+                inset 4px 4px 0 var(--gb-darkest),
+                inset -4px -4px 0 var(--gb-lightest);
         }
 
         button:active:not(:disabled) {
-            transform: translateY(0);
-            box-shadow: var(--shadow-sm);
+            box-shadow:
+                inset 4px 4px 0 var(--gb-darkest);
         }
 
         button:disabled {
-            opacity: 0.4;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         button.primary {
-            background: var(--color-accent-primary);
-            color: #000;
-            border-color: rgba(0,255,136,0.4);
-            font-weight: 800;
+            background: var(--gb-lightest);
+            color: var(--gb-darkest);
+            border-color: var(--gb-lightest);
+            box-shadow:
+                inset -4px -4px 0 var(--gb-light),
+                inset 4px 4px 0 #c5d82f;
         }
 
         button.primary:hover:not(:disabled) {
-            background: #00dd77;
-            box-shadow: var(--glow-primary), var(--shadow-md);
+            background: var(--gb-light);
+            color: var(--gb-darkest);
         }
 
-        /* Make Search the primary CTA */
+        /* Search button */
         #searchBtn {
-            padding: 14px 18px;
-            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 10px;
         }
 
+        /* Status bar - like a Game Boy dialog box */
         #status {
             margin: calc(var(--spacing-unit) * 3) 0;
             padding: calc(var(--spacing-unit) * 2);
-            background: var(--color-surface);
-            border-left: 3px solid var(--color-accent-primary);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
-            font-size: 14px;
+            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-light);
+            font-size: 8px;
             min-height: 24px;
         }
 
+        /* Text input - Game Boy style */
         input[type="text"] {
             flex: 1;
-            background: rgba(0,0,0,0.25);
-            color: var(--color-text);
-            border: 1px solid rgba(255,255,255,0.14);
-            padding: 14px 14px;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 16px;
-            transition: border-color 150ms ease, box-shadow 150ms ease;
+            background: var(--gb-darkest);
+            color: var(--gb-lightest);
+            border: var(--pixel-border) solid var(--gb-light);
+            padding: 12px 14px;
+            border-radius: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            box-shadow: inset 4px 4px 0 rgba(0,0,0,0.3);
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: rgba(0,255,136,0.45);
-            box-shadow: 0 0 0 3px rgba(0,255,136,0.18);
+            border-color: var(--gb-lightest);
+            background: var(--gb-dark);
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--gb-dark);
         }
         
         .results-section {
@@ -339,49 +386,43 @@
         .chooser-helper {
             margin-top: calc(var(--spacing-unit) * 2);
             padding: calc(var(--spacing-unit) * 2);
-            background: rgba(0,0,0,0.18);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            box-shadow: var(--shadow-sm);
+            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-light);
         }
         .chooser-helper h4 {
-            margin: 0 0 6px 0;
-            font-size: 12px;
-            letter-spacing: 0.08em;
+            margin: 0 0 8px 0;
+            font-size: 8px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.85);
+            color: var(--gb-lightest);
         }
         .chooser-helper p {
             margin: 0;
-            font-size: 13px;
-            color: rgba(255,255,255,0.68);
-            line-height: 1.45;
-            max-width: 72ch;
+            font-size: 8px;
+            color: var(--gb-light);
+            line-height: 2;
         }
-        
+
+        /* Results table - Game Boy menu style */
         .results-table {
             width: 100%;
             border-collapse: collapse;
             margin: calc(var(--spacing-unit) * 2) 0;
-            background: var(--color-surface);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
+            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-light);
         }
 
         .results-table th,
         .results-table td {
-            padding: calc(var(--spacing-unit) * 2);
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid var(--color-border);
+            border-bottom: 2px solid var(--gb-darkest);
+            font-size: 8px;
         }
 
         .results-table th {
-            background: var(--color-surface-elevated);
-            color: var(--color-accent-primary);
-            font-weight: 600;
-            font-size: 12px;
-            letter-spacing: 0.05em;
+            background: var(--gb-darkest);
+            color: var(--gb-lightest);
+            font-weight: normal;
             text-transform: uppercase;
         }
 
@@ -401,11 +442,10 @@
 
         .results-table tbody tr {
             cursor: pointer;
-            transition: background 150ms ease;
         }
 
         .results-table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--gb-darkest);
         }
 
         .results-table tbody tr:last-child td {
@@ -413,23 +453,28 @@
         }
 
         .results-table tr.selected {
-            background: rgba(0, 255, 136, 0.12);
+            background: var(--gb-light);
+            color: var(--gb-darkest);
+        }
+
+        .results-table tr.selected td {
+            color: var(--gb-darkest);
         }
 
         .results-table tr.selected td:first-child {
-            border-left: 4px solid var(--color-accent-primary);
-            padding-left: calc(var(--spacing-unit) * 2 - 4px);
+            padding-left: 12px;
+        }
+
+        /* Selection arrow indicator */
+        .results-table tr.selected td:first-child::before {
+            content: '▶ ';
         }
 
         @media (max-width: 640px) {
             .results-table th,
             .results-table td {
-                padding: calc(var(--spacing-unit) * 1.5);
-                font-size: 14px;
-            }
-
-            .results-table th {
-                font-size: 11px;
+                padding: 10px 12px;
+                font-size: 7px;
             }
 
             .results-table .source-col {
@@ -441,7 +486,7 @@
             }
 
             .results-table .action-col {
-                width: 100px;
+                width: 90px;
             }
         }
 
@@ -458,37 +503,32 @@
         .confidence-bar {
             width: 60px;
             height: 4px;
-            background: #333;
-            border-radius: 2px;
+            background: var(--gb-darkest);
             overflow: hidden;
         }
         .confidence-fill {
             height: 100%;
-            background: linear-gradient(90deg, #ff4444, #ffaa44, #00ff88);
-            transition: width 0.2s;
+            background: var(--gb-lightest);
         }
 
-        /* Selected source card */
+        /* Selected source card - Game Boy cartridge style */
         .selected-card {
             margin-top: calc(var(--spacing-unit) * 3);
             padding: calc(var(--spacing-unit) * 3);
-            background: var(--color-surface-elevated);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
+            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-light);
         }
         .selected-title {
             margin: 0;
-            font-size: 22px;
-            line-height: 1.2;
-            font-weight: 800;
-            letter-spacing: 0.01em;
-            color: var(--color-text);
+            font-size: 12px;
+            line-height: 2;
+            font-weight: normal;
+            color: var(--gb-lightest);
         }
         .selected-meta {
-            margin: 10px 0 0 0;
-            font-size: 13px;
-            color: rgba(255,255,255,0.62);
+            margin: 12px 0 0 0;
+            font-size: 8px;
+            color: var(--gb-light);
         }
         .selected-actions {
             display: flex;
@@ -498,56 +538,52 @@
         }
         .selected-actions .primary {
             flex: 1;
-            min-width: 180px;
-            padding: 12px 16px;
+            min-width: 160px;
+            padding: 14px 16px;
         }
         .selected-actions button:not(.primary) {
             flex: 1;
-            min-width: 160px;
+            min-width: 140px;
         }
         .selected-support {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             align-items: center;
             flex-wrap: wrap;
-            margin-top: 12px;
+            margin-top: 16px;
         }
         .selected-support .linklike {
             background: transparent;
             border: none;
             padding: 0;
             box-shadow: none;
-            color: rgba(0,255,136,0.9);
+            color: var(--gb-lightest);
             cursor: pointer;
-            font-size: 13px;
+            font-size: 8px;
+            text-decoration: underline;
         }
         .selected-support .linklike:hover {
-            text-decoration: underline;
+            color: var(--gb-light);
         }
         .preview-inline {
             display: inline-flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
         }
         .preview-state {
-            font-size: 12px;
-            color: rgba(255,255,255,0.55);
+            font-size: 8px;
+            color: var(--gb-light);
             display: none;
         }
 
-        /* Generated-state share button: more prominent, still secondary to Play */
+        /* Copy link button */
         #copyLinkBtn {
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(0,255,136,0.35);
-            background: rgba(0,0,0,0.18);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-            font-weight: 700;
+            padding: 12px 16px;
         }
         #copyLinkBtn:hover:not(:disabled) {
-            border-color: rgba(0,255,136,0.55);
-            box-shadow: var(--glow-primary), 0 12px 34px rgba(0,0,0,0.45);
+            background: var(--gb-light);
+            color: var(--gb-darkest);
         }
         .engine-line {
             margin-top: 14px;
