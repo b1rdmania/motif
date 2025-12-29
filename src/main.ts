@@ -644,6 +644,10 @@ class MotifApp {
       .replace(/[_]+/g, ' ')
       .replace(/[.]+/g, ' ')
       .replace(/\s+/g, ' ')
+      .trim()
+      // Strip standalone "mid" or "midi" words (case insensitive)
+      .replace(/\b(midi?)\b/gi, '')
+      .replace(/\s+/g, ' ')
       .trim();
     return this.titleCase(cleaned || 'Unknown');
   }

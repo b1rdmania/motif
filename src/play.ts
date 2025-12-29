@@ -53,6 +53,10 @@ function cleanLooseTitle(raw: string): string {
     .replace(/[_]+/g, ' ')
     .replace(/[.]+/g, ' ')
     .replace(/\s+/g, ' ')
+    .trim()
+    // Strip standalone "mid" or "midi" words
+    .replace(/\b(midi?)\b/gi, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 

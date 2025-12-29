@@ -222,8 +222,8 @@ app.get('/s/:code', async (req, res) => {
     const sharedTitle = (payload.title || '').trim();
     const ogTitle = sharedTitle ? `${sharedTitle} - WARIO SYNTH` : 'WARIO SYNTH';
     const ogDescription = sharedTitle
-      ? `I made ${sharedTitle} game boy version. Click to listen or generate your own, made in Wario Synth by @b1rdmania.`
-      : 'Turn any song into retro game console music. Made by @b1rdmania.';
+      ? `I made ${sharedTitle} game boy version. Click to listen or generate your own.`
+      : 'Turn any song into retro game console music.';
 
     const html = `<!doctype html>
 <html lang="en">
