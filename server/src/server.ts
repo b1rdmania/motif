@@ -221,7 +221,7 @@ app.get('/s/:code', async (req, res) => {
 
     const sharedTitle = (payload.title || '').trim();
     const ogTitle = sharedTitle || 'WARIO SYNTH';
-    const ogDescription = 'I made this in WARIO SYNTH';
+    const ogDescription = 'I made this in Wario Synth, click to listen or generate your own';
 
     const html = `<!doctype html>
 <html lang="en">
