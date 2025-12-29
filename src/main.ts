@@ -676,17 +676,18 @@ class MotifApp {
     const result = this.searchResults[this.selectedResultIndex];
     if (!result?.midiUrl) return;
 
-    // Build share URL
+    // Build share URL with title
+    const title = encodeURIComponent(result.title || '');
     let shareUrl: string;
     if (result.source === 'bitmidi') {
       const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
       if (m?.[1]) {
-        shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}`;
+        shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}&title=${title}`;
       } else {
-        shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}`;
+        shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}&title=${title}`;
       }
     } else {
-      shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}`;
+      shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}&title=${title}`;
     }
 
     // Show the link in a text box for easy copying
