@@ -628,14 +628,6 @@ class MotifApp {
     return this.titleCase(cleaned || 'Unknown');
   }
 
-  private formatDuration(secondsMaybe: any): string {
-    const seconds = Number(secondsMaybe);
-    if (!Number.isFinite(seconds) || seconds <= 0) return '—';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
-
   private formatSourceLabel(source: string): string {
     const s = String(source || '').toLowerCase();
     if (s === 'bitmidi') return 'BitMidi';
