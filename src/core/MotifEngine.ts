@@ -138,6 +138,25 @@ export class MotifEngine {
     }
   }
 
+  /**
+   * Connect an additional output tap node to the synthesis output.
+   * Useful for recording/export without changing the audible output.
+   */
+  connectOutput(node: AudioNode): void {
+    if (this.synthesisEngine) {
+      this.synthesisEngine.connectOutput(node);
+    }
+  }
+
+  /**
+   * Disconnect a previously connected output tap node.
+   */
+  disconnectOutput(node: AudioNode): void {
+    if (this.synthesisEngine) {
+      this.synthesisEngine.disconnectOutput(node);
+    }
+  }
+
   seek(progress: number): void {
     if (this.synthesisEngine) {
       this.synthesisEngine.seek(progress);

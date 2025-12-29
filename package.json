@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
+    "lamejs": "^1.2.1",
     "soundfont-player": "^0.12.0",
     "tone": "^15.1.22"
   },

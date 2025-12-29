@@ -19,6 +19,25 @@ export class SynthesisEngine {
     this.masterGain.gain.value = 0.3;
   }
 
+  /**
+   * Connect the master output to an additional node (e.g. recorder tap).
+   * This does not change the default destination routing.
+   */
+  connectOutput(node: AudioNode): void {
+    this.masterGain.connect(node);
+  }
+
+  /**
+   * Disconnect a previously connected output tap.
+   */
+  disconnectOutput(node: AudioNode): void {
+    try {
+      this.masterGain.disconnect(node);
+    } catch {
+      // ignore (node might not be connected)
+    }
+  }
+
   setupLayers(assignments: RoleAssignment[]): void {
     // Clean up existing layers
     this.cleanupLayers();
