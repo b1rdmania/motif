@@ -725,8 +725,8 @@ class MotifApp {
   }
 
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
-    // results
-    const hasResults = state === 'results' || state === 'selected';
+    // results - keep visible in all states except idle so user can pick a different source
+    const hasResults = state === 'results' || state === 'selected' || state === 'generated';
     this.resultsSection.classList.toggle('visible', hasResults);
     this.chooseHelper.style.display = state === 'results' ? 'block' : 'none';
 
