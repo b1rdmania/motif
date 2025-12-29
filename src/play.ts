@@ -1,7 +1,7 @@
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { MotifEngine } from './core/MotifEngine';
-import { unlockAudio } from './utils/audioUnlock';
+import { unlockAudio, isAudioReady } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
 
 function qs(id: string): HTMLElement {
@@ -140,6 +140,33 @@ async function main(): Promise<void> {
   const currentTimeEl = qs('playCurrentTime') as HTMLElement;
   const durationEl = qs('playDuration') as HTMLElement;
   const timeRow = qs('playTimeRow') as HTMLElement;
+  const iosAudioBanner = qs('iosAudioBanner') as HTMLElement;
+  const enableAudioBtn = qs('enableAudioBtn') as HTMLButtonElement;
+
+  // Detect iOS/Safari for audio unlock banner
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  function updateIOSBanner(): void {
+    if (isIOS && !isAudioReady()) {
+      iosAudioBanner.style.display = 'block';
+    } else {
+      iosAudioBanner.style.display = 'none';
+    }
+  }
+
+  // Show banner on iOS if needed
+  updateIOSBanner();
+
+  // Handle enable audio button
+  enableAudioBtn.addEventListener('click', async () => {
+    try {
+      await unlockAudio();
+      updateIOSBanner();
+    } catch {
+      // ignore
+    }
+  });
 
   const { midiUrl: u, title } = buildMidiUrlFromParams();
 
@@ -290,6 +317,7 @@ async function main(): Promise<void> {
     try {
       // Wait for unlock to complete
       await unlockPromise;
+      updateIOSBanner(); // Hide banner once audio is unlocked
 
       // First play generates the artifact (deterministically from MIDI structure).
       if (!isGenerated) {

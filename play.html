@@ -294,6 +294,28 @@
         color: var(--gb-lightest);
       }
 
+      /* iOS audio unlock banner */
+      .ios-audio-banner {
+        margin-top: calc(var(--spacing-unit) * 2);
+        padding: calc(var(--spacing-unit) * 2);
+        border-top: 2px solid var(--gb-light);
+        display: none; /* toggled by JS */
+        text-align: center;
+      }
+      .ios-audio-banner p {
+        font-size: 8px;
+        color: var(--gb-light);
+        margin: 0 0 calc(var(--spacing-unit)) 0;
+        line-height: 2;
+      }
+      .ios-audio-banner button {
+        background: var(--gb-lightest);
+        color: var(--gb-darkest);
+        border: var(--pixel-border) solid var(--gb-light);
+        padding: 12px 20px;
+        font-size: 10px;
+      }
+
       /* Footer */
       .footer {
         margin-top: calc(var(--spacing-unit) * 4);
@@ -336,6 +358,12 @@
             <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
             <div id="playProgressFill" class="progress-fill"></div>
           </div>
+        </div>
+
+        <!-- iOS Audio Unlock -->
+        <div id="iosAudioBanner" class="ios-audio-banner">
+          <p>Tap to enable audio on iOS</p>
+          <button id="enableAudioBtn" type="button">Enable Audio</button>
         </div>
 
         <!-- CTA -->
