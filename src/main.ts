@@ -215,7 +215,7 @@ class MotifApp {
     this.currentMIDI = null;
 
     this.setState('idle');
-    this.updateStatus('Ready. Enter a song to run it through our Wario 16-Bit Engine and make a new version.');
+    this.updateStatus('Ready. Search any song to make a Game Boy version.');
 
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
