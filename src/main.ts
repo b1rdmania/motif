@@ -215,7 +215,7 @@ class MotifApp {
     this.currentMIDI = null;
 
     this.setState('idle');
-    this.updateStatus('Ready. Enter a song name to search for MIDI files.');
+    this.updateStatus('Ready. Enter a song to run it through our Wario 16-Bit Engine and make a new version.');
 
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
