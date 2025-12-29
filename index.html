@@ -23,12 +23,16 @@
     <!-- General Meta -->
     <meta name="description" content="WARIO SYNTH - Transform any song into retro Gameboy-style game console music. Search, preview MIDI, and generate chiptune versions.">
 
-    <!-- Pixel Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
     <style>
+        /* Local Pixel Font */
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('/fonts/PressStart2P.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
         /* Design System: Game Boy DMG - Authentic light LCD look */
         :root {
             /* Game Boy palette - light mode (authentic LCD) */
@@ -131,11 +135,6 @@
             background: #fff;
             color: var(--gb-darkest);
         }
-        .faq-top {
-            position: absolute;
-            top: calc(var(--spacing-unit) * 2);
-            right: calc(var(--spacing-unit) * 2);
-        }
 
         /* FAQ modal - Game Boy style */
         .modal-backdrop {
@@ -151,9 +150,13 @@
         .modal-backdrop.open { display: flex; }
         .modal {
             width: min(720px, 100%);
+            max-height: calc(100vh - 40px);
+            max-height: calc(100dvh - 40px);
             background: var(--color-surface);
             border: var(--pixel-border) solid var(--gb-dark);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .modal header {
             display: flex;
@@ -162,6 +165,8 @@
             padding: 14px 16px;
             border-bottom: 2px solid var(--gb-dark);
             background: var(--gb-dark);
+            flex-shrink: 0;
+            flex-wrap: wrap;
         }
         .modal header h3 {
             margin: 0;
@@ -231,6 +236,9 @@
         .modal main {
             padding: 16px;
             background: var(--gb-lightest);
+            overflow-y: auto;
+            flex: 1;
+            -webkit-overflow-scrolling: touch;
         }
         .faq-grid {
             display: grid;
@@ -1058,7 +1066,6 @@
 <body>
     <div class="container">
         <div class="hero">
-            <button id="faqBtn" class="faq-link faq-top" type="button">FAQ</button>
             <h1>WARIO SYNTH</h1>
             <p class="tagline"><strong>Turn any song into retro game console music</strong></p>
         </div>
@@ -1072,11 +1079,7 @@
         
         <div id="resultsSection" class="results-section">
             <div id="chooseHelper" class="chooser-helper" style="display:none;">
-                <h4>Choosing a MIDI source</h4>
-                <p>
-                    Different MIDI files capture songs differently. Some will produce better results than others.<br />
-                    Pick a source, generate, and if it sounds off, try another.
-                </p>
+                <p>Pick a source and generate. If it sounds off, try another.</p>
             </div>
 
             <div class="results-header">

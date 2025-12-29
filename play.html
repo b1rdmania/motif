@@ -21,12 +21,16 @@
     <meta name="twitter:description" content="Tap to play this Gameboy tune" />
     <meta name="twitter:image" content="https://motif-self.vercel.app/wario-sprite.png" />
 
-    <!-- Pixel Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
     <style>
+        /* Local Pixel Font */
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('/fonts/PressStart2P.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
       :root {
         /* Game Boy palette - light mode (authentic LCD) */
         --gb-lightest: #E0E8C8;  /* Screen background */
