@@ -25,7 +25,6 @@ class MotifApp {
   private selectedTitle!: HTMLElement;
   private selectedMeta!: HTMLElement;
   private selectedDetails!: HTMLElement;
-  private selectedExpectation!: HTMLElement;
   private preGenActions!: HTMLElement;
   private preGenSupport!: HTMLElement;
   private generatedBlock!: HTMLElement;
@@ -116,7 +115,6 @@ class MotifApp {
     this.selectedTitle = document.getElementById('selectedTitle')!;
     this.selectedMeta = document.getElementById('selectedMeta')!;
     this.selectedDetails = document.getElementById('selectedDetails')!;
-    this.selectedExpectation = document.getElementById('selectedExpectation')!;
     this.preGenActions = document.getElementById('preGenActions')!;
     this.preGenSupport = document.getElementById('preGenSupport')!;
     this.generatedBlock = document.getElementById('generatedBlock')!;
@@ -830,7 +828,6 @@ class MotifApp {
 
     // Selected pre-generation content
     const showPreGen = state === 'selected';
-    this.selectedExpectation.style.display = showPreGen ? 'block' : 'none';
     this.preGenActions.style.display = showPreGen ? 'block' : 'none';
     this.preGenSupport.style.display = showPreGen ? 'flex' : 'none';
     this.detailsToggle.style.display = showPreGen ? 'block' : 'none';
