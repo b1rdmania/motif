@@ -31,7 +31,6 @@ class MotifApp {
   private preGenSupport!: HTMLElement;
   private generatedBlock!: HTMLElement;
   private playPauseBtn!: HTMLButtonElement;
-  private motifVolumeSlider!: HTMLInputElement;
   private detailsToggle!: HTMLElement;
   private previewBtn!: HTMLButtonElement;
   private previewStopBtn!: HTMLButtonElement;
@@ -122,7 +121,6 @@ class MotifApp {
     this.preGenSupport = document.getElementById('preGenSupport')!;
     this.generatedBlock = document.getElementById('generatedBlock')!;
     this.playPauseBtn = document.getElementById('playPauseBtn') as HTMLButtonElement;
-    this.motifVolumeSlider = document.getElementById('motifVolume') as HTMLInputElement;
     this.detailsToggle = document.getElementById('detailsToggle')!;
     this.previewBtn = document.getElementById('previewBtn') as HTMLButtonElement;
     this.previewStopBtn = document.getElementById('previewStopBtn') as HTMLButtonElement;
@@ -172,9 +170,6 @@ class MotifApp {
     // Motif
     this.motifBtn.addEventListener('click', () => this.handleMotif());
     this.playPauseBtn.addEventListener('click', () => void this.handlePlayPause());
-    this.motifVolumeSlider.addEventListener('input', () => {
-      this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value));
-    });
 
     // Preview inside selected source only
     this.previewBtn.addEventListener('click', () => void this.handlePreviewToggle());
@@ -523,7 +518,7 @@ class MotifApp {
 
       // Generate a variation using the procedural role-mapping mode
       await this.motifEngine.generateFromMIDI(this.currentMIDI.events, 'procedural');
-      this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value) || 0.8);
+      this.motifEngine.setVolume(0.8);
 
       await this.motifEngine.play();
 
@@ -830,7 +825,7 @@ class MotifApp {
       this.stopPreview();
       await unlockAudio();
 
-      this.motifEngine.setVolume(parseFloat(this.motifVolumeSlider.value) || 0.8);
+      this.motifEngine.setVolume(0.8);
       await this.motifEngine.play();
       if (this.motifResumeProgress > 0) this.motifEngine.seek(this.motifResumeProgress);
       this.isMotifPlaying = true;
