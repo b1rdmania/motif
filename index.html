@@ -601,7 +601,20 @@
             gap: calc(var(--spacing-unit) * 1.5);
             flex-wrap: wrap;
         }
-        
+
+        .footer-mascot {
+            margin-top: calc(var(--spacing-unit) * 4);
+            text-align: center;
+        }
+
+        .wario-sprite {
+            width: 80px;
+            height: auto;
+            /* Game Boy green tint using sepia + hue-rotate */
+            filter: sepia(100%) hue-rotate(50deg) saturate(200%) brightness(0.9);
+            opacity: 0.8;
+        }
+
         .player-section {
             margin: 30px 0;
             display: none;
@@ -1127,6 +1140,10 @@
     <div class="footer">
         <button id="faqBtnFooter" class="faq-link" type="button">FAQ</button>
         <button id="newSearchBtn" class="faq-link" type="button">New search</button>
+    </div>
+
+    <div class="footer-mascot">
+        <img src="/wario-sprite.png" alt="Wario" class="wario-sprite" />
     </div>
 
     <div id="faqModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
