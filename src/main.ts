@@ -58,6 +58,7 @@ class MotifApp {
   private iosAudioState!: HTMLElement;
 
   private copyLinkBtn!: HTMLButtonElement;
+  private copyLinkConfirm!: HTMLElement;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -134,6 +135,7 @@ class MotifApp {
     this.motifDuration = document.getElementById('motifDuration')!;
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
+    this.copyLinkConfirm = document.getElementById('copyLinkConfirm') as HTMLElement;
 
     // iOS audio unlock UI (Motif)
     this.iosAudioBanner = document.getElementById('iosAudioBanner')!;
@@ -353,7 +355,7 @@ class MotifApp {
         <td class="duration-col">${this.formatDuration(result.parsed?.durationSec)}</td>
         <td class="action-col">
           <div style="display:flex; gap: 10px; justify-content: flex-end; align-items:center;">
-            <button type="button" class="row-use-btn">Use this →</button>
+            <button type="button" class="row-use-btn">Use</button>
           </div>
         </td>
       `;
@@ -677,20 +679,41 @@ class MotifApp {
   }
 
   private async copyToClipboard(text: string): Promise<void> {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
+    // iOS Safari needs the textarea fallback - clipboard API is unreliable
+    // Try textarea approach first for better iOS compatibility
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
+    ta.style.left = '0';
     ta.style.top = '0';
+    ta.style.opacity = '0';
+    ta.style.pointerEvents = 'none';
+    ta.setAttribute('readonly', ''); // Prevent keyboard on iOS
     document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    document.execCommand('copy');
+
+    // iOS specific selection
+    const range = document.createRange();
+    range.selectNodeContents(ta);
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    ta.setSelectionRange(0, text.length); // iOS needs this
+
+    let success = false;
+    try {
+      success = document.execCommand('copy');
+    } catch {
+      success = false;
+    }
+
     document.body.removeChild(ta);
+
+    // Fallback to modern API if execCommand failed
+    if (!success && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    }
   }
 
   private async handleCopyLink(): Promise<void> {
@@ -739,13 +762,19 @@ class MotifApp {
     try {
       this.copyLinkBtn.disabled = true;
       await this.copyToClipboard(shareUrl);
-      const prev = this.copyLinkBtn.textContent || 'Copy link';
-      this.copyLinkBtn.textContent = 'Copied';
+      // Show confirmation
+      this.copyLinkConfirm.style.display = 'inline';
+      this.copyLinkConfirm.textContent = 'Link copied!';
       window.setTimeout(() => {
-        this.copyLinkBtn.textContent = prev;
-      }, 900);
-    } catch {
-      // keep quiet; clipboard can fail in some contexts
+        this.copyLinkConfirm.style.display = 'none';
+      }, 3000);
+    } catch (err) {
+      // Show error feedback
+      this.copyLinkConfirm.style.display = 'inline';
+      this.copyLinkConfirm.textContent = 'Copy failed';
+      window.setTimeout(() => {
+        this.copyLinkConfirm.style.display = 'none';
+      }, 3000);
     } finally {
       this.copyLinkBtn.disabled = false;
     }

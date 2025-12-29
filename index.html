@@ -137,11 +137,11 @@
             right: calc(var(--spacing-unit) * 2);
         }
 
-        /* FAQ modal */
+        /* FAQ modal - Game Boy style */
         .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.65);
+            background: rgba(0,0,0,0.5);
             display: none;
             align-items: center;
             justify-content: center;
@@ -151,10 +151,8 @@
         .modal-backdrop.open { display: flex; }
         .modal {
             width: min(720px, 100%);
-            background: rgba(20,20,20,0.98);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 12px;
-            box-shadow: 0 30px 120px rgba(0,0,0,0.75);
+            background: var(--color-surface);
+            border: var(--pixel-border) solid var(--gb-dark);
             overflow: hidden;
         }
         .modal header {
@@ -162,14 +160,15 @@
             align-items: center;
             gap: 12px;
             padding: 14px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 2px solid var(--gb-dark);
+            background: var(--gb-dark);
         }
         .modal header h3 {
             margin: 0;
-            font-size: 14px;
+            font-size: 10px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.9);
+            color: var(--gb-lightest);
         }
         .modal header .faq-header-links {
             display: flex;
@@ -182,32 +181,21 @@
             align-items: center;
             gap: 8px;
             padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(0,0,0,0.18);
-            color: rgba(255,255,255,0.82);
+            border: 2px solid var(--gb-light);
+            background: var(--gb-darkest);
+            color: var(--gb-lightest);
             text-decoration: none;
-            font-size: 12px;
+            font-size: 8px;
             line-height: 1;
-            box-shadow: none;
-            transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
         }
         .modal header .faq-header-links a:hover {
-            border-color: rgba(255,255,255,0.22);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-            background: rgba(0,0,0,0.28);
-        }
-        .modal header .faq-header-links a:focus-visible {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0,255,136,0.25), 0 12px 34px rgba(0,0,0,0.55);
-            border-color: rgba(0,255,136,0.45);
+            background: var(--gb-light);
+            color: var(--gb-darkest);
         }
         .modal header .faq-header-links .dot {
             width: 6px;
             height: 6px;
-            border-radius: 999px;
-            background: rgba(0,255,136,0.85);
-            box-shadow: 0 0 14px rgba(0,255,136,0.22);
+            background: var(--gb-lightest);
             flex: 0 0 auto;
         }
         .modal header .faq-header-links .label {
@@ -217,8 +205,7 @@
             white-space: nowrap;
         }
         .modal header .faq-header-links .handle {
-            color: rgba(0,255,136,0.9);
-            font-weight: 600;
+            color: var(--gb-lightest);
         }
         @media (max-width: 480px) {
             .modal header {
@@ -227,19 +214,23 @@
             }
             .modal header .faq-header-links a {
                 padding: 6px 9px;
-                font-size: 12px;
+                font-size: 8px;
             }
         }
         .modal header .spacer { margin-left: auto; }
         .modal header button {
-            padding: 8px 10px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: none;
+            padding: 8px 12px;
+            background: var(--gb-light);
+            border: 2px solid var(--gb-lightest);
+            color: var(--gb-darkest);
+            font-size: 8px;
+        }
+        .modal header button:hover {
+            background: var(--gb-lightest);
         }
         .modal main {
-            padding: 14px 16px 16px 16px;
+            padding: 16px;
+            background: var(--gb-lightest);
         }
         .faq-grid {
             display: grid;
@@ -247,25 +238,24 @@
             gap: 12px;
         }
         .faq-item {
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 12px 12px;
-            background: rgba(0,0,0,0.18);
+            border: 2px solid var(--gb-dark);
+            padding: 12px;
+            background: var(--color-surface);
         }
         .faq-item h4 {
-            margin: 0 0 6px 0;
-            font-size: 13px;
-            color: rgba(0,255,136,0.9);
+            margin: 0 0 8px 0;
+            font-size: 8px;
+            color: var(--gb-darkest);
         }
         .faq-item p {
             margin: 0;
-            color: rgba(255,255,255,0.75);
-            font-size: 13px;
-            line-height: 1.45;
+            color: var(--gb-dark);
+            font-size: 8px;
+            line-height: 2;
         }
         .faq-item code {
-            font-size: 12px;
-            color: rgba(255,255,255,0.85);
+            font-size: 8px;
+            color: var(--gb-darkest);
         }
         .controls {
             margin: calc(var(--spacing-unit) * 3) auto calc(var(--spacing-unit) * 2) auto;
@@ -1098,8 +1088,9 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 14px;">
+                    <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px;">
                         <button id="copyLinkBtn" type="button" disabled>Copy link</button>
+                        <span id="copyLinkConfirm" style="display: none; font-size: 8px; color: var(--gb-lightest);">Link copied!</span>
                     </div>
                 </div>
 
