@@ -1,14 +1,11 @@
 import type { SearchAdapter, MIDICandidate } from '../types.js';
 import { BitMidiAdapter } from '../adapters/BitMidiAdapter.js';
-import { FreeMidiAdapter } from '../adapters/FreeMidiAdapter.js';
 
 export class MIDISearchService {
   private adapters: SearchAdapter[];
 
   constructor() {
-    // FreeMidi first (more reliable), BitMidi as backup
     this.adapters = [
-      new FreeMidiAdapter(),
       new BitMidiAdapter()
     ];
     console.log('MIDISearchService initialized with adapters:', this.adapters.map(a => a.name));

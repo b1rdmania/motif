@@ -8,25 +8,17 @@ export class BitMidiAdapter implements SearchAdapter {
   async search(query: string): Promise<MIDICandidate[]> {
     try {
       const searchUrl = `${this.baseUrl}/search?q=${encodeURIComponent(query)}`;
-      console.log(`BitMidi: Fetching ${searchUrl}`);
-
       const response = await fetch(searchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
+          'User-Agent': 'Mozilla/5.0 (compatible; MotifBot/1.0)'
         }
       });
-
-      console.log(`BitMidi: Response status ${response.status}`);
 
       if (!response.ok) {
         throw new Error(`BitMidi search failed: ${response.status}`);
       }
 
       const html = await response.text();
-      console.log(`BitMidi: Got ${html.length} bytes, has initStore: ${html.includes('window.initStore')}`);
-
       return this.parseSearchResults(html, query);
     } catch (error) {
       console.error('BitMidi search error:', error);
