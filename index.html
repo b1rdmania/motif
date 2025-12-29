@@ -340,6 +340,8 @@
             display: flex;
             gap: calc(var(--spacing-unit) * 1.5);
             align-items: stretch;
+            width: 100%;
+            box-sizing: border-box;
         }
         .controls.locked {
             opacity: 0.35;
@@ -411,6 +413,7 @@
         /* Text input - Game Boy style */
         input[type="text"] {
             flex: 1;
+            min-width: 0;
             background: var(--gb-lightest);
             color: var(--gb-darkest);
             border: var(--pixel-border) solid var(--gb-dark);
