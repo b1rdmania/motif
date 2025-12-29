@@ -70,7 +70,6 @@ class MotifApp {
 
   // FAQ modal
   private faqBtnTop: HTMLButtonElement | null = null;
-  private faqBtnFooter: HTMLButtonElement | null = null;
   private newSearchBtn: HTMLButtonElement | null = null;
   private faqBackdrop!: HTMLElement;
   private faqCloseBtn!: HTMLButtonElement;
@@ -154,7 +153,6 @@ class MotifApp {
 
     // FAQ modal
     this.faqBtnTop = document.getElementById('faqBtnTop') as HTMLButtonElement | null;
-    this.faqBtnFooter = document.getElementById('faqBtnFooter') as HTMLButtonElement | null;
     this.newSearchBtn = document.getElementById('newSearchBtn') as HTMLButtonElement | null;
     this.faqBackdrop = document.getElementById('faqModalBackdrop')!;
     this.faqCloseBtn = document.getElementById('faqCloseBtn') as HTMLButtonElement;
@@ -200,7 +198,6 @@ class MotifApp {
 
     // FAQ
     this.faqBtnTop?.addEventListener('click', () => this.openFaq());
-    this.faqBtnFooter?.addEventListener('click', () => this.openFaq());
     this.newSearchBtn?.addEventListener('click', () => this.resetToNewSearch());
     this.faqCloseBtn.addEventListener('click', () => this.closeFaq());
     this.faqBackdrop.addEventListener('click', (e) => {
@@ -810,6 +807,11 @@ class MotifApp {
     this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
     this.shareToXBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
     this.shareToXBtn.disabled = !(state === 'generated' && this.hasGenerated);
+
+    // New search button only after generation
+    if (this.newSearchBtn) {
+      this.newSearchBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
+    }
 
     // Dim results when selected/generated, but keep them interactive
     this.resultsSection.classList.toggle('collapsed', state === 'selected' || state === 'generated');
