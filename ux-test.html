@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOTIF - UX Test</title>
+    <title>WARIO SYNTH - UX Test</title>
     <style>
         :root {
             --bg: #08080c;
@@ -380,8 +380,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎵 MOTIF</h1>
-            <p class="tagline">Gameboy synth for any song</p>
+            <h1>WARIO SYNTH</h1>
+            <p class="tagline">Turn any song into retro game console music</p>
         </header>
 
         <div class="search-box">
@@ -854,7 +854,7 @@
                 const url = await buildShortShareUrl();
                 const niceTitle = cleanTitleForShare(currentTitle);
                 // Keep tweet text clean; URL is passed separately.
-                const text = niceTitle ? `MOTIF chiptune: ${niceTitle}` : 'MOTIF chiptune';
+                const text = niceTitle ? `WARIO SYNTH: ${niceTitle}` : 'WARIO SYNTH chiptune';
                 const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
                 window.open(intent, '_blank', 'noopener,noreferrer');
             })();

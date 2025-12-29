@@ -1,13 +1,13 @@
-# MOTIF
+# WARIO SYNTH
 
-Search real MIDI, play it in-browser, then generate a Motif variation.
+Turn any song into retro game console music using the Wario Synthesis Engine.
 
-MOTIF is a small experiment in **music-as-code**: treat MIDI as structural data, not audio. It pulls MIDI patterns from the web, plays the original performance, then generates a “similar-but-different” procedural version using Web Audio.
+WARIO SYNTH is a small experiment in **music-as-code**: treat MIDI as structural data, not audio. It pulls MIDI patterns from the web, plays the original performance, then generates a retro Gameboy-style procedural version using the Wario Synthesis Engine and Web Audio.
 
 ## About
 
-- **What it does**: Search songs → pick a result → play the original MIDI → generate and play a Motif variant.
-- **Why it’s fun**: It’s like “hear a MIDI version of anything”, then remix it into something new.
+- **What it does**: Search songs → pick a result → play the original MIDI → generate retro game console music with the Wario Synthesis Engine.
+- **Why it's fun**: It's like "hear a MIDI version of anything", then transform it into classic chiptune-style audio.
 - **Status**: Working locally end-to-end. Hosted frontend exists, backend hosting may be separate depending on deployment.
 
 ## Live demo
@@ -18,7 +18,7 @@ Note: if the backend isn’t deployed/configured for the demo environment, searc
 
 ## Use on your website (embed)
 
-MOTIF includes an embeddable widget page at **`/embed`**. It generates audio in the user’s browser (no audio files needed).
+WARIO SYNTH includes an embeddable widget page at **`/embed`**. It generates audio in the user's browser (no audio files needed).
 
 Example:
 
@@ -44,7 +44,7 @@ Notes:\n- Autoplay is best-effort; iOS/Safari requires a user gesture before sou
   - Tone.js sampled piano
   - Soundfont piano
   - Custom WebAudio synth preview
-- **Motif generation**: role-based synthesis (bass / drone / ostinato / texture / accents) from parsed MIDI structure
+- **Wario Synthesis Engine**: role-based synthesis (bass / drone / ostinato / texture / accents) from parsed MIDI structure
 
 ## Quick start (local)
 
@@ -70,7 +70,7 @@ npm run dev
 4. Frontend parses MIDI into normalized note events
 5. User can:
    - **Play original MIDI** (soundfont/sampler playback), or
-   - **Generate Motif** (procedural Web Audio synthesis derived from structure)
+   - **Generate with Wario Synthesis Engine** (procedural Web Audio synthesis derived from structure)
 
 ## Backend API
 
@@ -101,5 +101,5 @@ server/
 
 - **More sources**: add/replace flaky scrapers with more reliable sources
 - **Better matching**: smarter ranking + metadata validation
-- **Motif controls**: “more ominous”, “more dancey”, “more ambient”, etc.
+- **Synthesis controls**: "more ominous", "more dancey", "more ambient", etc.
 - **Deployment**: host backend and wire frontend to it via env config

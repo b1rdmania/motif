@@ -217,13 +217,13 @@ app.get('/s/:code', async (req, res) => {
     const origin = getOrigin(req);
     const shortUrl = origin ? `${origin}/s/${encodeURIComponent(code)}` : `/s/${encodeURIComponent(code)}`;
     const playUrl = origin ? `${origin}${dest}` : dest;
-    const imageUrl = origin ? `${origin}/chiptune_blog_piece_1000x.webp` : '/chiptune_blog_piece_1000x.webp';
+    const imageUrl = origin ? `${origin}/wario.png` : '/wario.png';
 
     const sharedTitle = (payload.title || '').trim();
-    const ogTitle = sharedTitle ? `Check out this Gameboy tune: ${sharedTitle}` : 'Check out this Gameboy tune';
+    const ogTitle = sharedTitle ? `WARIO SYNTH: ${sharedTitle}` : 'WARIO SYNTH';
     const ogDescription = sharedTitle
-      ? `Someone shared “${sharedTitle}” with you. Tap to play it through the Wario synthesis engine — then generate your own.`
-      : 'Someone shared a song with you. Tap to play it through the Wario synthesis engine — then generate your own.';
+      ? `Someone shared "${sharedTitle}" with you. Tap to play it through the Wario Synthesis Engine — then generate your own.`
+      : 'Someone shared a song with you. Tap to play it through the Wario Synthesis Engine — then generate your own.';
 
     const html = `<!doctype html>
 <html lang="en">
