@@ -679,40 +679,61 @@ class MotifApp {
   }
 
   private async copyToClipboard(text: string): Promise<void> {
-    // iOS Safari needs the textarea fallback - clipboard API is unreliable
-    // Try textarea approach first for better iOS compatibility
+    // Try modern clipboard API first
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch {
+        // Fall through to textarea method
+      }
+    }
+
+    // Fallback for iOS Safari and older browsers
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.position = 'fixed';
-    ta.style.left = '0';
     ta.style.top = '0';
-    ta.style.opacity = '0';
-    ta.style.pointerEvents = 'none';
-    ta.setAttribute('readonly', ''); // Prevent keyboard on iOS
+    ta.style.left = '0';
+    ta.style.width = '2em';
+    ta.style.height = '2em';
+    ta.style.padding = '0';
+    ta.style.border = 'none';
+    ta.style.outline = 'none';
+    ta.style.boxShadow = 'none';
+    ta.style.background = 'transparent';
+    ta.style.fontSize = '16px'; // Prevent zoom on iOS
+    ta.setAttribute('readonly', '');
     document.body.appendChild(ta);
 
-    // iOS specific selection
-    const range = document.createRange();
-    range.selectNodeContents(ta);
-    const selection = window.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
+    // iOS needs special handling
+    const isiOS = /ipad|iphone|ipod/i.test(navigator.userAgent);
+    if (isiOS) {
+      ta.contentEditable = 'true';
+      ta.readOnly = false;
+      const range = document.createRange();
+      range.selectNodeContents(ta);
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      ta.setSelectionRange(0, 999999);
+    } else {
+      ta.select();
     }
-    ta.setSelectionRange(0, text.length); // iOS needs this
 
     let success = false;
     try {
       success = document.execCommand('copy');
     } catch {
-      success = false;
+      // ignore
     }
 
     document.body.removeChild(ta);
 
-    // Fallback to modern API if execCommand failed
-    if (!success && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
+    if (!success) {
+      throw new Error('Copy failed');
     }
   }
 
