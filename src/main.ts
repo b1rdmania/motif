@@ -758,6 +758,10 @@ class MotifApp {
 
     const title = this.cleanSongTitle(result.title || 'a song');
 
+    // Open window immediately (must be in user gesture context for mobile)
+    // We'll navigate it after getting the share URL
+    const popup = window.open('about:blank', '_blank');
+
     // Get share URL (try short link first)
     let shareUrl: string | null = null;
     try {
@@ -789,7 +793,13 @@ class MotifApp {
     const tweetText = `I made ${title} Game Boy version.\n\n16-Bit Midi Wario Synth by @b1rdmania`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
 
-    window.open(twitterUrl, '_blank', 'width=550,height=420');
+    // Navigate the already-opened window
+    if (popup) {
+      popup.location.href = twitterUrl;
+    } else {
+      // Fallback if popup was blocked
+      window.location.href = twitterUrl;
+    }
   }
 
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
