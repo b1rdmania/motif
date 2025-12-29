@@ -24,16 +24,13 @@ class MotifApp {
   
   private selectedTitle!: HTMLElement;
   private selectedMeta!: HTMLElement;
-  private selectedDetails!: HTMLElement;
   private preGenActions!: HTMLElement;
   private preGenSupport!: HTMLElement;
   private generatedBlock!: HTMLElement;
   private playPauseBtn!: HTMLButtonElement;
-  private detailsToggle!: HTMLElement;
   private previewBtn!: HTMLButtonElement;
   private previewStopBtn!: HTMLButtonElement;
   private previewState!: HTMLElement;
-  private chooseDifferentBtn!: HTMLButtonElement;
 
   private isPreviewPlaying = false;
   private hasGenerated = false;
@@ -114,16 +111,13 @@ class MotifApp {
     
     this.selectedTitle = document.getElementById('selectedTitle')!;
     this.selectedMeta = document.getElementById('selectedMeta')!;
-    this.selectedDetails = document.getElementById('selectedDetails')!;
     this.preGenActions = document.getElementById('preGenActions')!;
     this.preGenSupport = document.getElementById('preGenSupport')!;
     this.generatedBlock = document.getElementById('generatedBlock')!;
     this.playPauseBtn = document.getElementById('playPauseBtn') as HTMLButtonElement;
-    this.detailsToggle = document.getElementById('detailsToggle')!;
     this.previewBtn = document.getElementById('previewBtn') as HTMLButtonElement;
     this.previewStopBtn = document.getElementById('previewStopBtn') as HTMLButtonElement;
     this.previewState = document.getElementById('previewState')!;
-    this.chooseDifferentBtn = document.getElementById('chooseDifferentBtn') as HTMLButtonElement;
 
     // Motif controls
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
@@ -174,7 +168,6 @@ class MotifApp {
     // Preview inside selected source only
     this.previewBtn.addEventListener('click', () => void this.handlePreviewToggle());
     this.previewStopBtn.addEventListener('click', () => this.stopPreview());
-    this.chooseDifferentBtn.addEventListener('click', () => this.goToResults());
     // Use both input and change for iOS compatibility
     const seekHandler = (e: Event) => {
       const progress = parseFloat((e.target as HTMLInputElement).value) / 100;
@@ -429,18 +422,7 @@ class MotifApp {
       // Update UI
       const displayTitle = this.cleanSongTitle(result.title);
       this.selectedTitle.textContent = displayTitle;
-      this.selectedMeta.textContent = `Source: ${this.formatSourceLabel(result.source)} · Length: ${this.formatDuration(actualDuration)} · Notes: ${events.length}`;
-
-      // Optional details (hidden behind toggle)
-      const detailParts: string[] = [];
-      const trackCount = Number(metadata.trackCount);
-      const tempo = Number(metadata.tempo);
-      const duration = Number(actualDuration);
-      if (Number.isFinite(trackCount) && trackCount > 0) detailParts.push(`Tracks: ${trackCount}`);
-      if (Number.isFinite(tempo) && tempo > 0) detailParts.push(`Tempo: ${Math.round(tempo)} bpm`);
-      if (Number.isFinite(duration) && duration > 0) detailParts.push(`Length: ${this.formatDuration(duration)}`);
-      detailParts.push(`Notes: ${events.length}`);
-      this.selectedDetails.textContent = detailParts.join(' · ');
+      this.selectedMeta.textContent = `Source: ${this.formatSourceLabel(result.source)}`;
 
       this.updateEmbedSnippet(result.title);
       this.updateIOSAudioBanner();
@@ -830,7 +812,6 @@ class MotifApp {
     const showPreGen = state === 'selected';
     this.preGenActions.style.display = showPreGen ? 'block' : 'none';
     this.preGenSupport.style.display = showPreGen ? 'flex' : 'none';
-    this.detailsToggle.style.display = showPreGen ? 'block' : 'none';
 
     // Generated artifact content
     const showGenerated = state === 'generated';
@@ -843,15 +824,6 @@ class MotifApp {
       this.updateIOSAudioBanner();
     } else {
       this.iosAudioBanner.style.display = 'none';
-    }
-  }
-
-  private goToResults(): void {
-    this.setState('results');
-    try {
-      this.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch {
-      // ignore
     }
   }
 
