@@ -220,8 +220,10 @@ app.get('/s/:code', async (req, res) => {
     const imageUrl = origin ? `${origin}/wariosynthlogo.png` : '/wariosynthlogo.png';
 
     const sharedTitle = (payload.title || '').trim();
-    const ogTitle = sharedTitle || 'WARIO SYNTH';
-    const ogDescription = 'I made this in Wario Synth, click to listen or generate your own';
+    const ogTitle = sharedTitle ? `${sharedTitle} - WARIO SYNTH` : 'WARIO SYNTH';
+    const ogDescription = sharedTitle
+      ? `I made ${sharedTitle} game boy version. Click to listen or generate your own, made in Wario Synth by @b1rdmania.`
+      : 'Turn any song into retro game console music. Made by @b1rdmania.';
 
     const html = `<!doctype html>
 <html lang="en">
@@ -239,7 +241,7 @@ app.get('/s/:code', async (req, res) => {
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${escapeHtml(shortUrl)}" />
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(ogTitle)}" />
     <meta name="twitter:description" content="${escapeHtml(ogDescription)}" />
     <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />

@@ -58,6 +58,7 @@ class MotifApp {
   private iosAudioState!: HTMLElement;
 
   private copyLinkBtn!: HTMLButtonElement;
+  private shareToXBtn!: HTMLButtonElement;
   private shareLinkBox!: HTMLElement;
   private shareLinkInput!: HTMLInputElement;
 
@@ -135,6 +136,7 @@ class MotifApp {
     this.motifDuration = document.getElementById('motifDuration')!;
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
+    this.shareToXBtn = document.getElementById('shareToXBtn') as HTMLButtonElement;
     this.shareLinkBox = document.getElementById('shareLinkBox') as HTMLElement;
     this.shareLinkInput = document.getElementById('shareLinkInput') as HTMLInputElement;
 
@@ -184,6 +186,7 @@ class MotifApp {
     this.motifProgressBar.addEventListener('change', seekHandler);
 
     this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
+    this.shareToXBtn.addEventListener('click', () => void this.handleShareToX());
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
@@ -744,6 +747,47 @@ class MotifApp {
     }
   }
 
+  private async handleShareToX(): Promise<void> {
+    if (!this.hasGenerated) return;
+    const result = this.searchResults[this.selectedResultIndex];
+    if (!result?.midiUrl) return;
+
+    const title = this.cleanSongTitle(result.title || 'a song');
+
+    // Get share URL (try short link first)
+    let shareUrl: string | null = null;
+    try {
+      let payload: any = null;
+      if (result.source === 'bitmidi') {
+        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
+        if (m?.[1]) payload = { src: 'bitmidi', id: m[1], title: result.title };
+      }
+      if (!payload) payload = { u: result.midiUrl, title: result.title };
+
+      const resp = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.url) shareUrl = `${window.location.origin}${data.url}`;
+      }
+    } catch {
+      // Fall through
+    }
+
+    if (!shareUrl) {
+      shareUrl = window.location.href;
+    }
+
+    // Compose tweet text
+    const tweetText = `I made ${title} game boy version. Click to listen or generate your own, made in Wario Synth by @b1rdmania`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
+
+    window.open(twitterUrl, '_blank', 'width=550,height=420');
+  }
+
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
     // results - keep visible in all states except idle so user can pick a different source
     const hasResults = state === 'results' || state === 'selected' || state === 'generated';
@@ -754,9 +798,11 @@ class MotifApp {
     const hasSelection = state === 'selected' || state === 'generated';
     this.playerSection.classList.toggle('visible', hasSelection);
 
-    // share link only after generation
+    // share buttons only after generation
     this.copyLinkBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
     this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
+    this.shareToXBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
+    this.shareToXBtn.disabled = !(state === 'generated' && this.hasGenerated);
 
     // Dim results when selected/generated, but keep them interactive
     this.resultsSection.classList.toggle('collapsed', state === 'selected' || state === 'generated');
