@@ -55,8 +55,6 @@ class MotifApp {
 
   private copyLinkBtn!: HTMLButtonElement;
   private shareToXBtn!: HTMLButtonElement;
-  private shareLinkBox!: HTMLElement;
-  private shareLinkInput!: HTMLInputElement;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -129,8 +127,6 @@ class MotifApp {
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
     this.shareToXBtn = document.getElementById('shareToXBtn') as HTMLButtonElement;
-    this.shareLinkBox = document.getElementById('shareLinkBox') as HTMLElement;
-    this.shareLinkInput = document.getElementById('shareLinkInput') as HTMLInputElement;
 
     // iOS audio unlock UI (Motif)
     this.iosAudioBanner = document.getElementById('iosAudioBanner')!;
@@ -730,22 +726,12 @@ class MotifApp {
       }
     }
 
-    if (copied) {
-      // Show brief "Copied!" feedback
-      const originalText = this.copyLinkBtn.textContent;
-      this.copyLinkBtn.textContent = 'Copied!';
-      setTimeout(() => {
-        this.copyLinkBtn.textContent = originalText;
-      }, 1500);
-      // Hide the text box if it was showing from a previous attempt
-      this.shareLinkBox.style.display = 'none';
-    } else {
-      // Last resort: show text box for manual copy
-      this.shareLinkInput.value = shareUrl;
-      this.shareLinkBox.style.display = 'block';
-      this.shareLinkInput.focus();
-      this.shareLinkInput.select();
-    }
+    // Show feedback
+    const originalText = this.copyLinkBtn.textContent;
+    this.copyLinkBtn.textContent = copied ? 'Copied!' : 'Failed';
+    setTimeout(() => {
+      this.copyLinkBtn.textContent = originalText;
+    }, 1500);
   }
 
   private async handleShareToX(): Promise<void> {
