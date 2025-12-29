@@ -718,10 +718,30 @@ class MotifApp {
       }
     }
 
-    // Show the link
-    this.shareLinkInput.value = shareUrl;
-    this.shareLinkBox.style.display = 'block';
-    this.shareLinkInput.select();
+    // Try to copy to clipboard first (works on desktop)
+    let copied = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        copied = true;
+      }
+    } catch {
+      // Clipboard failed, fall through to text box
+    }
+
+    if (copied) {
+      // Show brief "Copied!" feedback
+      const originalText = this.copyLinkBtn.textContent;
+      this.copyLinkBtn.textContent = 'Copied!';
+      setTimeout(() => {
+        this.copyLinkBtn.textContent = originalText;
+      }, 1500);
+    } else {
+      // Fallback: show text box for manual copy (iOS)
+      this.shareLinkInput.value = shareUrl;
+      this.shareLinkBox.style.display = 'block';
+      this.shareLinkInput.select();
+    }
   }
 
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
