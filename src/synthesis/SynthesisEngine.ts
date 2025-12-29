@@ -81,20 +81,26 @@ export class SynthesisEngine {
 
   start(): void {
     if (this.isPlaying) return;
-    
+
     this.isPlaying = true;
     this.startTime = this.audioContext.currentTime;
-    
+
     // Reset event indices
     for (const role of this.roleAssignments.keys()) {
       this.nextEventIndex.set(role, 0);
     }
-    
+
+    // Restore layer gains (they may have been faded to 0 on stop)
+    for (const [role, layer] of this.layers) {
+      layer.gainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+      this.restoreLayerGain(layer.gainNode, role);
+    }
+
     // Start scheduler to play actual MIDI events
     this.schedulerIntervalId = window.setInterval(() => {
       this.scheduleEvents();
     }, this.config.scheduleInterval);
-    
+
     console.log('Started synthesis with', this.roleAssignments.size, 'roles');
   }
 
@@ -193,38 +199,49 @@ export class SynthesisEngine {
     };
   }
 
+  private getLayerGainForRole(role: Role): number {
+    switch (role) {
+      case 'bass': return 0.4;
+      case 'drone': return 0.2;
+      case 'ostinato': return 0.3;
+      case 'texture': return 0.1;
+      case 'accents': return 0.5;
+      case 'melody': return 0.35;
+      default: return 0.3;
+    }
+  }
+
+  private restoreLayerGain(gain: GainNode, role: Role): void {
+    gain.gain.setValueAtTime(this.getLayerGainForRole(role), this.audioContext.currentTime);
+  }
+
   private configureLayerForRole(gain: GainNode, filter: BiquadFilterNode, role: Role): void {
+    gain.gain.value = this.getLayerGainForRole(role);
+
     switch (role) {
       case 'bass':
-        gain.gain.value = 0.4;
         filter.type = 'lowpass';
         filter.frequency.value = 200;
         break;
       case 'drone':
-        gain.gain.value = 0.2;
         filter.type = 'bandpass';
         filter.frequency.value = 400;
         break;
       case 'ostinato':
-        gain.gain.value = 0.3;
         filter.type = 'highpass';
         filter.frequency.value = 300;
         break;
       case 'texture':
-        gain.gain.value = 0.1;
         filter.type = 'bandpass';
         filter.frequency.value = 800;
         break;
       case 'accents':
-        gain.gain.value = 0.5;
         filter.type = 'peaking';
         filter.frequency.value = 1000;
         break;
       case 'melody':
-        // Passthrough mode - balanced sound for all notes
-        gain.gain.value = 0.35;
         filter.type = 'lowpass';
-        filter.frequency.value = 4000; // Brighter sound for full range
+        filter.frequency.value = 4000;
         break;
     }
   }
@@ -398,14 +415,16 @@ export class SynthesisEngine {
   private fadeOutAllLayers(): void {
     const fadeTime = this.config.fadeTime;
     const when = this.audioContext.currentTime;
-    
+
     for (const layer of this.layers.values()) {
+      // Cancel any scheduled ramps and fade to 0
+      layer.gainNode.gain.cancelScheduledValues(when);
+      layer.gainNode.gain.setValueAtTime(layer.gainNode.gain.value, when);
       layer.gainNode.gain.linearRampToValueAtTime(0, when + fadeTime);
     }
-    
-    setTimeout(() => {
-      this.cleanupLayers();
-    }, fadeTime * 1000 + 100);
+
+    // Don't cleanup layers - keep them connected for resume
+    // Layers are only cleaned up when setupLayers is called with new data
   }
 
   private scheduleChord(role: Role, pitches: number[], duration: number, velocity: number, when: number): void {
