@@ -185,7 +185,7 @@ class MotifApp {
     this.motifProgressBar.addEventListener('input', seekHandler);
     this.motifProgressBar.addEventListener('change', seekHandler);
 
-    this.copyLinkBtn.addEventListener('click', () => this.handleCopyLink());
+    this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
@@ -671,26 +671,52 @@ class MotifApp {
     this.status.textContent = message;
   }
 
-  private handleCopyLink(): void {
+  private async handleCopyLink(): Promise<void> {
     if (!this.hasGenerated) return;
     const result = this.searchResults[this.selectedResultIndex];
     if (!result?.midiUrl) return;
 
-    // Build share URL with title
-    const title = encodeURIComponent(result.title || '');
-    let shareUrl: string;
-    if (result.source === 'bitmidi') {
-      const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
-      if (m?.[1]) {
-        shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}&title=${title}`;
-      } else {
-        shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}&title=${title}`;
+    const title = result.title || '';
+
+    // Try to get a short link with dynamic OG tags
+    let shareUrl: string | null = null;
+    try {
+      let payload: any = null;
+      if (result.source === 'bitmidi') {
+        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
+        if (m?.[1]) payload = { src: 'bitmidi', id: m[1], title };
       }
-    } else {
-      shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}&title=${title}`;
+      if (!payload) payload = { u: result.midiUrl, title };
+
+      const resp = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.url) shareUrl = `${window.location.origin}${data.url}`;
+      }
+    } catch {
+      // Fall through to long URL
     }
 
-    // Show the link in a text box for easy copying
+    // Fallback: direct /play link
+    if (!shareUrl) {
+      const encodedTitle = encodeURIComponent(title);
+      if (result.source === 'bitmidi') {
+        const m = String(result.midiUrl).match(/\/uploads\/(\d+)\.mid/i);
+        if (m?.[1]) {
+          shareUrl = `${window.location.origin}/play?src=bitmidi&id=${encodeURIComponent(m[1])}&title=${encodedTitle}`;
+        } else {
+          shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}&title=${encodedTitle}`;
+        }
+      } else {
+        shareUrl = `${window.location.origin}/play?u=${encodeURIComponent(result.midiUrl)}&title=${encodedTitle}`;
+      }
+    }
+
+    // Show the link
     this.shareLinkInput.value = shareUrl;
     this.shareLinkBox.style.display = 'block';
     this.shareLinkInput.select();

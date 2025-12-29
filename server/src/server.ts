@@ -221,7 +221,7 @@ app.get('/s/:code', async (req, res) => {
 
     const sharedTitle = (payload.title || '').trim();
     const ogTitle = sharedTitle ? `${sharedTitle} - WARIO SYNTH` : 'WARIO SYNTH';
-    const ogDescription = 'Tap to play this Gameboy tune';
+    const ogDescription = sharedTitle ? 'I made this in WARIO SYNTH' : 'Tap to play this Gameboy tune';
 
     const html = `<!doctype html>
 <html lang="en">
