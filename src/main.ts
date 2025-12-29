@@ -147,11 +147,20 @@ class MotifApp {
   }
 
   private setupEventListeners(): void {
-    this.searchBtn.addEventListener('click', () => this.handleSearch());
-    
+    this.searchBtn.addEventListener('click', () => {
+      console.log('[MotifApp] Search button clicked');
+      this.handleSearch().catch(err => {
+        console.error('[MotifApp] Search error:', err);
+        this.updateStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      });
+    });
+
     this.songInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        this.handleSearch();
+        this.handleSearch().catch(err => {
+          console.error('[MotifApp] Search error:', err);
+          this.updateStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        });
       }
     });
 
@@ -291,7 +300,9 @@ class MotifApp {
   }
 
   private async handleSearch(): Promise<void> {
+    console.log('[MotifApp] handleSearch called');
     const songName = this.songInput.value.trim();
+    console.log('[MotifApp] songName:', songName);
     if (!songName) {
       this.updateStatus('Enter a song name to search.');
       this.songInput.focus();
@@ -302,6 +313,7 @@ class MotifApp {
     this.handleMotifStop();
 
     this.updateStatus('Searching…');
+    console.log('[MotifApp] Starting search for:', songName);
     this.searchBtn.disabled = true;
     this.setState('idle');
 
@@ -915,5 +927,16 @@ class MotifApp {
 }
 
 // Make app globally available for onclick handlers
-const app = new MotifApp();
-(window as any).app = app;
+try {
+  const app = new MotifApp();
+  (window as any).app = app;
+  console.log('[MotifApp] Initialized successfully');
+} catch (err) {
+  console.error('[MotifApp] Failed to initialize:', err);
+  // Show error in UI so users can report it
+  const status = document.getElementById('status');
+  if (status) {
+    status.textContent = `App error: ${err instanceof Error ? err.message : 'Unknown error'}. Please refresh.`;
+    status.style.color = '#ff6b6b';
+  }
+}
