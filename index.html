@@ -305,7 +305,7 @@
         }
         .modal main {
             padding: 16px;
-            background: var(--gb-lightest);
+            background: var(--gb-dark);
             overflow-y: auto;
             flex: 1;
             -webkit-overflow-scrolling: touch;
@@ -316,24 +316,27 @@
             gap: 10px;
         }
         .faq-item {
-            border: 2px solid var(--gb-dark);
+            border: 2px solid var(--gb-medium);
             padding: 10px;
-            background: var(--color-surface);
+            background: var(--gb-darkest);
         }
         .faq-item h4 {
             margin: 0 0 6px 0;
             font-size: 8px;
-            color: var(--gb-darkest);
+            color: var(--gb-lightest);
         }
         .faq-item p {
             margin: 0;
-            color: var(--gb-dark);
+            color: var(--gb-light);
             font-size: 8px;
             line-height: 1.8;
         }
+        .faq-item a {
+            color: var(--gb-lightest);
+        }
         .faq-item code {
             font-size: 8px;
-            color: var(--gb-darkest);
+            color: var(--gb-lightest);
         }
         .controls {
             margin: calc(var(--spacing-unit) * 3) 0 calc(var(--spacing-unit) * 2) 0;
