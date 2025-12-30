@@ -34,6 +34,7 @@ logs/
 .cache/
 .tmp/
 .vercel
+.claude/
 
 # Backend runtime cache (downloaded MIDI files)
 server/cache/
