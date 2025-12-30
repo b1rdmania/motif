@@ -1,52 +1,34 @@
 # WARIO SYNTH
 
-Turn any song into retro game console music using the Wario Synthesis Engine.
+![Wario Synth Logo](public/wariosynthlogo.png)
 
-WARIO SYNTH is a small experiment in **music-as-code**: treat MIDI as structural data, not audio. It pulls MIDI patterns from the web, plays the original performance, then generates a retro Gameboy-style procedural version using the Wario Synthesis Engine and Web Audio.
+Turn any song into retro Game Boy music using the Wario Synthesis Engine.
+
+## Live Demo
+
+**[wariosynthengine.com](https://wariosynthengine.com)** (or [motif-self.vercel.app](https://motif-self.vercel.app))
 
 ## About
 
-- **What it does**: Search songs → pick a result → play the original MIDI → generate retro game console music with the Wario Synthesis Engine.
-- **Why it's fun**: It's like "hear a MIDI version of anything", then transform it into classic chiptune-style audio.
-- **Status**: Working locally end-to-end. Hosted frontend exists, backend hosting may be separate depending on deployment.
+WARIO SYNTH is a fun experiment in **music-as-code**: it treats MIDI as structural data, not audio. Search for any song, pick a MIDI source, and the Wario Synthesis Engine analyses the MIDI structure and resynthesises it using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip.
 
-## Live demo
+- **Two pulse wave channels** for melody and harmony
+- **One wave channel** for bass
+- **One noise channel** for percussion
 
-- **Frontend**: `https://motif-46uf00ypw-boom-test-c54cde04.vercel.app`
+All processing runs client-side in your browser - no server-side audio generation.
 
-Note: if the backend isn’t deployed/configured for the demo environment, search/fetch won’t work from the hosted URL. Run locally for the full experience.
+![Wario](public/wario-sprite.png)
 
-## Use on your website (embed)
-
-WARIO SYNTH includes an embeddable widget page at **`/embed`**. It generates audio in the user's browser (no audio files needed).
-
-Example:
-
-```html
-<iframe
-  src="https://YOUR_DOMAIN/embed?song=Hotel%20California"
-  width="420"
-  height="260"
-  style="border:0;border-radius:12px;overflow:hidden"
-  allow="autoplay"
-></iframe>
-```
-
-### Embed parameters (v1)
-- **`song`**: the query to load (e.g. `Hotel%20California`)\n+- **`volume`**: preview volume `0..1` (optional)\n+- **`motifVolume`**: motif volume `0..1` (optional)
-
-Notes:\n- Autoplay is best-effort; iOS/Safari requires a user gesture before sound.\n
 ## Features
 
-- **MIDI search** (currently BitMidi; additional sources optional)
-- **MIDI fetch + validation + caching** via an Express backend
-- **Browser playback** with multiple engines:
-  - Tone.js sampled piano
-  - Soundfont piano
-  - Custom WebAudio synth preview
-- **Wario Synthesis Engine**: role-based synthesis (bass / drone / ostinato / texture / accents) from parsed MIDI structure
+- **MIDI search** from BitMidi and other sources
+- **Browser playback** with soundfont piano preview
+- **Wario Synthesis Engine**: procedural Game Boy-style synthesis from parsed MIDI structure
+- **Share links** with dynamic social previews
+- **Works on mobile** (iOS audio unlock included)
 
-## Quick start (local)
+## Quick Start (Local)
 
 ```bash
 # Install frontend deps
@@ -62,44 +44,38 @@ npm run dev:backend
 npm run dev
 ```
 
-## How it works (pipeline)
+## How It Works
 
 1. User searches for a song
 2. Backend searches MIDI sources and returns ranked candidates
-3. Backend fetches the selected `.mid`, validates it, and caches it
+3. User picks a MIDI source
 4. Frontend parses MIDI into normalized note events
-5. User can:
-   - **Play original MIDI** (soundfont/sampler playback), or
-   - **Generate with Wario Synthesis Engine** (procedural Web Audio synthesis derived from structure)
+5. Wario Synthesis Engine maps tracks to Game Boy sound channels
+6. Web Audio oscillators generate the retro sound
 
-## Backend API
+## Embed Widget
 
-- `GET /api/midi/search?q=song`
-- `GET /api/midi/fetch?u=url` (URL must be encoded)
-- `GET /api/midi/parse?u=url`
-- `GET /health`
+WARIO SYNTH includes an embeddable widget at **`/embed`**:
 
-## Project structure
-
-```
-src/
-├── core/           # MotifEngine, RoleMapper
-├── midi/           # Parsing + feature extraction
-├── services/       # Backend API client
-├── synthesis/      # Players + procedural synthesis engine
-└── types/          # TypeScript interfaces
-
-server/
-├── src/
-│   ├── adapters/   # MIDI search adapters (sources)
-│   ├── services/   # Search/fetch/parse
-│   └── utils/      # Scoring, validation, MIDI helpers
-└── cache/          # Downloaded MIDI cache (local dev)
+```html
+<iframe
+  src="https://wariosynthengine.com/embed?song=Hotel%20California"
+  width="420"
+  height="260"
+  style="border:0;border-radius:12px;overflow:hidden"
+  allow="autoplay"
+></iframe>
 ```
 
-## Roadmap
+## Tech Stack
 
-- **More sources**: add/replace flaky scrapers with more reliable sources
-- **Better matching**: smarter ranking + metadata validation
-- **Synthesis controls**: "more ominous", "more dancey", "more ambient", etc.
-- **Deployment**: host backend and wire frontend to it via env config
+- **Frontend**: TypeScript, Vite, Web Audio API
+- **Backend**: Express, Node.js
+- **Deployment**: Vercel
+- **Built with**: Claude Code
+
+## Credits
+
+A non-commercial project by [@b1rdmania](https://x.com/b1rdmania) for lols. Please don't sue me.
+
+![Wario Moment](public/wario.png)
