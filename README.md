@@ -6,7 +6,7 @@ Turn any song into a Game Boy version.
 
 ## Live Demo
 
-**[wariosynthengine.com](https://wariosynthengine.com)** (or [motif-self.vercel.app](https://motif-self.vercel.app))
+**[www.wario.style](https://www.wario.style)**
 
 ## About
 
@@ -59,7 +59,7 @@ WARIO SYNTH includes an embeddable widget at **`/embed`**:
 
 ```html
 <iframe
-  src="https://wariosynthengine.com/embed?song=Hotel%20California"
+  src="https://www.wario.style/embed?song=Hotel%20California"
   width="420"
   height="260"
   style="border:0;border-radius:12px;overflow:hidden"
