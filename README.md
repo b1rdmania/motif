@@ -1,8 +1,8 @@
-# WARIO SYNTH
+# Wario Synthesis Engine 16-Bit Midi
 
 ![Wario Synth Logo](public/wariosynthlogo.png)
 
-Turn any song into retro Game Boy music using the Wario Synthesis Engine.
+Turn any song into a Game Boy version.
 
 ## Live Demo
 
