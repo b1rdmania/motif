@@ -804,8 +804,8 @@ class MotifApp {
       shareUrl = window.location.href;
     }
 
-    // Compose tweet text - URL will be inserted by Twitter between the two parts
-    const tweetText = `I made ${title} Game Boy version.\n\n16-Bit Midi Wario Synth by @b1rdmania`;
+    // Compose tweet text
+    const tweetText = `I made a Game Boy version of ${title}\n\nUsing @b1rdmania's Wario Synthesis Midi Engine\n\nCheck it out here`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
 
     // Navigate the already-opened window
