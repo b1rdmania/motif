@@ -505,4 +505,231 @@ export class SynthesisEngine {
     }
     this.layers.clear();
   }
+
+  /**
+   * Render audio offline (faster than real-time) to an AudioBuffer.
+   * This is a static method that creates its own offline context and scheduling.
+   */
+  static async renderOffline(
+    assignments: RoleAssignment[],
+    _config: MotifConfig,
+    sampleRate = 44100
+  ): Promise<AudioBuffer> {
+    // Calculate duration from assignments
+    let maxDuration = 0;
+    for (const assignment of assignments) {
+      for (const event of assignment.events) {
+        const eventEnd = event.time + event.duration;
+        maxDuration = Math.max(maxDuration, eventEnd);
+      }
+      for (const chord of assignment.chords) {
+        const chordEnd = chord.time + chord.duration;
+        maxDuration = Math.max(maxDuration, chordEnd);
+      }
+    }
+
+    // Add a little padding for release envelopes
+    const totalDuration = maxDuration + 0.5;
+    const totalSamples = Math.ceil(totalDuration * sampleRate);
+
+    // Create offline context
+    const offlineCtx = new OfflineAudioContext(2, totalSamples, sampleRate);
+
+    // Create master gain
+    const masterGain = offlineCtx.createGain();
+    masterGain.connect(offlineCtx.destination);
+    masterGain.gain.value = 0.3;
+
+    // Normalize times (same logic as setupLayers)
+    let earliestTime = Infinity;
+    for (const assignment of assignments) {
+      if (assignment.events.length > 0) {
+        earliestTime = Math.min(earliestTime, assignment.events[0].time);
+      }
+      if (assignment.chords.length > 0) {
+        earliestTime = Math.min(earliestTime, assignment.chords[0].time);
+      }
+    }
+    if (earliestTime !== Infinity && earliestTime > 0) {
+      for (const assignment of assignments) {
+        for (const event of assignment.events) {
+          event.time -= earliestTime;
+        }
+        for (const chord of assignment.chords) {
+          chord.time -= earliestTime;
+        }
+      }
+    }
+
+    // Schedule all events for each assignment
+    for (const assignment of assignments) {
+      const { role, events, chords } = assignment;
+
+      // Create layer nodes for this role
+      const { filterNode } = SynthesisEngine.createOfflineLayer(offlineCtx, masterGain, role);
+
+      // For roles that support polyphony, prefer chords
+      if ((role === 'drone' || role === 'texture') && chords.length > 0) {
+        for (const chord of chords) {
+          SynthesisEngine.scheduleOfflineChord(
+            offlineCtx,
+            filterNode,
+            role,
+            chord.pitches,
+            Math.max(0.05, chord.duration),
+            chord.velocity,
+            chord.time
+          );
+        }
+      } else {
+        for (const event of events) {
+          SynthesisEngine.scheduleOfflineNote(
+            offlineCtx,
+            filterNode,
+            role,
+            event.pitch,
+            Math.max(0.05, event.duration),
+            event.velocity,
+            event.time
+          );
+        }
+      }
+    }
+
+    // Render and return
+    return offlineCtx.startRendering();
+  }
+
+  private static createOfflineLayer(
+    ctx: OfflineAudioContext,
+    masterGain: GainNode,
+    role: Role
+  ): { gainNode: GainNode; filterNode: BiquadFilterNode } {
+    const gainNode = ctx.createGain();
+    const filterNode = ctx.createBiquadFilter();
+
+    filterNode.connect(gainNode);
+    gainNode.connect(masterGain);
+
+    // Set gain based on role
+    switch (role) {
+      case 'bass': gainNode.gain.value = 0.4; break;
+      case 'drone': gainNode.gain.value = 0.2; break;
+      case 'ostinato': gainNode.gain.value = 0.3; break;
+      case 'texture': gainNode.gain.value = 0.1; break;
+      case 'accents': gainNode.gain.value = 0.5; break;
+      case 'melody': gainNode.gain.value = 0.35; break;
+      default: gainNode.gain.value = 0.3;
+    }
+
+    // Configure filter based on role
+    switch (role) {
+      case 'bass':
+        filterNode.type = 'lowpass';
+        filterNode.frequency.value = 200;
+        break;
+      case 'drone':
+        filterNode.type = 'bandpass';
+        filterNode.frequency.value = 400;
+        break;
+      case 'ostinato':
+        filterNode.type = 'highpass';
+        filterNode.frequency.value = 300;
+        break;
+      case 'texture':
+        filterNode.type = 'bandpass';
+        filterNode.frequency.value = 800;
+        break;
+      case 'accents':
+        filterNode.type = 'peaking';
+        filterNode.frequency.value = 1000;
+        break;
+      case 'melody':
+        filterNode.type = 'lowpass';
+        filterNode.frequency.value = 4000;
+        break;
+    }
+
+    return { gainNode, filterNode };
+  }
+
+  private static midiToFreq(midiNote: number): number {
+    return 440 * Math.pow(2, (midiNote - 69) / 12);
+  }
+
+  private static getOscillatorType(role: Role): OscillatorType {
+    switch (role) {
+      case 'bass': return 'square';
+      case 'drone': return 'sawtooth';
+      case 'ostinato': return 'triangle';
+      case 'melody': return 'triangle';
+      case 'texture': return 'sine';
+      case 'accents': return 'sine';
+      default: return 'sine';
+    }
+  }
+
+  private static scheduleOfflineNote(
+    ctx: OfflineAudioContext,
+    filterNode: BiquadFilterNode,
+    role: Role,
+    pitch: number,
+    duration: number,
+    velocity: number,
+    when: number
+  ): void {
+    const osc = ctx.createOscillator();
+    const envelope = ctx.createGain();
+
+    osc.frequency.value = SynthesisEngine.midiToFreq(pitch);
+    osc.type = SynthesisEngine.getOscillatorType(role);
+
+    osc.connect(envelope);
+    envelope.connect(filterNode);
+
+    const gainValue = velocity * 0.5;
+    const attackTime = Math.max(0.005, Math.min(0.05, duration * 0.1));
+    const releaseTime = Math.max(0.01, Math.min(0.1, duration * 0.3));
+
+    envelope.gain.setValueAtTime(0, when);
+    envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
+    envelope.gain.setValueAtTime(gainValue, when + Math.max(attackTime, duration - releaseTime));
+    envelope.gain.exponentialRampToValueAtTime(0.001, when + duration + releaseTime);
+
+    osc.start(when);
+    osc.stop(when + duration + releaseTime + 0.01);
+  }
+
+  private static scheduleOfflineChord(
+    ctx: OfflineAudioContext,
+    filterNode: BiquadFilterNode,
+    role: Role,
+    pitches: number[],
+    duration: number,
+    velocity: number,
+    when: number
+  ): void {
+    for (const pitch of pitches) {
+      const osc = ctx.createOscillator();
+      const envelope = ctx.createGain();
+
+      osc.frequency.value = SynthesisEngine.midiToFreq(pitch);
+      osc.type = SynthesisEngine.getOscillatorType(role);
+
+      osc.connect(envelope);
+      envelope.connect(filterNode);
+
+      const gainValue = (velocity * 0.3) / Math.max(pitches.length * 0.5, 1);
+      const attackTime = Math.max(0.005, Math.min(0.05, duration * 0.1));
+      const releaseTime = Math.max(0.01, Math.min(0.1, duration * 0.3));
+
+      envelope.gain.setValueAtTime(0, when);
+      envelope.gain.linearRampToValueAtTime(gainValue, when + attackTime);
+      envelope.gain.setValueAtTime(gainValue, when + Math.max(attackTime, duration - releaseTime));
+      envelope.gain.exponentialRampToValueAtTime(0.001, when + duration + releaseTime);
+
+      osc.start(when);
+      osc.stop(when + duration + releaseTime + 0.01);
+    }
+  }
 }

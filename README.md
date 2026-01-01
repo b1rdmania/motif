@@ -1,4 +1,4 @@
-# Wario Synthesis Engine 16-Bit Midi
+# Wario Synthesis Engine 8-Bit Midi
 
 ![Wario Synth Logo](public/wariosynthlogo.png)
 

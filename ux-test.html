@@ -2,140 +2,201 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>WARIO SYNTH - UX Test</title>
     <style>
+        /* Local Pixel Font */
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('/fonts/PressStart2P.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
         :root {
-            --bg: #08080c;
-            --surface: #101014;
-            --surface-2: #18181f;
-            --border: rgba(255,255,255,0.08);
-            --text: #e8e8e8;
-            --text-dim: #888;
-            --neon-green: #00ff88;
-            --neon-pink: #ff00aa;
-            --neon-blue: #00aaff;
-            --neon-orange: #ff8800;
+            /* Game Boy palette - light mode (authentic LCD) */
+            --gb-lightest: #E0E8C8;  /* Screen background */
+            --gb-light: #A8B89A;     /* Surface/cards */
+            --gb-medium: #6B7B5A;    /* Dim text, borders */
+            --gb-dark: #3A4A2A;      /* Text */
+            --gb-darkest: #1D2A1D;   /* Darkest accents */
+
+            /* Semantic mapping - LIGHT background, DARK text */
+            --color-bg: #C8D8B0;
+            --color-surface: #A8B89A;
+            --color-border: var(--gb-dark);
+            --color-text: var(--gb-darkest);
+            --color-text-dim: var(--gb-medium);
+
+            --spacing-unit: 8px;
+            --pixel-border: 4px;
         }
 
         * {
             box-sizing: border-box;
+            image-rendering: pixelated;
         }
 
         body {
             margin: 0;
-            padding: 24px 16px;
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: calc(var(--spacing-unit) * 3);
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Press Start 2P', monospace;
+            line-height: 2;
+            font-size: 10px;
             min-height: 100vh;
-            line-height: 1.5;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+        }
+
+        /* LCD Screen Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.03) 0px,
+                rgba(0, 0, 0, 0.03) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
         }
 
         .container {
-            max-width: 480px;
+            max-width: 600px;
             margin: 0 auto;
         }
 
         /* Header */
-        header {
+        .hero {
             text-align: center;
-            margin-bottom: 32px;
+            margin: 0 0 calc(var(--spacing-unit) * 3) 0;
+            padding: calc(var(--spacing-unit) * 2);
+            border: var(--pixel-border) solid var(--gb-dark);
+            background: var(--color-surface);
         }
 
-        h1 {
-            font-size: 2em;
-            margin: 0 0 8px 0;
-            color: var(--neon-green);
-            text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
-            letter-spacing: 0.05em;
-        }
-
-        .tagline {
-            color: var(--text-dim);
-            font-size: 15px;
+        .hero h1 {
+            color: var(--gb-darkest);
             margin: 0;
+            font-size: 16px;
+            font-weight: normal;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .hero .tagline {
+            margin: calc(var(--spacing-unit)) 0 0 0;
+            color: var(--gb-dark);
+            font-size: 8px;
+        }
+
+        .hero .test-badge {
+            display: inline-block;
+            margin-top: calc(var(--spacing-unit));
+            padding: 4px 8px;
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
+            font-size: 8px;
         }
 
         /* Search */
         .search-box {
             display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
+            gap: calc(var(--spacing-unit));
+            margin-bottom: calc(var(--spacing-unit) * 2);
         }
 
         input[type="text"] {
             flex: 1;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 14px 16px;
-            border-radius: 10px;
-            font-size: 15px;
-            transition: border-color 0.15s;
+            background: var(--gb-lightest);
+            color: var(--gb-darkest);
+            border: var(--pixel-border) solid var(--gb-dark);
+            padding: 12px 14px;
+            border-radius: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            box-shadow: inset 3px 3px 0 var(--gb-medium);
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: var(--neon-green);
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+            border-color: var(--gb-darkest);
+            background: #fff;
         }
 
         input[type="text"]::placeholder {
-            color: #555;
+            color: var(--gb-medium);
         }
 
         button {
-            background: var(--surface);
-            color: var(--text);
-            border: 1px solid var(--border);
-            padding: 14px 20px;
-            border-radius: 10px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            border: var(--pixel-border) solid var(--gb-dark);
+            padding: 12px 16px;
+            border-radius: 0;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.15s ease;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            box-shadow:
+                inset -3px -3px 0 var(--gb-medium),
+                inset 3px 3px 0 var(--gb-lightest);
+            transition: none;
         }
 
         button:hover:not(:disabled) {
-            border-color: rgba(255,255,255,0.2);
-            background: var(--surface-2);
+            background: var(--gb-lightest);
+            color: var(--gb-darkest);
+        }
+
+        button:active:not(:disabled) {
+            box-shadow: inset 3px 3px 0 var(--gb-medium);
         }
 
         button:disabled {
-            opacity: 0.4;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         button.primary {
-            background: var(--neon-green);
-            color: #000;
-            border-color: var(--neon-green);
-            font-weight: 600;
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
+            border-color: var(--gb-darkest);
+            box-shadow:
+                inset -3px -3px 0 var(--gb-darkest),
+                inset 3px 3px 0 var(--gb-medium);
         }
 
         button.primary:hover:not(:disabled) {
-            box-shadow: 0 0 24px rgba(0, 255, 136, 0.4);
-            transform: translateY(-1px);
+            background: var(--gb-darkest);
+            color: var(--gb-lightest);
         }
 
         /* Status */
         .status {
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-dim);
-            margin-bottom: 24px;
-            min-height: 20px;
+            padding: calc(var(--spacing-unit) * 2);
+            background: var(--gb-lightest);
+            border: var(--pixel-border) solid var(--gb-dark);
+            color: var(--gb-darkest);
+            font-size: 8px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
         }
 
         .status.error {
-            color: var(--neon-pink);
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
         }
 
         /* Results */
         .results {
             display: none;
-            margin-bottom: 24px;
+            margin-bottom: calc(var(--spacing-unit) * 3);
         }
 
         .results.visible {
@@ -143,52 +204,55 @@
         }
 
         .results-label {
-            font-size: 11px;
+            font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            color: var(--text-dim);
-            margin-bottom: 8px;
+            color: var(--gb-dark);
+            margin-bottom: calc(var(--spacing-unit));
         }
 
         .result-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
+            background: var(--color-surface);
+            border: var(--pixel-border) solid var(--gb-dark);
             padding: 12px 14px;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             cursor: pointer;
-            transition: all 0.15s;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .result-item:hover {
-            border-color: rgba(255,255,255,0.15);
-            background: var(--surface-2);
+            background: var(--gb-lightest);
         }
 
         .result-item.selected {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
+        }
+
+        .result-item.selected::before {
+            content: '▶ ';
         }
 
         .result-title {
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 8px;
         }
 
         .result-meta {
-            font-size: 12px;
-            color: var(--text-dim);
+            font-size: 8px;
+            color: var(--gb-medium);
+        }
+
+        .result-item.selected .result-meta {
+            color: var(--gb-light);
         }
 
         /* Player Card */
         .player-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
+            background: var(--gb-dark);
+            border: var(--pixel-border) solid var(--gb-darkest);
+            padding: calc(var(--spacing-unit) * 3);
             display: none;
         }
 
@@ -198,21 +262,21 @@
 
         .now-playing {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: calc(var(--spacing-unit) * 2);
         }
 
         .now-playing-label {
-            font-size: 11px;
+            font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            color: var(--text-dim);
+            color: var(--gb-light);
             margin-bottom: 4px;
         }
 
         .now-playing-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
+            font-size: 12px;
+            color: var(--gb-lightest);
+            word-break: break-word;
         }
 
         /* EQ Visualizer */
@@ -221,50 +285,59 @@
             align-items: flex-end;
             justify-content: center;
             gap: 2px;
-            height: 80px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 16px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .eq-visualizer::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0,0,0,0.1) 2px,
-                rgba(0,0,0,0.1) 4px
-            );
-            pointer-events: none;
-            z-index: 10;
+            height: 60px;
+            background: var(--gb-darkest);
+            border: 2px solid var(--gb-medium);
+            padding: 8px;
+            margin-bottom: calc(var(--spacing-unit) * 2);
         }
 
         .eq-bar {
-            width: 6px;
-            min-height: 3px;
-            background: linear-gradient(to top, var(--neon-green) 0%, var(--neon-blue) 100%);
-            border-radius: 2px;
-            transition: height 0.05s ease-out;
-            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+            width: 4px;
+            min-height: 2px;
+            background: var(--gb-light);
         }
 
         .eq-bar.hot {
-            background: linear-gradient(to top, var(--neon-orange) 0%, var(--neon-pink) 100%);
-            box-shadow: 0 0 8px rgba(255, 0, 170, 0.4);
+            background: var(--gb-lightest);
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: var(--gb-darkest);
+            border: 2px solid var(--gb-medium);
+            padding: 4px;
+            margin-bottom: calc(var(--spacing-unit) * 2);
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: none;
+            background: transparent;
+            color: var(--gb-medium);
+            font-size: 8px;
+            box-shadow: none;
+            cursor: pointer;
+        }
+
+        .mode-btn:hover {
+            color: var(--gb-light);
+            background: transparent;
+        }
+
+        .mode-btn.active {
+            background: var(--gb-dark);
+            color: var(--gb-lightest);
         }
 
         /* Player Controls */
         .player-controls {
             display: flex;
-            gap: 10px;
+            gap: calc(var(--spacing-unit));
             justify-content: center;
-            margin-bottom: 16px;
+            margin-bottom: calc(var(--spacing-unit) * 2);
         }
 
         .player-controls button {
@@ -275,18 +348,28 @@
         /* Share row */
         .share-row {
             display: flex;
-            gap: 10px;
+            gap: calc(var(--spacing-unit));
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: calc(var(--spacing-unit));
         }
+
         .share-row button {
             flex: 1;
             max-width: 140px;
+            background: var(--gb-darkest);
+            color: var(--gb-light);
+            border-color: var(--gb-medium);
         }
+
+        .share-row button:hover:not(:disabled) {
+            background: var(--gb-medium);
+            color: var(--gb-lightest);
+        }
+
         .share-hint {
-            margin: 0 0 16px 0;
-            font-size: 12px;
-            color: var(--text-dim);
+            margin: 0 0 calc(var(--spacing-unit) * 2) 0;
+            font-size: 8px;
+            color: var(--gb-light);
             min-height: 16px;
             text-align: center;
         }
@@ -295,12 +378,14 @@
         .volume-row {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: calc(var(--spacing-unit) * 1.5);
+            padding-top: calc(var(--spacing-unit) * 2);
+            border-top: 2px solid var(--gb-medium);
         }
 
         .volume-label {
-            font-size: 12px;
-            color: var(--text-dim);
+            font-size: 8px;
+            color: var(--gb-light);
             min-width: 50px;
         }
 
@@ -308,85 +393,94 @@
             flex: 1;
             -webkit-appearance: none;
             appearance: none;
-            height: 4px;
-            background: var(--surface-2);
-            border-radius: 2px;
+            height: 8px;
+            background: var(--gb-darkest);
+            border: 2px solid var(--gb-medium);
+            border-radius: 0;
             outline: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--neon-green);
+            width: 12px;
+            height: 12px;
+            border-radius: 0;
+            background: var(--gb-lightest);
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-        }
-
-        /* Mode Toggle */
-        .mode-toggle {
-            display: flex;
-            background: var(--surface-2);
-            border-radius: 8px;
-            padding: 4px;
-            margin-bottom: 16px;
-        }
-
-        .mode-btn {
-            flex: 1;
-            padding: 10px 12px;
             border: none;
-            background: transparent;
-            color: var(--text-dim);
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 6px;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 0;
+            background: var(--gb-lightest);
             cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .mode-btn:hover {
-            color: var(--text);
-        }
-
-        .mode-btn.active {
-            background: var(--surface);
-            color: var(--neon-green);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: none;
         }
 
         /* Footer */
-        footer {
+        .footer {
+            margin-top: calc(var(--spacing-unit) * 4);
             text-align: center;
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border);
+            padding-top: calc(var(--spacing-unit) * 2);
+            border-top: 2px solid var(--gb-medium);
         }
 
-        footer p {
-            font-size: 12px;
-            color: var(--text-dim);
+        .footer p {
+            font-size: 8px;
+            color: var(--gb-dark);
             margin: 0;
         }
 
-        footer a {
-            color: var(--neon-green);
-            text-decoration: none;
+        .footer a {
+            color: var(--gb-darkest);
+            text-decoration: underline;
+        }
+
+        .footer-mascot {
+            margin-top: calc(var(--spacing-unit) * 3);
+            text-align: center;
+        }
+
+        .wario-sprite {
+            width: 120px;
+            height: auto;
+            mix-blend-mode: multiply;
+            opacity: 0.7;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            body {
+                font-size: 11px;
+            }
+            .hero h1 {
+                font-size: 14px;
+            }
+            button {
+                font-size: 9px;
+                padding: 14px 16px;
+            }
+            .mode-btn {
+                font-size: 7px;
+                padding: 10px 6px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
+        <div class="hero">
             <h1>WARIO SYNTH</h1>
-            <p class="tagline">Turn any song into retro game console music</p>
-        </header>
+            <p class="tagline">Turn any song into Game Boy music</p>
+            <span class="test-badge">UX Test Page</span>
+        </div>
 
         <div class="search-box">
             <input type="text" id="songInput" placeholder="Search any song..." value="Hotel California" />
-            <button id="searchBtn">Search</button>
+            <button id="searchBtn" class="primary">Search</button>
         </div>
 
         <div id="status" class="status">Search for a song to get started</div>
@@ -429,9 +523,13 @@
             </div>
         </div>
 
-        <footer>
+        <div class="footer">
             <p>UX Test Page · <a href="/">Back to main</a></p>
-        </footer>
+        </div>
+
+        <div class="footer-mascot">
+            <img src="/wario-sprite.png" alt="Wario" class="wario-sprite" />
+        </div>
     </div>
 
     <script type="module">
@@ -480,7 +578,7 @@
             for (let i = 0; i < NUM_BARS; i++) {
                 const bar = document.createElement('div');
                 bar.className = 'eq-bar';
-                bar.style.height = '3px';
+                bar.style.height = '2px';
                 eqVisualizer.appendChild(bar);
             }
         }
@@ -494,7 +592,7 @@
             if (!analyser || !dataArray) {
                 bars.forEach((bar) => {
                     const value = isPlaying ? Math.floor(Math.random() * 255) : 0;
-                    const height = Math.max(3, (value / 255) * 60);
+                    const height = Math.max(2, (value / 255) * 40);
                     bar.style.height = height + 'px';
                     if (value > 180) bar.classList.add('hot');
                     else bar.classList.remove('hot');
@@ -512,7 +610,7 @@
                     sum += dataArray[i * step + j] || 0;
                 }
                 const value = sum / step;
-                const height = Math.max(3, (value / 255) * 60);
+                const height = Math.max(2, (value / 255) * 40);
                 bar.style.height = height + 'px';
 
                 if (value > 180) {
@@ -532,7 +630,7 @@
             }
             const bars = eqVisualizer.querySelectorAll('.eq-bar');
             bars.forEach(bar => {
-                bar.style.height = '3px';
+                bar.style.height = '2px';
                 bar.classList.remove('hot');
             });
         }
@@ -686,10 +784,7 @@
             if (!currentEvents) return;
             try {
                 downloadMp3Btn.disabled = true;
-                shareHint.textContent = 'Preparing MP3…';
-
-                // Ensure audio unlocked (user gesture)
-                const audioContext = await unlockAudio();
+                shareHint.textContent = 'Rendering audio…';
 
                 // Stop any current playback first
                 stopPlayback();
@@ -697,65 +792,36 @@
                 // Ensure Motif engine exists
                 if (!motifEngine) motifEngine = new MotifEngine();
 
-                // Use synth output (the "Gameboy" render)
-                await motifEngine.generateFromMIDI(currentEvents, 'procedural');
-                motifEngine.setVolume(1);
+                // Render offline (faster than real-time!)
+                const sampleRate = 44100;
+                const audioBuffer = await motifEngine.renderOffline(currentEvents, 'procedural', sampleRate);
+
+                shareHint.textContent = 'Encoding MP3…';
 
                 // Lazy-load MP3 encoder
                 const lameMod = await import('lamejs');
                 const Mp3Encoder = lameMod.Mp3Encoder || (lameMod.default && lameMod.default.Mp3Encoder);
                 if (!Mp3Encoder) throw new Error('MP3 encoder not available');
 
-                const channels = 2;
-                const sampleRate = audioContext.sampleRate;
+                const channels = audioBuffer.numberOfChannels;
                 const kbps = 128;
                 const encoder = new Mp3Encoder(channels, sampleRate, kbps);
                 const mp3Chunks = [];
 
-                // Tap audio via ScriptProcessorNode
-                const bufferSize = 4096;
-                const processor = audioContext.createScriptProcessor(bufferSize, channels, channels);
-                const sink = audioContext.createGain();
-                sink.gain.value = 0; // avoid doubling audible output
-                processor.connect(sink);
-                sink.connect(audioContext.destination);
+                // Get audio data from buffer
+                const leftData = audioBuffer.getChannelData(0);
+                const rightData = channels > 1 ? audioBuffer.getChannelData(1) : leftData;
+                const left = floatToInt16(leftData);
+                const right = floatToInt16(rightData);
 
-                let recording = true;
-                processor.onaudioprocess = (e) => {
-                    if (!recording) return;
-                    const ib = e.inputBuffer;
-                    const left = floatToInt16(ib.getChannelData(0));
-                    const right = ib.numberOfChannels > 1 ? floatToInt16(ib.getChannelData(1)) : left;
-
-                    // Encode in 1152-sample frames
-                    const frameSize = 1152;
-                    for (let i = 0; i < left.length; i += frameSize) {
-                        const l = left.subarray(i, i + frameSize);
-                        const r = right.subarray(i, i + frameSize);
-                        const buf = encoder.encodeBuffer(l, r);
-                        if (buf && buf.length) mp3Chunks.push(buf);
-                    }
-                };
-
-                motifEngine.connectOutput(processor);
-
-                // Start playback (audible) while we capture/encode
-                isPlaying = true;
-                await motifEngine.play();
-                updateVisualizer();
-
-                const durationSec = Math.max(1, motifEngine.getDuration());
-                shareHint.textContent = `Recording… (${Math.round(durationSec)}s)`;
-
-                await new Promise((resolve) => setTimeout(resolve, (durationSec + 0.25) * 1000));
-
-                recording = false;
-                try { motifEngine.disconnectOutput(processor); } catch {}
-                try { processor.disconnect(); } catch {}
-                try { sink.disconnect(); } catch {}
-
-                // Stop playback after capture
-                stopPlayback();
+                // Encode in 1152-sample frames
+                const frameSize = 1152;
+                for (let i = 0; i < left.length; i += frameSize) {
+                    const l = left.subarray(i, i + frameSize);
+                    const r = right.subarray(i, i + frameSize);
+                    const buf = encoder.encodeBuffer(l, r);
+                    if (buf && buf.length) mp3Chunks.push(buf);
+                }
 
                 const tail = encoder.flush();
                 if (tail && tail.length) mp3Chunks.push(tail);
@@ -767,6 +833,7 @@
                 window.setTimeout(() => (shareHint.textContent = ''), 1400);
             } catch (e) {
                 shareHint.textContent = `MP3 failed: ${e && e.message ? e.message : 'Unknown error'}`;
+                console.error('MP3 download error:', e);
             } finally {
                 downloadMp3Btn.disabled = false;
             }

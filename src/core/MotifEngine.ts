@@ -184,6 +184,49 @@ export class MotifEngine {
     return 0;
   }
 
+  /**
+   * Render audio offline (faster than real-time) to an AudioBuffer.
+   * This does not require play() - it pre-schedules all events and renders in one go.
+   */
+  async renderOffline(
+    events: NoteEvent[],
+    transformMode: 'passthrough' | 'procedural' = 'passthrough',
+    sampleRate = 44100
+  ): Promise<AudioBuffer> {
+    let roleAssignments;
+
+    if (transformMode === 'passthrough') {
+      // Direct playback mode - play MIDI as-is without transformations
+      roleAssignments = [{
+        role: 'melody' as const,
+        sourceTrack: 0,
+        events: [...events], // Clone to avoid mutation
+        chords: [],
+        confidence: 1.0,
+        features: {
+          medianPitch: 60,
+          pitchRange: 48,
+          noteDensity: 1.0,
+          polyphonyRatio: 0.5,
+          averageDuration: 0.5,
+          repetitionScore: 0.5,
+          isMonophonic: false,
+          hasPhraseContinuity: true,
+          register: 'mid' as const
+        }
+      }];
+    } else {
+      // Procedural mode - transform the MIDI with role mapping
+      // Clone events to avoid mutating originals
+      const clonedEvents = events.map(e => ({ ...e }));
+      const features = this.midiProcessor.extractFeatures(clonedEvents);
+      roleAssignments = this.roleMapper.assignRoles(features, clonedEvents);
+    }
+
+    console.log(`Motif: Offline rendering in ${transformMode} mode`);
+    return SynthesisEngine.renderOffline(roleAssignments, this.config, sampleRate);
+  }
+
   private generateSyntheticMIDI(songName: string): NoteEvent[] {
     // Generate procedural MIDI based on song name hash
     const hash = this.simpleHash(songName);
