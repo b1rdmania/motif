@@ -538,6 +538,7 @@
         import { SoundfontMIDIPlayer } from './src/synthesis/SoundfontMIDIPlayer.ts';
         import { MotifEngine } from './src/core/MotifEngine.ts';
         import { unlockAudio } from './src/utils/audioUnlock.ts';
+        import lamejs from 'lamejs';
 
         const NUM_BARS = 40;
         const midiService = new MIDIService();
@@ -798,9 +799,8 @@
 
                 shareHint.textContent = 'Encoding MP3…';
 
-                // Lazy-load MP3 encoder
-                const lameMod = await import('lamejs');
-                const Mp3Encoder = lameMod.Mp3Encoder || (lameMod.default && lameMod.default.Mp3Encoder);
+                // Use statically imported lamejs
+                const Mp3Encoder = lamejs.Mp3Encoder;
                 if (!Mp3Encoder) throw new Error('MP3 encoder not available');
 
                 const channels = audioBuffer.numberOfChannels;
