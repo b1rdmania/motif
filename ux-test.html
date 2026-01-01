@@ -469,6 +469,7 @@
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -538,7 +539,7 @@
         import { SoundfontMIDIPlayer } from './src/synthesis/SoundfontMIDIPlayer.ts';
         import { MotifEngine } from './src/core/MotifEngine.ts';
         import { unlockAudio } from './src/utils/audioUnlock.ts';
-        import lamejs from 'lamejs';
+        // lamejs loaded via CDN script tag (ESM compatibility issues with npm version)
 
         const NUM_BARS = 40;
         const midiService = new MIDIService();
@@ -799,9 +800,9 @@
 
                 shareHint.textContent = 'Encoding MP3…';
 
-                // Use statically imported lamejs
-                const Mp3Encoder = lamejs.Mp3Encoder;
-                if (!Mp3Encoder) throw new Error('MP3 encoder not available');
+                // Use lamejs from CDN (global)
+                const Mp3Encoder = window.lamejs?.Mp3Encoder;
+                if (!Mp3Encoder) throw new Error('MP3 encoder not available - lamejs not loaded');
 
                 const channels = audioBuffer.numberOfChannels;
                 const kbps = 128;
