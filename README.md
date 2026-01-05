@@ -10,17 +10,21 @@ Turn any song into a Game Boy version.
 
 ## About
 
-Search any song. Get the 8-bit version. It's that simple.
+**WAH!** 🎮
 
-WARIO SYNTH grabs real MIDI files from the internet and runs them through a fake Game Boy sound chip built entirely in your browser. Four channels of crunchy lo-fi goodness:
+Type in literally any song. We'll find a MIDI file somewhere on the internet and absolutely demolish it through a janky homebrew Game Boy sound chip running in your browser.
 
-- **Two pulse waves** — bleepy melodies
-- **One wave channel** — thicc bass
-- **One noise channel** — tsss tsss drums
+Is it accurate? Sometimes. Is it legal? Probably. Does it slap? **Absolutely.**
 
-No server audio, no samples, just pure Web Audio oscillators doing their best 1989 impression.
+Four glorious channels of chiptune chaos:
+- 🟨 **Pulse 1** — screamy lead melodies
+- 🟨 **Pulse 2** — whatever pulse 1 forgot
+- 🟩 **Wave** — chunky bass that hits different
+- ⬜ **Noise** — percussion (tssss pshhhh)
 
-**Try it → [wario.style](https://www.wario.style)**
+Zero samples. Zero server audio. Just raw oscillators having the time of their lives.
+
+**[wario.style](https://www.wario.style)** ← go make your favorite song worse
 
 ![Wario](public/wario-sprite.png)
 
