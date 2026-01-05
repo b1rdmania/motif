@@ -268,6 +268,27 @@
         width: 0%;
       }
 
+      /* Share buttons */
+      .share-buttons {
+        margin-top: calc(var(--spacing-unit) * 2);
+        display: flex;
+        gap: calc(var(--spacing-unit) * 1.5);
+        flex-wrap: wrap;
+      }
+
+      .share-buttons button {
+        flex: 1;
+        min-width: 120px;
+        background: var(--gb-darkest);
+        color: var(--gb-light);
+        border-color: var(--gb-medium);
+      }
+
+      .share-buttons button:hover:not(:disabled) {
+        background: var(--gb-medium);
+        color: var(--gb-lightest);
+      }
+
       /* CTA link (inside card) */
       .cta-link-inline {
         margin-top: calc(var(--spacing-unit) * 2);
@@ -370,6 +391,12 @@
             <input id="playProgressBar" class="progress-bar" type="range" min="0" max="100" value="0" step="0.1" />
             <div id="playProgressFill" class="progress-fill"></div>
           </div>
+        </div>
+
+        <!-- Share buttons -->
+        <div id="shareButtons" class="share-buttons">
+          <button id="copyLinkBtn" type="button">Copy link</button>
+          <button id="shareToXBtn" type="button">Share to X</button>
         </div>
 
         <!-- iOS Audio Unlock -->

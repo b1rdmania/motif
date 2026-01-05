@@ -142,6 +142,8 @@ async function main(): Promise<void> {
   const timeRow = qs('playTimeRow') as HTMLElement;
   const iosAudioBanner = qs('iosAudioBanner') as HTMLElement;
   const enableAudioBtn = qs('enableAudioBtn') as HTMLButtonElement;
+  const copyLinkBtn = qs('copyLinkBtn') as HTMLButtonElement;
+  const shareToXBtn = qs('shareToXBtn') as HTMLButtonElement;
 
   // Detect iOS/Safari for audio unlock banner
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -166,6 +168,41 @@ async function main(): Promise<void> {
     } catch {
       // ignore
     }
+  });
+
+  // Copy link handler
+  copyLinkBtn.addEventListener('click', async () => {
+    const shareUrl = window.location.href;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const orig = copyLinkBtn.textContent;
+      copyLinkBtn.textContent = 'Copied!';
+      setTimeout(() => { copyLinkBtn.textContent = orig; }, 1500);
+    } catch {
+      // ignore
+    }
+  });
+
+  // Share to X handler
+  shareToXBtn.addEventListener('click', () => {
+    const shareUrl = window.location.href;
+    const { title: rawTitle } = buildMidiUrlFromParams();
+    const niceTitle = pickShareTitle(rawTitle).title;
+    const tweetText = `I made a Game Boy version of ${niceTitle}\n\nUsing @b1rdmania's Wario Synthesis Midi Engine\n\nCheck it out here`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(twitterUrl, '_blank');
   });
 
   const { midiUrl: u, title } = buildMidiUrlFromParams();
