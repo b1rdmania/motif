@@ -1141,7 +1141,7 @@
     <div class="container">
         <div class="hero">
             <div class="hero-top">
-                <h1>WARIO SYNTH <span class="version-tag">v1.3</span></h1>
+                <h1>WARIO SYNTH <span class="version-tag">v1.5</span></h1>
                 <button id="faqBtnTop" class="faq-link" type="button">FAQ</button>
             </div>
         </div>
@@ -1222,6 +1222,7 @@
                     <div style="margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap;">
                         <button id="copyLinkBtn" type="button" disabled>Copy link</button>
                         <button id="shareToXBtn" type="button" disabled>Share to X</button>
+                        <button id="downloadMp3Btn" type="button" disabled>Download MP3</button>
                     </div>
                     <div id="shareFallback" style="display: none; margin-top: 12px;">
                         <p style="font-size: 8px; margin: 0 0 8px 0; color: var(--gb-light);">Sorry, copy doesn't work on your device. Here's the link:</p>
@@ -1246,6 +1247,12 @@
                     <strong>How it works:</strong> The Wario Synthesis Engine analyses MIDI files to identify melody, bass, and chord tracks. It then resynthesises each part using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip: two pulse wave channels, one wave channel, and one noise channel. All processing runs client-side in your browser - no server-side audio generation. Built with TypeScript, Vite, and Claude Code.
                 </div>
                 <div class="version-divider"></div>
+                <div class="version-item">
+                    <strong>v1.5</strong> - Download MP3 button, offline rendering for faster exports
+                </div>
+                <div class="version-item">
+                    <strong>v1.4</strong> - 16-bit to 8-bit audio fixes, improved synthesis quality
+                </div>
                 <div class="version-item">
                     <strong>v1.3</strong> - Share to X, light Game Boy palette, iOS audio fixes, local font hosting
                 </div>
@@ -1294,6 +1301,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
     <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

@@ -55,6 +55,7 @@ class MotifApp {
 
   private copyLinkBtn!: HTMLButtonElement;
   private shareToXBtn!: HTMLButtonElement;
+  private downloadMp3Btn!: HTMLButtonElement;
   private shareFallback!: HTMLElement;
   private shareFallbackInput!: HTMLInputElement;
 
@@ -129,6 +130,7 @@ class MotifApp {
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
     this.shareToXBtn = document.getElementById('shareToXBtn') as HTMLButtonElement;
+    this.downloadMp3Btn = document.getElementById('downloadMp3Btn') as HTMLButtonElement;
     this.shareFallback = document.getElementById('shareFallback')!;
     this.shareFallbackInput = document.getElementById('shareFallbackInput') as HTMLInputElement;
 
@@ -189,6 +191,7 @@ class MotifApp {
 
     this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
     this.shareToXBtn.addEventListener('click', () => void this.handleShareToX());
+    this.downloadMp3Btn.addEventListener('click', () => void this.handleDownloadMp3());
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
@@ -817,6 +820,85 @@ class MotifApp {
     }
   }
 
+  private floatToInt16(input: Float32Array): Int16Array {
+    const out = new Int16Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      const s = Math.max(-1, Math.min(1, input[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return out;
+  }
+
+  private async handleDownloadMp3(): Promise<void> {
+    if (!this.hasGenerated || !this.currentMIDI) return;
+
+    try {
+      this.downloadMp3Btn.disabled = true;
+      this.updateStatus('Rendering audio…');
+
+      // Stop any current playback
+      this.handleMotifStop();
+
+      // Render offline
+      const sampleRate = 44100;
+      const audioBuffer = await this.motifEngine.renderOffline(
+        this.currentMIDI.events,
+        'procedural',
+        sampleRate
+      );
+
+      this.updateStatus('Encoding MP3…');
+
+      // Use lamejs from CDN (global)
+      const Mp3Encoder = (window as any).lamejs?.Mp3Encoder;
+      if (!Mp3Encoder) throw new Error('MP3 encoder not loaded');
+
+      const channels = audioBuffer.numberOfChannels;
+      const kbps = 128;
+      const encoder = new Mp3Encoder(channels, sampleRate, kbps);
+      const mp3Chunks: BlobPart[] = [];
+
+      // Get audio data
+      const leftData = audioBuffer.getChannelData(0);
+      const rightData = channels > 1 ? audioBuffer.getChannelData(1) : leftData;
+      const left = this.floatToInt16(leftData);
+      const right = this.floatToInt16(rightData);
+
+      // Encode in 1152-sample frames
+      const frameSize = 1152;
+      for (let i = 0; i < left.length; i += frameSize) {
+        const l = left.subarray(i, i + frameSize);
+        const r = right.subarray(i, i + frameSize);
+        const buf = encoder.encodeBuffer(l, r);
+        if (buf && buf.length) mp3Chunks.push(buf);
+      }
+
+      const tail = encoder.flush();
+      if (tail && tail.length) mp3Chunks.push(tail);
+
+      const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
+      const result = this.searchResults[this.selectedResultIndex];
+      const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
+
+      // Download
+      const a = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = `${safeTitle}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      this.updateStatus('MP3 downloaded!');
+      setTimeout(() => this.updateStatus(''), 1500);
+    } catch (e) {
+      this.updateStatus(`MP3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      this.downloadMp3Btn.disabled = false;
+    }
+  }
+
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
     // results - keep visible in all states except idle so user can pick a different source
     const hasResults = state === 'results' || state === 'selected' || state === 'generated';
@@ -832,6 +914,8 @@ class MotifApp {
     this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
     this.shareToXBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
     this.shareToXBtn.disabled = !(state === 'generated' && this.hasGenerated);
+    this.downloadMp3Btn.style.display = state === 'generated' ? 'inline-block' : 'none';
+    this.downloadMp3Btn.disabled = !(state === 'generated' && this.hasGenerated);
     // Hide share fallback when state changes
     this.shareFallback.style.display = 'none';
 
