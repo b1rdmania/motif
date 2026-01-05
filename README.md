@@ -10,13 +10,17 @@ Turn any song into a Game Boy version.
 
 ## About
 
-WARIO SYNTH is a fun experiment in **music-as-code**: it treats MIDI as structural data, not audio. Search for any song, pick a MIDI source, and the Wario Synthesis Engine analyses the MIDI structure and resynthesises it using Web Audio oscillators tuned to mimic the Game Boy's 4-channel sound chip.
+Search any song. Get the 8-bit version. It's that simple.
 
-- **Two pulse wave channels** for melody and harmony
-- **One wave channel** for bass
-- **One noise channel** for percussion
+WARIO SYNTH grabs real MIDI files from the internet and runs them through a fake Game Boy sound chip built entirely in your browser. Four channels of crunchy lo-fi goodness:
 
-All processing runs client-side in your browser - no server-side audio generation.
+- **Two pulse waves** — bleepy melodies
+- **One wave channel** — thicc bass
+- **One noise channel** — tsss tsss drums
+
+No server audio, no samples, just pure Web Audio oscillators doing their best 1989 impression.
+
+**Try it → [wario.style](https://www.wario.style)**
 
 ![Wario](public/wario-sprite.png)
 
