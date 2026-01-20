@@ -42,6 +42,18 @@
       "src": "/ux-test",
       "dest": "/ux-test.html"
     },
+    {
+      "src": "/v2",
+      "dest": "/v2.html"
+    },
+    {
+      "src": "/v2-test",
+      "dest": "/v2-test.html"
+    },
+    {
+      "src": "/v2-diagnostic",
+      "dest": "/v2-diagnostic.html"
+    },
     { "handle": "filesystem" },
     {
       "src": "/(.*)",

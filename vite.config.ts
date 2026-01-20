@@ -17,6 +17,10 @@ export default defineConfig({
         // Sharing trial pages
         play: resolve(__dirname, 'play.html'),
         ux_test: resolve(__dirname, 'ux-test.html'),
+        // V2 Game Boy Sound Engine (isolated from v1)
+        v2: resolve(__dirname, 'v2.html'),
+        v2_test: resolve(__dirname, 'v2-test.html'),
+        v2_diagnostic: resolve(__dirname, 'v2-diagnostic.html'),
       },
     },
   },
