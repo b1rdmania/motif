@@ -235,6 +235,7 @@
       <div class="btn-row">
         <button id="btn-combined" class="primary">Test Combined</button>
         <button id="btn-all">Run All Tests</button>
+        <button id="btn-stop" style="background: #661111; border-color: #ff4444; color: #ff4444;">■ STOP ALL</button>
       </div>
     </div>
     
@@ -270,10 +271,35 @@
     
     let audioContext = null;
     let channels = null;
+    const activeNodes = new Set();
     
     const logEl = document.getElementById('log');
     const statusEl = document.getElementById('status');
     const verificationEl = document.getElementById('verification-results');
+    
+    // Helper to track and auto-cleanup nodes
+    function trackNode(node) {
+      activeNodes.add(node);
+      node.onended = () => activeNodes.delete(node);
+      return node;
+    }
+    
+    // Stop all playing sounds
+    function stopAll() {
+      if (audioContext) {
+        const now = audioContext.currentTime;
+        for (const node of activeNodes) {
+          try {
+            node.stop(now);
+          } catch (e) {
+            // Already stopped
+          }
+        }
+        activeNodes.clear();
+        addLog('All sounds stopped', 'info');
+        setStatus('Ready');
+      }
+    }
     
     // Override console.log to show in UI
     const originalLog = console.log;
@@ -359,44 +385,56 @@
       setStatus('Ready');
     });
     
+    // Stop button
+    document.getElementById('btn-stop').addEventListener('click', () => {
+      stopAll();
+    });
+    
     // Quick sound checks
     document.getElementById('btn-note-c').addEventListener('click', async () => {
       await ensureAudioContext();
       channels.pulse.setDutyCycle(2);
-      channels.pulse.playNote(60, 0.3, 100);
+      const result = channels.pulse.playNote(60, 0.3, 100);
+      trackNode(result.oscillator);
     });
     
     document.getElementById('btn-note-e').addEventListener('click', async () => {
       await ensureAudioContext();
       channels.pulse.setDutyCycle(1);
-      channels.pulse.playNote(64, 0.3, 100);
+      const result = channels.pulse.playNote(64, 0.3, 100);
+      trackNode(result.oscillator);
     });
     
     document.getElementById('btn-note-g').addEventListener('click', async () => {
       await ensureAudioContext();
       channels.pulse.setDutyCycle(0);
-      channels.pulse.playNote(67, 0.3, 100);
+      const result = channels.pulse.playNote(67, 0.3, 100);
+      trackNode(result.oscillator);
     });
     
     document.getElementById('btn-bass').addEventListener('click', async () => {
       await ensureAudioContext();
       channels.wave.loadPreset('bass');
-      channels.wave.playNote(36, 0.5, 100);
+      const result = channels.wave.playNote(36, 0.5, 100);
+      trackNode(result.oscillator);
     });
     
     document.getElementById('btn-kick').addEventListener('click', async () => {
       await ensureAudioContext();
-      channels.noise.playKick(100);
+      const result = channels.noise.playKick(100);
+      if (result) trackNode(result.source);
     });
     
     document.getElementById('btn-snare').addEventListener('click', async () => {
       await ensureAudioContext();
-      channels.noise.playSnare(100);
+      const result = channels.noise.playSnare(100);
+      if (result) trackNode(result.source);
     });
     
     document.getElementById('btn-hihat').addEventListener('click', async () => {
       await ensureAudioContext();
-      channels.noise.playHihat(80, false);
+      const result = channels.noise.playHihat(80, false);
+      if (result) trackNode(result.source);
     });
     
     addLog('Wario Synth v2 Test Page loaded', 'success');
