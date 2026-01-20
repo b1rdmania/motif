@@ -34,7 +34,7 @@ const DEFAULT_CONFIG: ColorizerConfig = {
   lowpassFreq: 10000,     // GB natural rolloff (slightly higher)
   bitDepth: 8,            // Less aggressive bit crushing (4 was too harsh)
   sampleRateReduction: 1, // No sample rate reduction (was causing artifacts)
-  saturation: 0.2,        // Subtle warmth
+  saturation: 0.08,       // Very subtle - avoid clipping artifacts
   highpassFreq: 20,       // LOW - allow bass through!
 };
 
@@ -78,13 +78,13 @@ export class GameBoyColorizer {
     this.waveshaper.curve = this.createSaturationCurve(this.config.saturation);
     this.waveshaper.oversample = '2x';
     
-    // Limiter to prevent clipping
+    // Limiter to prevent clipping - more aggressive settings
     this.limiter = audioContext.createDynamicsCompressor();
-    this.limiter.threshold.value = -6;
-    this.limiter.knee.value = 6;
-    this.limiter.ratio.value = 12;
+    this.limiter.threshold.value = -12;  // Catch peaks earlier
+    this.limiter.knee.value = 3;         // Harder knee
+    this.limiter.ratio.value = 20;       // More aggressive limiting
     this.limiter.attack.value = 0.001;
-    this.limiter.release.value = 0.1;
+    this.limiter.release.value = 0.05;   // Faster release
     
     // Initialize chain (without bit crusher for now)
     this.initializeBasicChain();
@@ -227,13 +227,13 @@ export class GameBoyColorizer {
   static createPreset(preset: 'dmg' | 'gbc' | 'gba' | 'clean'): Partial<ColorizerConfig> {
     switch (preset) {
       case 'dmg':
-        // Original Game Boy - lo-fi but with bass
+        // Original Game Boy - warm but clean
         return {
           enabled: true,
           lowpassFreq: 8000,
           bitDepth: 8,           // Less harsh than 4-bit
           sampleRateReduction: 1, // No SR reduction (causes artifacts)
-          saturation: 0.3,
+          saturation: 0.1,       // Minimal saturation to avoid clicks
           highpassFreq: 30,      // Let bass through!
         };
         
@@ -244,7 +244,7 @@ export class GameBoyColorizer {
           lowpassFreq: 10000,
           bitDepth: 8,
           sampleRateReduction: 1,
-          saturation: 0.2,
+          saturation: 0.08,     // Minimal saturation
           highpassFreq: 25,
         };
         

@@ -97,33 +97,37 @@ export class GameBoyAPU {
   
   /**
    * Initialize all 8 channels with their gain nodes.
+   * 
+   * Gain staging: Keep total under 1.0 to avoid clipping
+   * With 8 channels potentially active: each should be ~0.1-0.15
    */
   private initializeChannels(): void {
-    // Create pulse channels
+    // Create pulse channels (4 × 0.12 = 0.48 max)
     for (const config of CHANNEL_CONFIG.pulse) {
-      const gain = this.createChannelGain(config.id, 0.25);
+      const gain = this.createChannelGain(config.id, 0.12);
       const channel = new PulseChannel(this.audioContext, gain, config.hasSweep);
       channel.setDutyCycle(config.defaultDuty);
       this.pulseChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
     
-    // Create wave channels (higher gain for bass)
+    // Create wave channels - slightly higher for bass presence (2 × 0.18 = 0.36 max)
     for (const config of CHANNEL_CONFIG.wave) {
-      const gain = this.createChannelGain(config.id, 0.55);  // Boosted for bass
+      const gain = this.createChannelGain(config.id, 0.18);
       const channel = new WaveChannel(this.audioContext, gain, config.preset);
       this.waveChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
     
-    // Create noise channels
+    // Create noise channels (2 × 0.08 = 0.16 max)
     for (const config of CHANNEL_CONFIG.noise) {
-      const gain = this.createChannelGain(config.id, 0.3);
+      const gain = this.createChannelGain(config.id, 0.08);
       const channel = new NoiseChannel(this.audioContext, gain, config.mode);
       this.noiseChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
   }
+  // Total max: 0.48 + 0.36 + 0.16 = 1.0
   
   /**
    * Create a gain node for a channel and connect to master.
