@@ -34,7 +34,6 @@ export class WaveChannel {
   private volume: WaveVolume = 1; // Default to 100%
   private outputNode: GainNode;
   private currentPreset: WavePreset;
-  private lowpassFilter: BiquadFilterNode;
   
   constructor(
     audioContext: AudioContext,
@@ -44,14 +43,6 @@ export class WaveChannel {
     this.audioContext = audioContext;
     this.outputNode = outputNode;
     this.currentPreset = preset;
-    
-    // Create a low-pass filter to warm up the sound
-    // GB wave channel had natural rolloff from the DAC
-    this.lowpassFilter = audioContext.createBiquadFilter();
-    this.lowpassFilter.type = 'lowpass';
-    this.lowpassFilter.frequency.value = 2000; // Cut harsh highs
-    this.lowpassFilter.Q.value = 0.7;
-    this.lowpassFilter.connect(outputNode);
     
     // Initialize wavetable with preset
     this.waveTable = new WaveTable();
@@ -158,9 +149,9 @@ export class WaveChannel {
     const stopTime = now + duration + releaseTime;
     gain.gain.linearRampToValueAtTime(0.001, stopTime);
     
-    // Connect nodes through low-pass filter for warmer sound
+    // Connect nodes directly to output
     oscillator.connect(gain);
-    gain.connect(this.lowpassFilter);
+    gain.connect(this.outputNode);
     
     // Schedule playback
     oscillator.start(now);
@@ -220,7 +211,7 @@ export class WaveChannel {
     gain.gain.linearRampToValueAtTime(0.001, stopTime);
     
     oscillator.connect(gain);
-    gain.connect(this.lowpassFilter);
+    gain.connect(this.outputNode);
     
     oscillator.start(now);
     oscillator.stop(stopTime + 0.01);

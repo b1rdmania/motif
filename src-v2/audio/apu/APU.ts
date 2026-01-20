@@ -77,19 +77,18 @@ export class GameBoyAPU {
     this.audioContext = audioContext || new AudioContext();
     this.config = { ...DEFAULT_V2_CONFIG, ...config };
     
-    // Create colorizer with DMG preset for authentic sound
+    // Create colorizer (but don't use it for now - bypassed)
     this.colorizer = new GameBoyColorizer(
       this.audioContext, 
-      GameBoyColorizer.createPreset('dmg')
+      GameBoyColorizer.createPreset()
     );
     
     // Create master gain
     this.masterGain = this.audioContext.createGain();
     this.masterGain.gain.value = this.config.masterVolume;
     
-    // Wire: master -> colorizer -> destination
-    this.masterGain.connect(this.colorizer.getInput());
-    this.colorizer.getOutput().connect(this.audioContext.destination);
+    // SIMPLIFIED: master -> destination (bypass colorizer to avoid distortion)
+    this.masterGain.connect(this.audioContext.destination);
     
     // Initialize all channels
     this.initializeChannels();
