@@ -38,7 +38,7 @@ const DEFAULT_PLAYER_CONFIG: GameBoyPlayerConfig = {
   autoResume: true,
   defaultBPM: 120,
   masterVolume: 0.7,
-  enableArranger: true, // ON by default for fuller sound
+  enableArranger: false, // OFF by default - too many overlapping notes causes clipping
   arrangerConfig: {},
 };
 

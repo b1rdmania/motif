@@ -54,6 +54,7 @@ export class GameBoyAPU {
   
   // Master output chain
   private masterGain: GainNode;
+  private limiter: DynamicsCompressorNode;
   private colorizer: GameBoyColorizer;
   
   // Individual channel instances
@@ -87,8 +88,17 @@ export class GameBoyAPU {
     this.masterGain = this.audioContext.createGain();
     this.masterGain.gain.value = this.config.masterVolume;
     
-    // SIMPLIFIED: master -> destination (bypass colorizer to avoid distortion)
-    this.masterGain.connect(this.audioContext.destination);
+    // Create limiter to prevent clipping when many notes overlap
+    this.limiter = this.audioContext.createDynamicsCompressor();
+    this.limiter.threshold.value = -6;   // Start compressing at -6dB
+    this.limiter.knee.value = 3;         // Soft knee
+    this.limiter.ratio.value = 20;       // Heavy compression (limiter)
+    this.limiter.attack.value = 0.001;   // Fast attack
+    this.limiter.release.value = 0.1;    // Medium release
+    
+    // Signal chain: master -> limiter -> destination
+    this.masterGain.connect(this.limiter);
+    this.limiter.connect(this.audioContext.destination);
     
     // Initialize all channels
     this.initializeChannels();
@@ -97,36 +107,37 @@ export class GameBoyAPU {
   /**
    * Initialize all 8 channels with their gain nodes.
    * 
-   * Gain staging: Keep total under 1.0 to avoid clipping
-   * With 8 channels potentially active: each should be ~0.1-0.15
+   * Gain staging: Keep total well under 1.0 to leave headroom
+   * Notes stack when overlapping, so we use conservative values
+   * The limiter will catch peaks, but we want to minimize its work
    */
   private initializeChannels(): void {
-    // Create pulse channels (4 × 0.12 = 0.48 max)
+    // Create pulse channels (4 × 0.08 = 0.32 max)
     for (const config of CHANNEL_CONFIG.pulse) {
-      const gain = this.createChannelGain(config.id, 0.12);
+      const gain = this.createChannelGain(config.id, 0.08);
       const channel = new PulseChannel(this.audioContext, gain, config.hasSweep);
       channel.setDutyCycle(config.defaultDuty);
       this.pulseChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
     
-    // Create wave channels - slightly higher for bass presence (2 × 0.18 = 0.36 max)
+    // Create wave channels - slightly higher for bass presence (2 × 0.12 = 0.24 max)
     for (const config of CHANNEL_CONFIG.wave) {
-      const gain = this.createChannelGain(config.id, 0.18);
+      const gain = this.createChannelGain(config.id, 0.12);
       const channel = new WaveChannel(this.audioContext, gain, config.preset);
       this.waveChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
     
-    // Create noise channels (2 × 0.08 = 0.16 max)
+    // Create noise channels (2 × 0.05 = 0.10 max)
     for (const config of CHANNEL_CONFIG.noise) {
-      const gain = this.createChannelGain(config.id, 0.08);
+      const gain = this.createChannelGain(config.id, 0.05);
       const channel = new NoiseChannel(this.audioContext, gain, config.mode);
       this.noiseChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
   }
-  // Total max: 0.48 + 0.36 + 0.16 = 1.0
+  // Total max: 0.32 + 0.24 + 0.10 = 0.66 (headroom for note overlap)
   
   /**
    * Create a gain node for a channel and connect to master.
