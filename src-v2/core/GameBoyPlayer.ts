@@ -230,7 +230,7 @@ export class GameBoyPlayer {
    */
   stop(): void {
     this.isPlaying = false;
-    this.apu.reset();
+    this.apu.stopAll();
     console.log('Playback stopped');
   }
   

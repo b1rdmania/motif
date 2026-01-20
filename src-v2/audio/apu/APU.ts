@@ -70,6 +70,9 @@ export class GameBoyAPU {
   // Note scheduling stats (no limit - Web Audio handles scheduling)
   private scheduledNoteCount = 0;
   
+  // Track active audio nodes for stop functionality
+  private activeNodes: Set<OscillatorNode | AudioBufferSourceNode> = new Set();
+  
   constructor(audioContext?: AudioContext, config?: Partial<V2Config>) {
     this.audioContext = audioContext || new AudioContext();
     this.config = { ...DEFAULT_V2_CONFIG, ...config };
@@ -197,7 +200,8 @@ export class GameBoyAPU {
     const channel = this.pulseChannels.get(channelId);
     if (!channel) return;
     
-    channel.playNote(midiNote, duration, velocity, startTime);
+    const result = channel.playNote(midiNote, duration, velocity, startTime);
+    this.trackNode(result.oscillator, result.stopTime);
   }
   
   /**
@@ -213,7 +217,8 @@ export class GameBoyAPU {
     const channel = this.waveChannels.get(channelId);
     if (!channel) return;
     
-    channel.playNote(midiNote, duration, velocity, startTime);
+    const result = channel.playNote(midiNote, duration, velocity, startTime);
+    this.trackNode(result.oscillator, result.stopTime);
   }
   
   /**
@@ -229,7 +234,21 @@ export class GameBoyAPU {
     const channel = this.noiseChannels.get(channelId);
     if (!channel) return;
     
-    channel.playNote(midiNote, duration, velocity, startTime);
+    const result = channel.playNote(midiNote, duration, velocity, startTime);
+    this.trackNode(result.source, result.stopTime);
+  }
+  
+  /**
+   * Track an audio node for stop functionality.
+   */
+  private trackNode(node: OscillatorNode | AudioBufferSourceNode, stopTime: number): void {
+    this.activeNodes.add(node);
+    
+    // Auto-remove when the node ends naturally
+    const cleanup = () => {
+      this.activeNodes.delete(node);
+    };
+    node.onended = cleanup;
   }
   
   /**
@@ -390,6 +409,26 @@ export class GameBoyAPU {
       this.initChannelState(id);
     }
     this.scheduledNoteCount = 0;
+  }
+  
+  /**
+   * Stop all currently playing and scheduled sounds immediately.
+   */
+  stopAll(): void {
+    const now = this.audioContext.currentTime;
+    
+    // Stop all tracked nodes
+    for (const node of this.activeNodes) {
+      try {
+        node.stop(now);
+      } catch {
+        // Node may have already stopped
+      }
+    }
+    this.activeNodes.clear();
+    
+    // Reset channel states
+    this.reset();
   }
   
   /**
