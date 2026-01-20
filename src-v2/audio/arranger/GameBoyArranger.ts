@@ -46,12 +46,12 @@ export interface ArrangerConfig {
 
 const DEFAULT_CONFIG: ArrangerConfig = {
   enhanceBass: true,
-  enhanceDrums: true,
+  enhanceDrums: false,  // Disabled - no phantom drums/hi-hats
   doubleMelody: true,
   fillGaps: true,
   minGapToFill: 0.5,
   targetUtilization: 0.7,
-  hihatRate: 1, // Quarter notes (less busy than 8th notes)
+  hihatRate: 1,
   bpm: 120,
 };
 
