@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wario Synth v2 - Sound Test</title>
+  <style>
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-panel: #1a1a1a;
+      --gb-green: #9bbc0f;
+      --gb-dark-green: #0f380f;
+      --gb-light-green: #8bac0f;
+      --text: #e0e0e0;
+      --text-dim: #888;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: var(--gb-green);
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    
+    .panel {
+      background: var(--bg-panel);
+      border: 2px solid var(--gb-dark-green);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .panel h2 {
+      color: var(--gb-light-green);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--gb-dark-green);
+      padding-bottom: 0.5rem;
+    }
+    
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    button {
+      background: var(--gb-dark-green);
+      color: var(--gb-green);
+      border: 2px solid var(--gb-green);
+      padding: 0.75rem 1.25rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    button:hover {
+      background: var(--gb-green);
+      color: var(--gb-dark-green);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button.primary {
+      background: var(--gb-green);
+      color: var(--gb-dark-green);
+      font-weight: bold;
+    }
+    
+    button.primary:hover {
+      background: var(--gb-light-green);
+    }
+    
+    .log {
+      background: #000;
+      border: 1px solid var(--gb-dark-green);
+      border-radius: 4px;
+      padding: 1rem;
+      height: 200px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    
+    .log-entry {
+      margin-bottom: 0.25rem;
+    }
+    
+    .log-entry.success {
+      color: var(--gb-green);
+    }
+    
+    .log-entry.error {
+      color: #ff6b6b;
+    }
+    
+    .log-entry.info {
+      color: var(--text-dim);
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+    }
+    
+    .status.ready {
+      background: var(--gb-dark-green);
+      color: var(--gb-green);
+    }
+    
+    .status.playing {
+      background: var(--gb-green);
+      color: var(--bg-dark);
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .verification-results {
+      margin-top: 1rem;
+    }
+    
+    .result-item {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--bg-dark);
+    }
+    
+    .result-item .icon {
+      width: 20px;
+      margin-right: 0.75rem;
+      text-align: center;
+    }
+    
+    .result-item.pass .icon {
+      color: var(--gb-green);
+    }
+    
+    .result-item.fail .icon {
+      color: #ff6b6b;
+    }
+    
+    .result-item .name {
+      flex: 1;
+    }
+    
+    .result-item .message {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+    }
+    
+    .warning {
+      background: #332200;
+      border: 1px solid #665500;
+      color: #ffcc00;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Wario Synth v2</h1>
+    <p class="subtitle">Game Boy Sound Engine Test Suite</p>
+    
+    <div class="warning">
+      ⚠️ This is the v2 test page. The main site (v1) is unaffected.
+      Click any button to start audio (required by browsers).
+    </div>
+    
+    <div class="panel">
+      <h2>Verification Tests</h2>
+      <div class="btn-row">
+        <button id="btn-verify" class="primary">Run Verification</button>
+      </div>
+      <div id="verification-results" class="verification-results"></div>
+    </div>
+    
+    <div class="panel">
+      <h2>Audio Tests <span id="status" class="status ready">Ready</span></h2>
+      <div class="btn-row">
+        <button id="btn-duty">Test Duty Cycles</button>
+        <button id="btn-wave">Test Wave Channel</button>
+        <button id="btn-noise">Test Noise Channel</button>
+      </div>
+      <div class="btn-row">
+        <button id="btn-combined" class="primary">Test Combined</button>
+        <button id="btn-all">Run All Tests</button>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>Quick Sound Check</h2>
+      <div class="btn-row">
+        <button id="btn-note-c">Play C4</button>
+        <button id="btn-note-e">Play E4</button>
+        <button id="btn-note-g">Play G4</button>
+        <button id="btn-bass">Play Bass</button>
+        <button id="btn-kick">Kick</button>
+        <button id="btn-snare">Snare</button>
+        <button id="btn-hihat">HiHat</button>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>Console Log</h2>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+  
+  <script type="module">
+    import { 
+      runVerificationTests, 
+      createTestChannels,
+      testDutyCycles,
+      testWaveChannel,
+      testNoiseChannel,
+      testCombined,
+      runAllAudioTests
+    } from './src-v2/audio/test/soundTest.ts';
+    
+    let audioContext = null;
+    let channels = null;
+    
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    const verificationEl = document.getElementById('verification-results');
+    
+    // Override console.log to show in UI
+    const originalLog = console.log;
+    console.log = (...args) => {
+      originalLog(...args);
+      addLog(args.join(' '), 'info');
+    };
+    
+    function addLog(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `> ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    function setStatus(status) {
+      statusEl.textContent = status;
+      statusEl.className = `status ${status.toLowerCase()}`;
+    }
+    
+    async function ensureAudioContext() {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+        channels = createTestChannels(audioContext);
+        addLog('Audio context initialized', 'success');
+      }
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+    }
+    
+    // Verification tests
+    document.getElementById('btn-verify').addEventListener('click', () => {
+      const results = runVerificationTests();
+      
+      verificationEl.innerHTML = results.map(r => `
+        <div class="result-item ${r.passed ? 'pass' : 'fail'}">
+          <span class="icon">${r.passed ? '✓' : '✗'}</span>
+          <span class="name">${r.name}</span>
+          <span class="message">${r.message}</span>
+        </div>
+      `).join('');
+      
+      results.forEach(r => {
+        addLog(`${r.passed ? '✓' : '✗'} ${r.name}: ${r.message}`, r.passed ? 'success' : 'error');
+      });
+    });
+    
+    // Audio tests
+    document.getElementById('btn-duty').addEventListener('click', async () => {
+      await ensureAudioContext();
+      setStatus('Playing');
+      await testDutyCycles(channels.pulse, audioContext);
+      setStatus('Ready');
+    });
+    
+    document.getElementById('btn-wave').addEventListener('click', async () => {
+      await ensureAudioContext();
+      setStatus('Playing');
+      await testWaveChannel(channels.wave, audioContext);
+      setStatus('Ready');
+    });
+    
+    document.getElementById('btn-noise').addEventListener('click', async () => {
+      await ensureAudioContext();
+      setStatus('Playing');
+      await testNoiseChannel(channels.noise, audioContext);
+      setStatus('Ready');
+    });
+    
+    document.getElementById('btn-combined').addEventListener('click', async () => {
+      await ensureAudioContext();
+      setStatus('Playing');
+      await testCombined(channels.pulse, channels.wave, channels.noise, audioContext);
+      setStatus('Ready');
+    });
+    
+    document.getElementById('btn-all').addEventListener('click', async () => {
+      await ensureAudioContext();
+      setStatus('Playing');
+      await runAllAudioTests(audioContext);
+      setStatus('Ready');
+    });
+    
+    // Quick sound checks
+    document.getElementById('btn-note-c').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.pulse.setDutyCycle(2);
+      channels.pulse.playNote(60, 0.3, 100);
+    });
+    
+    document.getElementById('btn-note-e').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.pulse.setDutyCycle(1);
+      channels.pulse.playNote(64, 0.3, 100);
+    });
+    
+    document.getElementById('btn-note-g').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.pulse.setDutyCycle(0);
+      channels.pulse.playNote(67, 0.3, 100);
+    });
+    
+    document.getElementById('btn-bass').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.wave.loadPreset('bass');
+      channels.wave.playNote(36, 0.5, 100);
+    });
+    
+    document.getElementById('btn-kick').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.noise.playKick(100);
+    });
+    
+    document.getElementById('btn-snare').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.noise.playSnare(100);
+    });
+    
+    document.getElementById('btn-hihat').addEventListener('click', async () => {
+      await ensureAudioContext();
+      channels.noise.playHihat(80, false);
+    });
+    
+    addLog('Wario Synth v2 Test Page loaded', 'success');
+    addLog('Click any button to initialize audio', 'info');
+  </script>
+</body>
+</html>

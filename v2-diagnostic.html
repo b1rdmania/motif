@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V2 Sound Diagnostic</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: monospace;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    h1 { color: #9bbc0f; margin-bottom: 1rem; }
+    h2 { color: #8bac0f; margin: 2rem 0 1rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+    
+    .test-section {
+      background: #16213e;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 4px;
+    }
+    
+    .test-section h3 {
+      color: #00ff88;
+      margin-bottom: 0.5rem;
+    }
+    
+    .test-section p {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    
+    button {
+      background: #0f3460;
+      color: #eee;
+      border: 2px solid #00ff88;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      border-radius: 4px;
+    }
+    
+    button:hover { background: #1a4f7a; }
+    button:active { background: #00ff88; color: #000; }
+    
+    .log {
+      background: #000;
+      padding: 1rem;
+      margin-top: 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      border-radius: 4px;
+    }
+    
+    .log-entry { margin-bottom: 0.25rem; }
+    .log-entry.info { color: #888; }
+    .log-entry.success { color: #00ff88; }
+    .log-entry.error { color: #ff4444; }
+    .log-entry.test { color: #ffaa00; }
+    
+    .comparison { 
+      display: flex; 
+      gap: 1rem; 
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    
+    .comparison button {
+      flex: 1;
+      min-width: 150px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 V2 Sound Diagnostic</h1>
+  <p>Test each audio component in isolation to identify issues.</p>
+  
+  <h2>1. Baseline Tests</h2>
+  
+  <div class="test-section">
+    <h3>Built-in Oscillators (Should definitely work)</h3>
+    <p>These use Web Audio's built-in waveforms. If these don't sound right, there's an audio context issue.</p>
+    <button onclick="testBuiltinSquare()">Square Wave</button>
+    <button onclick="testBuiltinTriangle()">Triangle Wave</button>
+    <button onclick="testBuiltinSawtooth()">Sawtooth Wave</button>
+    <button onclick="testBuiltinSine()">Sine Wave</button>
+  </div>
+  
+  <h2>2. Pulse Channel Tests</h2>
+  
+  <div class="test-section">
+    <h3>A/B Comparison: Built-in vs Our PeriodicWave</h3>
+    <p>Click these in sequence. The 50% duty SHOULD sound identical to the built-in square.</p>
+    <div class="comparison">
+      <button onclick="testBuiltinSquare()">Built-in Square (Reference)</button>
+      <button onclick="testDuty50()">Our 50% Duty Cycle</button>
+    </div>
+    <p style="margin-top: 1rem;">If they sound DIFFERENT, our PeriodicWave is broken.</p>
+  </div>
+  
+  <div class="test-section">
+    <h3>All 4 Duty Cycles</h3>
+    <p>12.5% = thin/buzzy, 25% = classic chiptune, 50% = full square, 75% = inverted 25%</p>
+    <button onclick="testDuty(0)">12.5%</button>
+    <button onclick="testDuty(1)">25%</button>
+    <button onclick="testDuty(2)">50%</button>
+    <button onclick="testDuty(3)">75%</button>
+  </div>
+  
+  <div class="test-section">
+    <h3>Frequency Comparison</h3>
+    <p>Standard frequency vs GB-quantized frequency. Should be nearly identical.</p>
+    <div class="comparison">
+      <button onclick="testFreqStandard()">Standard A4 (440Hz)</button>
+      <button onclick="testFreqGB()">GB Quantized A4</button>
+    </div>
+  </div>
+  
+  <h2>3. Noise Channel Tests</h2>
+  
+  <div class="test-section">
+    <h3>LFSR Noise</h3>
+    <p>7-bit = harsher/metallic, 15-bit = smoother white noise</p>
+    <button onclick="testNoise7bit()">7-bit Noise</button>
+    <button onclick="testNoise15bit()">15-bit Noise</button>
+    <button onclick="testNoiseWhite()">Pure White Noise (Reference)</button>
+  </div>
+  
+  <h2>4. Wave Channel Tests</h2>
+  
+  <div class="test-section">
+    <h3>4-bit Wavetable</h3>
+    <p>Should sound distinctly lo-fi compared to smooth sine.</p>
+    <div class="comparison">
+      <button onclick="testBuiltinSine()">Pure Sine (Reference)</button>
+      <button onclick="testWaveSine()">4-bit Quantized Sine</button>
+    </div>
+    <button onclick="testWaveTriangle()">4-bit Triangle</button>
+    <button onclick="testWaveSawtooth()">4-bit Sawtooth</button>
+  </div>
+  
+  <h2>5. Full Channel Tests (Through APU)</h2>
+  
+  <div class="test-section">
+    <h3>Complete V2 Pipeline</h3>
+    <p>Tests the full path through APU and Colorizer.</p>
+    <button onclick="testFullPulse()">V2 Pulse (P1)</button>
+    <button onclick="testFullWave()">V2 Wave (W1)</button>
+    <button onclick="testFullNoise()">V2 Noise (N1)</button>
+  </div>
+  
+  <h2>Log</h2>
+  <div id="log" class="log"></div>
+  
+  <script type="module">
+    // ===== LOGGING =====
+    const logEl = document.getElementById('log');
+    
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toISOString().slice(11,19)}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+    
+    window.log = log;
+    
+    // ===== AUDIO CONTEXT =====
+    let ctx = null;
+    
+    function getContext() {
+      if (!ctx || ctx.state === 'closed') {
+        ctx = new AudioContext();
+        log('Created AudioContext', 'success');
+      }
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      return ctx;
+    }
+    
+    window.getContext = getContext;
+    
+    // ===== 1. BASELINE TESTS =====
+    
+    window.testBuiltinSquare = function() {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'square';
+      osc.frequency.value = 440;
+      
+      gain.gain.value = 0.3;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      
+      log('Playing built-in SQUARE wave at 440Hz', 'test');
+    };
+    
+    window.testBuiltinTriangle = function() {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.value = 440;
+      gain.gain.value = 0.3;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      
+      log('Playing built-in TRIANGLE wave at 440Hz', 'test');
+    };
+    
+    window.testBuiltinSawtooth = function() {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sawtooth';
+      osc.frequency.value = 440;
+      gain.gain.value = 0.3;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      
+      log('Playing built-in SAWTOOTH wave at 440Hz', 'test');
+    };
+    
+    window.testBuiltinSine = function() {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = 440;
+      gain.gain.value = 0.3;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      
+      log('Playing built-in SINE wave at 440Hz', 'test');
+    };
+    
+    // ===== 2. DUTY CYCLE TESTS =====
+    
+    // Import our duty cycle function
+    import { createDutyWave, DUTY_RATIOS } from './src-v2/audio/synthesis/DutyCycle.ts';
+    
+    window.testDuty = function(dutyIndex) {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      try {
+        const wave = createDutyWave(dutyIndex, ctx);
+        osc.setPeriodicWave(wave);
+        osc.frequency.value = 440;
+        
+        gain.gain.value = 0.3;
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+        
+        log(`Playing ${DUTY_RATIOS[dutyIndex] * 100}% duty cycle at 440Hz`, 'test');
+      } catch (e) {
+        log(`ERROR: ${e.message}`, 'error');
+      }
+    };
+    
+    window.testDuty50 = function() {
+      testDuty(2); // 50% duty
+    };
+    
+    // ===== FREQUENCY COMPARISON =====
+    
+    import { calculatePulseFrequency } from './src-v2/audio/synthesis/FrequencyCalc.ts';
+    
+    window.testFreqStandard = function() {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'square';
+      osc.frequency.value = 440; // Exact A4
+      gain.gain.value = 0.3;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      
+      log(`Playing standard frequency: 440Hz exactly`, 'test');
+    };
+    
+    window.testFreqGB = function() {
+      const ctx = getContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'square';
+      const gbFreq = calculatePulseFrequency(69); // MIDI note 69 = A4
+      osc.frequency.value = gbFreq;
+      gain.gain.value = 0.3;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+      
+      log(`Playing GB-quantized frequency: ${gbFreq.toFixed(2)}Hz (expected ~440Hz)`, 'test');
+    };
+    
+    // ===== 3. NOISE TESTS =====
+    
+    import { LFSR } from './src-v2/audio/synthesis/LFSR.ts';
+    
+    function generateLFSRBuffer(ctx, mode, duration, frequency) {
+      const sampleRate = ctx.sampleRate;
+      const bufferLength = Math.ceil(duration * sampleRate);
+      const buffer = ctx.createBuffer(1, bufferLength, sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      const lfsr = new LFSR(mode);
+      const samplesPerClock = sampleRate / frequency;
+      
+      let clockCounter = 0;
+      let output = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        if (clockCounter >= samplesPerClock) {
+          output = lfsr.clock();
+          clockCounter = 0;
+        }
+        data[i] = output ? 0.3 : -0.3;
+        clockCounter++;
+      }
+      
+      return buffer;
+    }
+    
+    window.testNoise7bit = function() {
+      const ctx = getContext();
+      
+      try {
+        const buffer = generateLFSRBuffer(ctx, '7bit', 0.5, 20000);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start();
+        
+        log('Playing 7-bit LFSR noise (should sound harsh/metallic)', 'test');
+      } catch (e) {
+        log(`ERROR: ${e.message}`, 'error');
+      }
+    };
+    
+    window.testNoise15bit = function() {
+      const ctx = getContext();
+      
+      try {
+        const buffer = generateLFSRBuffer(ctx, '15bit', 0.5, 20000);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start();
+        
+        log('Playing 15-bit LFSR noise (should sound more like white noise)', 'test');
+      } catch (e) {
+        log(`ERROR: ${e.message}`, 'error');
+      }
+    };
+    
+    window.testNoiseWhite = function() {
+      const ctx = getContext();
+      const sampleRate = ctx.sampleRate;
+      const duration = 0.5;
+      const bufferLength = Math.ceil(duration * sampleRate);
+      const buffer = ctx.createBuffer(1, bufferLength, sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      // Pure random white noise
+      for (let i = 0; i < bufferLength; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.3;
+      }
+      
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start();
+      
+      log('Playing pure white noise (reference)', 'test');
+    };
+    
+    // ===== 4. WAVE TESTS =====
+    
+    function generate4bitWavetable(waveformFn) {
+      const samples = new Uint8Array(32);
+      for (let i = 0; i < 32; i++) {
+        const t = i / 32;
+        const value = waveformFn(t); // Returns 0-1
+        samples[i] = Math.floor(value * 15); // Quantize to 4-bit (0-15)
+      }
+      return samples;
+    }
+    
+    function playWavetable(samples, frequency) {
+      const ctx = getContext();
+      const sampleRate = ctx.sampleRate;
+      const duration = 0.5;
+      const bufferLength = Math.ceil(duration * sampleRate);
+      const buffer = ctx.createBuffer(1, bufferLength, sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      const samplesPerCycle = sampleRate / frequency;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const phase = (i / samplesPerCycle) % 1;
+        const sampleIndex = Math.floor(phase * 32) % 32;
+        // Convert 4-bit (0-15) to audio range (-1 to 1)
+        data[i] = ((samples[sampleIndex] / 15) * 2 - 1) * 0.3;
+      }
+      
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start();
+    }
+    
+    window.testWaveSine = function() {
+      const samples = generate4bitWavetable(t => (Math.sin(t * Math.PI * 2) + 1) / 2);
+      playWavetable(samples, 440);
+      log(`Playing 4-bit quantized sine. Samples: [${Array.from(samples).join(',')}]`, 'test');
+    };
+    
+    window.testWaveTriangle = function() {
+      const samples = generate4bitWavetable(t => t < 0.5 ? t * 2 : 2 - t * 2);
+      playWavetable(samples, 440);
+      log(`Playing 4-bit triangle. Samples: [${Array.from(samples).join(',')}]`, 'test');
+    };
+    
+    window.testWaveSawtooth = function() {
+      const samples = generate4bitWavetable(t => t);
+      playWavetable(samples, 440);
+      log(`Playing 4-bit sawtooth. Samples: [${Array.from(samples).join(',')}]`, 'test');
+    };
+    
+    // ===== 5. FULL V2 TESTS =====
+    
+    import { GameBoyAPU } from './src-v2/audio/apu/APU.ts';
+    
+    let apu = null;
+    
+    function getAPU() {
+      if (!apu) {
+        apu = new GameBoyAPU(getContext());
+        log('Created GameBoyAPU', 'success');
+      }
+      return apu;
+    }
+    
+    window.testFullPulse = function() {
+      const apu = getAPU();
+      const channel = apu.getPulseChannel('p1');
+      if (channel) {
+        channel.playNote(69, 0.5, 100); // A4
+        log('Playing through full V2 pipeline: Pulse channel P1, MIDI note 69 (A4)', 'test');
+      } else {
+        log('ERROR: Could not get pulse channel P1', 'error');
+      }
+    };
+    
+    window.testFullWave = function() {
+      const apu = getAPU();
+      const channel = apu.getWaveChannel('w1');
+      if (channel) {
+        channel.playNote(57, 0.5, 100); // A3 (lower)
+        log('Playing through full V2 pipeline: Wave channel W1, MIDI note 57 (A3)', 'test');
+      } else {
+        log('ERROR: Could not get wave channel W1', 'error');
+      }
+    };
+    
+    window.testFullNoise = function() {
+      const apu = getAPU();
+      const channel = apu.getNoiseChannel('n1');
+      if (channel) {
+        channel.playKick(100);
+        log('Playing through full V2 pipeline: Noise channel N1 (kick)', 'test');
+      } else {
+        log('ERROR: Could not get noise channel N1', 'error');
+      }
+    };
+    
+    // ===== INIT =====
+    log('Diagnostic page ready. Click buttons to test.', 'success');
+    log('Compare "Built-in Square" with "Our 50% Duty" - they SHOULD sound the same.', 'info');
+  </script>
+</body>
+</html>

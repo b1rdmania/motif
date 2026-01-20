@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wario Synth v2 - Game Boy Sound Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f380f;
+      --bg-panel: #306230;
+      --gb-green: #9bbc0f;
+      --gb-dark-green: #0f380f;
+      --gb-light-green: #8bac0f;
+      --gb-cream: #e0f8d0;
+      --text: #9bbc0f;
+      --text-dim: #306230;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      padding: 2rem 0;
+      border-bottom: 4px solid var(--gb-light-green);
+      margin-bottom: 2rem;
+    }
+    
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 2px 0 #0a280a;
+    }
+    
+    .subtitle {
+      font-size: 0.7rem;
+      color: var(--gb-light-green);
+    }
+    
+    .version-badge {
+      display: inline-block;
+      background: var(--gb-green);
+      color: var(--bg-dark);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.6rem;
+      margin-top: 0.5rem;
+    }
+    
+    .panel {
+      background: var(--bg-panel);
+      border: 4px solid var(--gb-light-green);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .panel h2 {
+      font-size: 0.8rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--gb-light-green);
+    }
+    
+    .upload-zone {
+      border: 3px dashed var(--gb-light-green);
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .upload-zone:hover {
+      background: rgba(155, 188, 15, 0.1);
+    }
+    
+    .upload-zone.dragover {
+      background: rgba(155, 188, 15, 0.2);
+      border-color: var(--gb-green);
+    }
+    
+    .upload-zone p {
+      margin-bottom: 1rem;
+      font-size: 0.7rem;
+    }
+    
+    .upload-zone .icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    button {
+      background: var(--bg-dark);
+      color: var(--gb-green);
+      border: 3px solid var(--gb-green);
+      padding: 0.75rem 1.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    button:hover:not(:disabled) {
+      background: var(--gb-green);
+      color: var(--bg-dark);
+    }
+    
+    button:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button.primary {
+      background: var(--gb-green);
+      color: var(--bg-dark);
+    }
+    
+    button.primary:hover:not(:disabled) {
+      background: var(--gb-cream);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .volume-control {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .volume-control input[type="range"] {
+      width: 100px;
+      accent-color: var(--gb-green);
+    }
+    
+    .status {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.6rem;
+      background: var(--bg-dark);
+      border: 2px solid var(--gb-light-green);
+    }
+    
+    .status.playing {
+      background: var(--gb-green);
+      color: var(--bg-dark);
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .channels {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .channel {
+      background: var(--bg-dark);
+      border: 2px solid var(--gb-light-green);
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.6rem;
+    }
+    
+    .channel.active {
+      border-color: var(--gb-green);
+      background: rgba(155, 188, 15, 0.2);
+    }
+    
+    .channel .id {
+      font-size: 0.7rem;
+      margin-bottom: 0.3rem;
+    }
+    
+    .channel .role {
+      color: var(--gb-light-green);
+      font-size: 0.5rem;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .info-item {
+      background: var(--bg-dark);
+      padding: 0.75rem;
+      border: 2px solid var(--gb-light-green);
+    }
+    
+    .info-item .label {
+      font-size: 0.55rem;
+      color: var(--gb-light-green);
+      margin-bottom: 0.3rem;
+    }
+    
+    .info-item .value {
+      font-size: 0.8rem;
+    }
+    
+    .log {
+      background: #000;
+      border: 2px solid var(--gb-light-green);
+      padding: 0.75rem;
+      height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.65rem;
+      color: var(--gb-green);
+    }
+    
+    .log-entry {
+      margin-bottom: 0.25rem;
+      line-height: 1.4;
+    }
+    
+    .log-entry.error { color: #ff6b6b; }
+    .log-entry.success { color: var(--gb-cream); }
+    
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      font-size: 0.6rem;
+      color: var(--gb-light-green);
+    }
+    
+    footer a {
+      color: var(--gb-green);
+    }
+    
+    .quick-test {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    
+    .quick-test button {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.6rem;
+    }
+    
+    .quick-test button.active {
+      background: var(--gb-green);
+      color: var(--bg-dark);
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .search-box input[type="text"] {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 3px solid var(--gb-green);
+      color: var(--gb-green);
+      padding: 0.75rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+    }
+    
+    .search-box input[type="text"]::placeholder {
+      color: var(--gb-light-green);
+      opacity: 0.7;
+    }
+    
+    .search-box input[type="text"]:focus {
+      outline: none;
+      background: rgba(155, 188, 15, 0.1);
+    }
+    
+    .results-list {
+      margin-top: 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .result-item {
+      background: var(--bg-dark);
+      border: 2px solid var(--gb-light-green);
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .result-item:hover {
+      background: rgba(155, 188, 15, 0.15);
+      border-color: var(--gb-green);
+    }
+    
+    .result-item.selected {
+      background: rgba(155, 188, 15, 0.25);
+      border-color: var(--gb-green);
+    }
+    
+    .result-item .title {
+      font-size: 0.65rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+    
+    .result-item .confidence {
+      font-size: 0.5rem;
+      color: var(--gb-light-green);
+    }
+    
+    .divider {
+      text-align: center;
+      font-size: 0.6rem;
+      color: var(--gb-light-green);
+      margin: 1rem 0;
+      position: relative;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 2px;
+      background: var(--gb-light-green);
+    }
+    
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎮 WARIO SYNTH</h1>
+      <p class="subtitle">Game Boy Sound Engine</p>
+      <span class="version-badge">v2.0 BETA</span>
+    </header>
+    
+    <div class="panel">
+      <h2>SEARCH BITMIDI</h2>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search for a song...">
+        <button id="btn-search">SEARCH</button>
+      </div>
+      <div id="results-list" class="results-list"></div>
+      
+      <div class="divider">OR</div>
+      
+      <div class="upload-zone" id="upload-zone">
+        <div class="icon">🎵</div>
+        <p>Drop a MIDI file here or click to browse</p>
+        <button>Choose File</button>
+        <input type="file" id="file-input" accept=".mid,.midi">
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>PLAYBACK</h2>
+      <div class="controls">
+        <button id="btn-play" class="primary" disabled>▶ PLAY</button>
+        <button id="btn-stop" disabled>■ STOP</button>
+        <div class="volume-control">
+          <span>VOL:</span>
+          <input type="range" id="volume" min="0" max="100" value="70">
+        </div>
+        <span id="status" class="status">READY</span>
+      </div>
+      
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">DURATION</div>
+          <div class="value" id="duration">--:--</div>
+        </div>
+        <div class="info-item">
+          <div class="label">NOTES</div>
+          <div class="value" id="notes">---</div>
+        </div>
+        <div class="info-item">
+          <div class="label">TEMPO</div>
+          <div class="value" id="tempo">--- BPM</div>
+        </div>
+        <div class="info-item">
+          <div class="label">TRACKS</div>
+          <div class="value" id="tracks">---</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>CHANNELS</h2>
+      <div class="channels">
+        <div class="channel" id="ch-p1"><div class="id">P1</div><div class="role">-</div></div>
+        <div class="channel" id="ch-p2"><div class="id">P2</div><div class="role">-</div></div>
+        <div class="channel" id="ch-p3"><div class="id">P3</div><div class="role">-</div></div>
+        <div class="channel" id="ch-p4"><div class="id">P4</div><div class="role">-</div></div>
+        <div class="channel" id="ch-w1"><div class="id">W1</div><div class="role">-</div></div>
+        <div class="channel" id="ch-w2"><div class="id">W2</div><div class="role">-</div></div>
+        <div class="channel" id="ch-n1"><div class="id">N1</div><div class="role">-</div></div>
+        <div class="channel" id="ch-n2"><div class="id">N2</div><div class="role">-</div></div>
+      </div>
+      
+      <div class="quick-test">
+        <span style="font-size: 0.6rem; opacity: 0.7;">Quick test:</span>
+        <button id="btn-c4">C4</button>
+        <button id="btn-chord">Chord</button>
+        <button id="btn-bass">Bass</button>
+        <button id="btn-drum">Drum</button>
+      </div>
+      
+      <div class="quick-test" style="margin-top: 0.5rem;">
+        <span style="font-size: 0.6rem; opacity: 0.7;">Sound mode:</span>
+        <button id="btn-dmg" class="active">DMG</button>
+        <button id="btn-gbc">GBC</button>
+        <button id="btn-gba">GBA</button>
+        <button id="btn-clean">Clean</button>
+      </div>
+      
+      <div class="quick-test" style="margin-top: 0.5rem;">
+        <span style="font-size: 0.6rem; opacity: 0.7;">Arranger:</span>
+        <button id="btn-arranger" class="active" style="background: var(--gb-green); color: var(--bg-dark);">ON</button>
+        <span style="font-size: 0.5rem; opacity: 0.6; margin-left: 0.5rem;">Makes sparse MIDIs sound full</span>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <h2>LOG</h2>
+      <div id="log" class="log"></div>
+    </div>
+    
+    <footer>
+      <p>Wario Synth v2 - Authentic Game Boy Sound</p>
+      <p><a href="/">Back to v1</a> | <a href="/v2-test.html">Sound Tests</a></p>
+    </footer>
+  </div>
+  
+  <script type="module">
+    import { GameBoyPlayer } from './src-v2/core/GameBoyPlayer.ts';
+    import { MIDIService } from './src/services/MIDIService.ts';
+    
+    // Initialize player and services
+    const player = new GameBoyPlayer();
+    const midiService = new MIDIService();
+    let currentMIDI = null;
+    let searchResults = [];
+    let selectedResultIndex = -1;
+    
+    // DOM elements
+    const searchInput = document.getElementById('search-input');
+    const btnSearch = document.getElementById('btn-search');
+    const resultsList = document.getElementById('results-list');
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    const btnPlay = document.getElementById('btn-play');
+    const btnStop = document.getElementById('btn-stop');
+    const volumeSlider = document.getElementById('volume');
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+    
+    // Info elements
+    const durationEl = document.getElementById('duration');
+    const notesEl = document.getElementById('notes');
+    const tempoEl = document.getElementById('tempo');
+    const tracksEl = document.getElementById('tracks');
+    
+    // Channel elements
+    const channelEls = {
+      p1: document.getElementById('ch-p1'),
+      p2: document.getElementById('ch-p2'),
+      p3: document.getElementById('ch-p3'),
+      p4: document.getElementById('ch-p4'),
+      w1: document.getElementById('ch-w1'),
+      w2: document.getElementById('ch-w2'),
+      n1: document.getElementById('ch-n1'),
+      n2: document.getElementById('ch-n2'),
+    };
+    
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `> ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+    
+    function setStatus(status, playing = false) {
+      statusEl.textContent = status;
+      statusEl.className = `status ${playing ? 'playing' : ''}`;
+    }
+    
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function updateInfo(info) {
+      durationEl.textContent = formatTime(info.duration);
+      notesEl.textContent = info.noteCount.toString();
+      tempoEl.textContent = `${Math.round(info.bpm)} BPM`;
+      tracksEl.textContent = info.trackCount.toString();
+    }
+    
+    function updateChannels(assignments) {
+      // Reset all
+      Object.values(channelEls).forEach(el => {
+        el.classList.remove('active');
+        el.querySelector('.role').textContent = '-';
+      });
+      
+      // Highlight assigned channels
+      for (const assignment of assignments) {
+        const el = channelEls[assignment.channelId];
+        if (el) {
+          el.classList.add('active');
+          // Get role from track analysis (simplified)
+          let role = assignment.channelId.startsWith('p') ? 'PULSE' :
+                     assignment.channelId.startsWith('w') ? 'WAVE' : 'NOISE';
+          if (assignment.shouldArpeggiate) role = 'ARP';
+          el.querySelector('.role').textContent = role;
+        }
+      }
+    }
+    
+    // File upload handling
+    uploadZone.addEventListener('click', () => fileInput.click());
+    
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) await loadMIDI(file);
+    });
+    
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) await loadMIDI(file);
+    });
+    
+    async function loadMIDI(file) {
+      try {
+        log(`Loading: ${file.name}`);
+        const buffer = await file.arrayBuffer();
+        currentMIDI = buffer;
+        
+        // Analyze without playing
+        const info = player.analyzeMIDI(buffer);
+        updateInfo(info);
+        updateChannels(info.assignments);
+        
+        log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks`, 'success');
+        
+        btnPlay.disabled = false;
+        setStatus('LOADED');
+      } catch (error) {
+        log(`Error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Playback controls
+    btnPlay.addEventListener('click', async () => {
+      if (!currentMIDI) return;
+      
+      try {
+        await player.resume();
+        const info = await player.playMIDI(currentMIDI);
+        
+        setStatus('PLAYING', true);
+        btnPlay.disabled = true;
+        btnStop.disabled = false;
+        
+        log('Playback started', 'success');
+        
+        // Auto-reset when done
+        setTimeout(() => {
+          if (!player.getIsPlaying()) {
+            setStatus('FINISHED');
+            btnPlay.disabled = false;
+            btnStop.disabled = true;
+          }
+        }, (info.duration + 1) * 1000);
+      } catch (error) {
+        log(`Playback error: ${error.message}`, 'error');
+      }
+    });
+    
+    btnStop.addEventListener('click', () => {
+      player.stop();
+      setStatus('STOPPED');
+      btnPlay.disabled = false;
+      btnStop.disabled = true;
+      log('Playback stopped');
+    });
+    
+    // Volume control
+    volumeSlider.addEventListener('input', (e) => {
+      player.setVolume(e.target.value / 100);
+    });
+    
+    // Quick test buttons
+    document.getElementById('btn-c4').addEventListener('click', async () => {
+      await player.resume();
+      const apu = player.getAPU();
+      apu.getPulseChannel('p1')?.playNote(60, 0.3, 100);
+    });
+    
+    document.getElementById('btn-chord').addEventListener('click', async () => {
+      await player.resume();
+      const apu = player.getAPU();
+      const now = apu.getCurrentTime();
+      apu.getPulseChannel('p1')?.playNote(60, 0.4, 80, now);
+      apu.getPulseChannel('p2')?.playNote(64, 0.4, 80, now);
+      apu.getPulseChannel('p3')?.playNote(67, 0.4, 80, now);
+    });
+    
+    document.getElementById('btn-bass').addEventListener('click', async () => {
+      await player.resume();
+      const apu = player.getAPU();
+      apu.getWaveChannel('w1')?.playNote(36, 0.5, 100);
+    });
+    
+    document.getElementById('btn-drum').addEventListener('click', async () => {
+      await player.resume();
+      const apu = player.getAPU();
+      apu.getNoiseChannel('n1')?.playKick(100);
+    });
+    
+    // Colorizer preset buttons
+    const presetButtons = {
+      dmg: document.getElementById('btn-dmg'),
+      gbc: document.getElementById('btn-gbc'),
+      gba: document.getElementById('btn-gba'),
+      clean: document.getElementById('btn-clean'),
+    };
+    
+    function setColorizerPreset(preset) {
+      log(`Sound mode: ${preset.toUpperCase()}`);
+      player.getAPU().setColorizerPreset(preset);
+      
+      // Update button states
+      Object.entries(presetButtons).forEach(([key, btn]) => {
+        btn.classList.toggle('active', key === preset);
+      });
+    }
+    
+    presetButtons.dmg.addEventListener('click', () => setColorizerPreset('dmg'));
+    presetButtons.gbc.addEventListener('click', () => setColorizerPreset('gbc'));
+    presetButtons.gba.addEventListener('click', () => setColorizerPreset('gba'));
+    presetButtons.clean.addEventListener('click', () => setColorizerPreset('clean'));
+    
+    // ===== ARRANGER TOGGLE =====
+    
+    const arrangerBtn = document.getElementById('btn-arranger');
+    let arrangerEnabled = true;
+    
+    arrangerBtn.addEventListener('click', () => {
+      arrangerEnabled = !arrangerEnabled;
+      player.setArrangerEnabled(arrangerEnabled);
+      
+      if (arrangerEnabled) {
+        arrangerBtn.textContent = 'ON';
+        arrangerBtn.style.background = 'var(--gb-green)';
+        arrangerBtn.style.color = 'var(--bg-dark)';
+        log('Arranger ON - sparse MIDIs will be enhanced');
+      } else {
+        arrangerBtn.textContent = 'OFF';
+        arrangerBtn.style.background = 'transparent';
+        arrangerBtn.style.color = 'var(--gb-green)';
+        log('Arranger OFF - playing raw MIDI data');
+      }
+    });
+    
+    // ===== BITMIDI SEARCH =====
+    
+    async function handleSearch() {
+      const query = searchInput.value.trim();
+      if (!query) {
+        log('Enter a song name to search');
+        return;
+      }
+      
+      log(`Searching: "${query}"...`);
+      setStatus('SEARCHING');
+      btnSearch.disabled = true;
+      resultsList.innerHTML = '';
+      
+      try {
+        const results = await midiService.search(query);
+        searchResults = results;
+        
+        if (results.length === 0) {
+          log('No MIDI files found. Try a different search.', 'error');
+          setStatus('NO RESULTS');
+          return;
+        }
+        
+        log(`Found ${results.length} results`, 'success');
+        setStatus('SELECT MIDI');
+        displayResults();
+        
+      } catch (error) {
+        log(`Search error: ${error.message}`, 'error');
+        setStatus('ERROR');
+      } finally {
+        btnSearch.disabled = false;
+      }
+    }
+    
+    function displayResults() {
+      resultsList.innerHTML = '';
+      
+      for (let i = 0; i < Math.min(searchResults.length, 10); i++) {
+        const result = searchResults[i];
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.innerHTML = `
+          <span class="title">${result.title}</span>
+          <span class="confidence">${Math.round((result.confidence || 0) * 100)}%</span>
+        `;
+        item.addEventListener('click', () => selectResult(i));
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            selectResult(i);
+          }
+        });
+        resultsList.appendChild(item);
+      }
+    }
+    
+    async function selectResult(index) {
+      if (index < 0 || index >= searchResults.length) return;
+      
+      selectedResultIndex = index;
+      const result = searchResults[index];
+      
+      // Update UI to show selection
+      document.querySelectorAll('.result-item').forEach((el, i) => {
+        el.classList.toggle('selected', i === index);
+      });
+      
+      log(`Loading: ${result.title}...`);
+      setStatus('LOADING');
+      
+      try {
+        const midiBuffer = await midiService.fetchMIDI(result.midiUrl);
+        
+        if (!midiBuffer) {
+          throw new Error('Failed to fetch MIDI');
+        }
+        
+        currentMIDI = midiBuffer;
+        
+        // Analyze without playing
+        const info = player.analyzeMIDI(midiBuffer);
+        updateInfo(info);
+        updateChannels(info.assignments);
+        
+        log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks`, 'success');
+        
+        btnPlay.disabled = false;
+        setStatus('READY');
+        
+      } catch (error) {
+        log(`Load error: ${error.message}`, 'error');
+        setStatus('ERROR');
+      }
+    }
+    
+    // Search event listeners
+    btnSearch.addEventListener('click', handleSearch);
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleSearch();
+    });
+    
+    // Initialize
+    log('Wario Synth v2 initialized', 'success');
+    log('Search BitMidi or drop a MIDI file');
+  </script>
+</body>
+</html>
