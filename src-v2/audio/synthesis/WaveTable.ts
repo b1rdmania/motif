@@ -193,21 +193,12 @@ export function generateSquareWave(): Uint8Array {
 
 /**
  * Generate a bass-optimized waveform.
- * Combination of triangle with slight harmonics.
+ * Pure triangle wave - warm, round, and perfect for bass.
+ * This is the classic Game Boy bass sound.
  */
 export function generateBassWave(): Uint8Array {
-  const wave = new Uint8Array(WAVE_TABLE_SIZE);
-  
-  for (let i = 0; i < WAVE_TABLE_SIZE; i++) {
-    const position = i / WAVE_TABLE_SIZE;
-    const angle = position * Math.PI * 2;
-    
-    // Fundamental + slight 2nd harmonic for warmth
-    const value = (Math.sin(angle) * 0.8 + Math.sin(angle * 2) * 0.2 + 1) / 2;
-    wave[i] = Math.floor(value * MAX_SAMPLE_VALUE);
-  }
-  
-  return wave;
+  // Use triangle wave for bass - warmest and most bass-friendly
+  return generateTriangleWave();
 }
 
 /**
@@ -259,10 +250,15 @@ export type WavePreset = keyof typeof WAVE_PRESETS;
 /**
  * Create a PeriodicWave from a wavetable for use with OscillatorNode.
  * This is more accurate than using AudioBufferSourceNode with playback rate.
+ * 
+ * @param samples - The wavetable samples (0-15 values)
+ * @param audioContext - The audio context
+ * @param maxHarmonics - Maximum harmonics (lower = warmer, higher = brighter). Default 16 for GB authenticity.
  */
 export function createPeriodicWaveFromTable(
   samples: Uint8Array | number[],
-  audioContext: BaseAudioContext
+  audioContext: BaseAudioContext,
+  maxHarmonics: number = 16
 ): PeriodicWave {
   const n = samples.length;
   
@@ -273,8 +269,9 @@ export function createPeriodicWaveFromTable(
     normalized.push((sample / MAX_SAMPLE_VALUE) * 2 - 1);
   }
   
-  // Number of harmonics - more harmonics = more accurate representation
-  const numHarmonics = 64;
+  // Limit harmonics for warmer, more GB-authentic sound
+  // The real GB had limited bandwidth due to its DAC
+  const numHarmonics = Math.min(maxHarmonics, 32);
   
   // Calculate Fourier coefficients
   const real = new Float32Array(numHarmonics);
@@ -295,9 +292,10 @@ export function createPeriodicWaveFromTable(
       imagSum -= normalized[i] * Math.sin(angle);
     }
     
-    // Scale by 2/n for proper amplitude
-    real[k] = (2 * realSum) / n;
-    imag[k] = (2 * imagSum) / n;
+    // Scale by 2/n for proper amplitude, with harmonic rolloff for warmth
+    const rolloff = 1 / (1 + k * 0.1); // Gentle high-frequency rolloff
+    real[k] = (2 * realSum) / n * rolloff;
+    imag[k] = (2 * imagSum) / n * rolloff;
   }
   
   return audioContext.createPeriodicWave(real, imag, {
