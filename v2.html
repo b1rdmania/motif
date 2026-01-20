@@ -450,13 +450,6 @@
         <button id="btn-drum">Drum</button>
       </div>
       
-      <div class="quick-test" style="margin-top: 0.5rem;">
-        <span style="font-size: 0.6rem; opacity: 0.7;">Sound mode:</span>
-        <button id="btn-dmg" class="active">DMG</button>
-        <button id="btn-gbc">GBC</button>
-        <button id="btn-gba">GBA</button>
-        <button id="btn-clean">Clean</button>
-      </div>
       
       <div class="quick-test" style="margin-top: 0.5rem;">
         <span style="font-size: 0.6rem; opacity: 0.7;">Arranger:</span>
@@ -676,29 +669,6 @@
       const apu = player.getAPU();
       apu.getNoiseChannel('n1')?.playKick(100);
     });
-    
-    // Colorizer preset buttons
-    const presetButtons = {
-      dmg: document.getElementById('btn-dmg'),
-      gbc: document.getElementById('btn-gbc'),
-      gba: document.getElementById('btn-gba'),
-      clean: document.getElementById('btn-clean'),
-    };
-    
-    function setColorizerPreset(preset) {
-      log(`Sound mode: ${preset.toUpperCase()}`);
-      player.getAPU().setColorizerPreset(preset);
-      
-      // Update button states
-      Object.entries(presetButtons).forEach(([key, btn]) => {
-        btn.classList.toggle('active', key === preset);
-      });
-    }
-    
-    presetButtons.dmg.addEventListener('click', () => setColorizerPreset('dmg'));
-    presetButtons.gbc.addEventListener('click', () => setColorizerPreset('gbc'));
-    presetButtons.gba.addEventListener('click', () => setColorizerPreset('gba'));
-    presetButtons.clean.addEventListener('click', () => setColorizerPreset('clean'));
     
     // ===== ARRANGER TOGGLE =====
     

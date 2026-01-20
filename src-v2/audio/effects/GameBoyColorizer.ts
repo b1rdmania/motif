@@ -222,53 +222,18 @@ export class GameBoyColorizer {
   }
   
   /**
-   * Create a preset configuration.
+   * Create the default GB configuration.
+   * Simple, clean Game Boy sound.
    */
-  static createPreset(preset: 'dmg' | 'gbc' | 'gba' | 'clean'): Partial<ColorizerConfig> {
-    switch (preset) {
-      case 'dmg':
-        // Original Game Boy - warm but clean
-        return {
-          enabled: true,
-          lowpassFreq: 8000,
-          bitDepth: 8,           // Less harsh than 4-bit
-          sampleRateReduction: 1, // No SR reduction (causes artifacts)
-          saturation: 0.1,       // Minimal saturation to avoid clicks
-          highpassFreq: 30,      // Let bass through!
-        };
-        
-      case 'gbc':
-        // Game Boy Color - slightly cleaner
-        return {
-          enabled: true,
-          lowpassFreq: 10000,
-          bitDepth: 8,
-          sampleRateReduction: 1,
-          saturation: 0.08,     // Minimal saturation
-          highpassFreq: 25,
-        };
-        
-      case 'gba':
-        // Game Boy Advance - cleaner still
-        return {
-          enabled: true,
-          lowpassFreq: 14000,
-          bitDepth: 12,
-          sampleRateReduction: 1,
-          saturation: 0.1,
-          highpassFreq: 20,
-        };
-        
-      case 'clean':
-        // No processing
-        return {
-          enabled: false,
-          lowpassFreq: 20000,
-          bitDepth: 16,
-          sampleRateReduction: 1,
-          saturation: 0,
-          highpassFreq: 20,
-        };
-    }
+  static createPreset(_preset?: string): Partial<ColorizerConfig> {
+    // Just one clean GB sound - no complexity
+    return {
+      enabled: true,
+      lowpassFreq: 8000,       // Natural GB rolloff
+      bitDepth: 8,             // Clean enough to avoid harshness
+      sampleRateReduction: 1,  // No SR reduction (causes artifacts)
+      saturation: 0.05,        // Very subtle warmth
+      highpassFreq: 30,        // Let bass through
+    };
   }
 }
