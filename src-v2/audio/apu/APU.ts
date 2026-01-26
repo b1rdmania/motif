@@ -112,32 +112,32 @@ export class GameBoyAPU {
    * The limiter will catch peaks, but we want to minimize its work
    */
   private initializeChannels(): void {
-    // Create pulse channels (4 × 0.08 = 0.32 max)
+    // Create pulse channels (4 × 0.12 = 0.48 max)
     for (const config of CHANNEL_CONFIG.pulse) {
-      const gain = this.createChannelGain(config.id, 0.08);
+      const gain = this.createChannelGain(config.id, 0.12);
       const channel = new PulseChannel(this.audioContext, gain, config.hasSweep);
       channel.setDutyCycle(config.defaultDuty);
       this.pulseChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
     
-    // Create wave channels - slightly higher for bass presence (2 × 0.12 = 0.24 max)
+    // Create wave channels for bass (2 × 0.15 = 0.30 max)
     for (const config of CHANNEL_CONFIG.wave) {
-      const gain = this.createChannelGain(config.id, 0.12);
+      const gain = this.createChannelGain(config.id, 0.15);
       const channel = new WaveChannel(this.audioContext, gain, config.preset);
       this.waveChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
     
-    // Create noise channels (2 × 0.05 = 0.10 max)
+    // Create noise channels - very quiet (2 × 0.02 = 0.04 max)
     for (const config of CHANNEL_CONFIG.noise) {
-      const gain = this.createChannelGain(config.id, 0.05);
+      const gain = this.createChannelGain(config.id, 0.02);
       const channel = new NoiseChannel(this.audioContext, gain, config.mode);
       this.noiseChannels.set(config.id, channel);
       this.initChannelState(config.id);
     }
   }
-  // Total max: 0.32 + 0.24 + 0.10 = 0.66 (headroom for note overlap)
+  // Total max: 0.48 + 0.30 + 0.08 = 0.86 (limiter handles peaks)
   
   /**
    * Create a gain node for a channel and connect to master.

@@ -125,8 +125,8 @@ export class NoiseChannel {
     // Create gain for envelope
     const gain = this.audioContext.createGain();
     
-    // Calculate gain from velocity
-    const maxGain = (velocity / 127) * 0.7; // Noise is loud, keep headroom
+    // Calculate gain from velocity - keep very quiet
+    const maxGain = (velocity / 127) * 0.3;
     
     // Noise envelope: instant attack, decay to sustain, release
     const attackTime = 0.001;  // Nearly instant
@@ -201,7 +201,7 @@ export class NoiseChannel {
     source.buffer = buffer;
     
     const gain = this.audioContext.createGain();
-    const maxGain = (velocity / 127) * 0.9;
+    const maxGain = (velocity / 127) * 0.4;
     
     // Kick envelope: instant attack, fast decay
     gain.gain.setValueAtTime(maxGain, now);
@@ -237,7 +237,7 @@ export class NoiseChannel {
     source.buffer = buffer;
     
     const gain = this.audioContext.createGain();
-    const maxGain = (velocity / 127) * 0.8;
+    const maxGain = (velocity / 127) * 0.3;
     
     // Snare envelope: fast attack, medium decay
     gain.gain.setValueAtTime(0, now);
@@ -279,7 +279,7 @@ export class NoiseChannel {
     source.buffer = buffer;
     
     const gain = this.audioContext.createGain();
-    const maxGain = (velocity / 127) * 0.5; // Hihats are quieter
+    const maxGain = (velocity / 127) * 0.2; // Hihats very quiet
     
     // Hihat envelope: instant attack, quick decay
     gain.gain.setValueAtTime(maxGain, now);

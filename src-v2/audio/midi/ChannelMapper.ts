@@ -38,8 +38,8 @@ export interface ChannelMapperConfig {
 }
 
 const DEFAULT_CONFIG: ChannelMapperConfig = {
-  maxTracks: 8,
-  arpeggiateHarmony: true,
+  maxTracks: 8,     // Full 8 GB channels
+  arpeggiateHarmony: true,  // Re-enabled for classic GB sound
   leadDuty: 2,      // 50% for full sound
   harmonyDuty: 1,   // 25% for thinner, less intrusive sound
 };

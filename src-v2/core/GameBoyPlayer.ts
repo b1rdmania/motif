@@ -53,6 +53,13 @@ export class GameBoyPlayer {
   private currentPlaybackInfo: PlaybackInfo | null = null;
   private playbackStartTime: number = 0;
   
+  // Progressive scheduling state
+  private pendingNotes: ChannelNote[] = [];
+  private scheduleIndex: number = 0;
+  private schedulerInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly SCHEDULE_AHEAD_TIME = 2.0; // Schedule 2 seconds ahead
+  private readonly SCHEDULER_INTERVAL_MS = 250; // Check every 250ms
+  
   constructor(config: Partial<GameBoyPlayerConfig> = {}) {
     this.config = { ...DEFAULT_PLAYER_CONFIG, ...config };
     this.apu = new GameBoyAPU(undefined, this.config);
@@ -115,13 +122,15 @@ export class GameBoyPlayer {
     const startTime = this.apu.getCurrentTime() + 0.1; // Small lookahead
     this.playbackStartTime = startTime;
     
-    // Schedule all notes
-    for (const note of gbNotes) {
-      this.apu.scheduleNote({
-        ...note,
-        startTime: startTime + note.startTime,
-      });
-    }
+    // Store notes for progressive scheduling
+    this.pendingNotes = gbNotes;
+    this.scheduleIndex = 0;
+    
+    // Schedule initial batch
+    this.scheduleNextBatch();
+    
+    // Start the scheduler for progressive note scheduling
+    this.startScheduler();
     
     this.isPlaying = true;
     
@@ -226,10 +235,79 @@ export class GameBoyPlayer {
   }
   
   /**
+   * Schedule notes progressively - only schedule notes within the lookahead window.
+   */
+  private scheduleNextBatch(): void {
+    if (!this.isPlaying && this.scheduleIndex > 0) return;
+    
+    const currentTime = this.apu.getCurrentTime();
+    const elapsedTime = currentTime - this.playbackStartTime;
+    const scheduleUntil = elapsedTime + this.SCHEDULE_AHEAD_TIME;
+    
+    let scheduledCount = 0;
+    
+    while (this.scheduleIndex < this.pendingNotes.length) {
+      const note = this.pendingNotes[this.scheduleIndex];
+      
+      // If note is beyond our scheduling window, stop
+      if (note.startTime > scheduleUntil) {
+        break;
+      }
+      
+      // Schedule the note
+      this.apu.scheduleNote({
+        ...note,
+        startTime: this.playbackStartTime + note.startTime,
+      });
+      
+      this.scheduleIndex++;
+      scheduledCount++;
+    }
+    
+    if (scheduledCount > 0) {
+      console.log(`Scheduled ${scheduledCount} notes (${this.scheduleIndex}/${this.pendingNotes.length})`);
+    }
+  }
+  
+  /**
+   * Start the progressive scheduler.
+   */
+  private startScheduler(): void {
+    this.stopScheduler();
+    
+    this.schedulerInterval = setInterval(() => {
+      if (!this.isPlaying) {
+        this.stopScheduler();
+        return;
+      }
+      
+      this.scheduleNextBatch();
+      
+      // Check if all notes have been scheduled
+      if (this.scheduleIndex >= this.pendingNotes.length) {
+        this.stopScheduler();
+      }
+    }, this.SCHEDULER_INTERVAL_MS);
+  }
+  
+  /**
+   * Stop the progressive scheduler.
+   */
+  private stopScheduler(): void {
+    if (this.schedulerInterval) {
+      clearInterval(this.schedulerInterval);
+      this.schedulerInterval = null;
+    }
+  }
+  
+  /**
    * Stop playback.
    */
   stop(): void {
     this.isPlaying = false;
+    this.stopScheduler();
+    this.pendingNotes = [];
+    this.scheduleIndex = 0;
     this.apu.stopAll();
     console.log('Playback stopped');
   }
