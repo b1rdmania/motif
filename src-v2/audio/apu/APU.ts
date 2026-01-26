@@ -129,9 +129,9 @@ export class GameBoyAPU {
       this.initChannelState(config.id);
     }
     
-    // Create noise channels - very quiet (2 × 0.02 = 0.04 max)
+    // Create noise channels - MUTED for now
     for (const config of CHANNEL_CONFIG.noise) {
-      const gain = this.createChannelGain(config.id, 0.02);
+      const gain = this.createChannelGain(config.id, 0);
       const channel = new NoiseChannel(this.audioContext, gain, config.mode);
       this.noiseChannels.set(config.id, channel);
       this.initChannelState(config.id);
