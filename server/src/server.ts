@@ -147,6 +147,9 @@ app.get('/api/midi/search', async (req, res) => {
     res.json({ results, count: results.length });
   } catch (error) {
     console.error('Search error:', error);
+    if (error instanceof Error && error.message === 'MIDI_SOURCE_UNAVAILABLE') {
+      return res.status(503).json({ error: 'BitMidi is temporarily unavailable. Please try again in a minute.' });
+    }
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -284,7 +287,9 @@ app.get('/api/midi/fetch', async (req, res) => {
       res.setHeader('Content-Length', result.data!.byteLength);
       res.send(Buffer.from(result.data!));
     } else {
-      res.status(404).json({ error: result.error });
+      const error = String(result.error || 'Fetch failed');
+      const blocked = /blocked|not allowed/i.test(error);
+      res.status(blocked ? 403 : 404).json({ error });
     }
   } catch (error) {
     console.error('Fetch error:', error);
@@ -307,7 +312,9 @@ app.get('/api/midi/parse', async (req, res) => {
       const metadata = parseService.parseMIDI(result.data);
       res.json(metadata);
     } else {
-      res.status(404).json({ error: result.error || 'Failed to fetch MIDI' });
+      const error = String(result.error || 'Failed to fetch MIDI');
+      const blocked = /blocked|not allowed/i.test(error);
+      res.status(blocked ? 403 : 404).json({ error });
     }
   } catch (error) {
     console.error('Parse error:', error);

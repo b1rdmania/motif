@@ -22,7 +22,7 @@ export class BitMidiAdapter implements SearchAdapter {
       return this.parseSearchResults(html, query);
     } catch (error) {
       console.error('BitMidi search error:', error);
-      return [];
+      throw error instanceof Error ? error : new Error('BitMidi search failed');
     }
   }
 
