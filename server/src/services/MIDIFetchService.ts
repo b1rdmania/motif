@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import { ScoreUtils } from '../utils/ScoreUtils.js';
 import { SimpleMIDI } from '../utils/SimpleMIDI.js';
 import type { CacheEntry } from '../types.js';
@@ -26,6 +28,11 @@ export class MIDIFetchService {
         const syntheticBuffer = SimpleMIDI.generateValidMIDI(songName);
         console.log(`Generated ${syntheticBuffer.byteLength} bytes of synthetic MIDI data`);
         return { success: true, data: syntheticBuffer };
+      }
+
+      const target = await this.validateTargetUrl(url);
+      if (!target.valid) {
+        return { success: false, error: target.error };
       }
 
       // Check cache first
@@ -99,6 +106,103 @@ export class MIDIFetchService {
     }
 
     return { valid: true };
+  }
+
+  private async validateTargetUrl(rawUrl: string): Promise<{ valid: boolean; error?: string }> {
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      return { valid: false, error: 'Invalid URL' };
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { valid: false, error: 'Only http/https URLs are allowed' };
+    }
+
+    if (parsed.username || parsed.password) {
+      return { valid: false, error: 'URLs with embedded credentials are not allowed' };
+    }
+
+    const hostname = parsed.hostname.trim().toLowerCase();
+    if (!hostname) {
+      return { valid: false, error: 'Missing hostname' };
+    }
+
+    if (this.isBlockedHostname(hostname)) {
+      return { valid: false, error: 'Blocked hostname' };
+    }
+
+    // If hostname is a literal IP, validate directly.
+    if (net.isIP(hostname)) {
+      if (this.isPrivateOrLocalIp(hostname)) {
+        return { valid: false, error: 'Blocked target IP' };
+      }
+      return { valid: true };
+    }
+
+    try {
+      const resolved = await dns.lookup(hostname, { all: true });
+      if (resolved.length === 0) {
+        return { valid: false, error: 'Unable to resolve hostname' };
+      }
+
+      // Require every resolved IP to be public routable.
+      for (const entry of resolved) {
+        if (this.isPrivateOrLocalIp(entry.address)) {
+          return { valid: false, error: 'Blocked target IP' };
+        }
+      }
+    } catch {
+      return { valid: false, error: 'Unable to resolve hostname' };
+    }
+
+    return { valid: true };
+  }
+
+  private isBlockedHostname(hostname: string): boolean {
+    return hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local');
+  }
+
+  private isPrivateOrLocalIp(ip: string): boolean {
+    if (net.isIPv4(ip)) {
+      return this.isPrivateOrLocalIPv4(ip);
+    }
+    if (net.isIPv6(ip)) {
+      return this.isPrivateOrLocalIPv6(ip);
+    }
+    return true;
+  }
+
+  private isPrivateOrLocalIPv4(ip: string): boolean {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) {
+      return true;
+    }
+
+    const [a, b] = parts;
+
+    if (a === 10) return true;                     // 10.0.0.0/8
+    if (a === 127) return true;                    // 127.0.0.0/8 loopback
+    if (a === 0) return true;                      // 0.0.0.0/8 "this host"
+    if (a === 169 && b === 254) return true;       // 169.254.0.0/16 link-local
+    if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+    if (a === 192 && b === 168) return true;       // 192.168.0.0/16
+    if (a >= 224) return true;                     // multicast/reserved
+
+    return false;
+  }
+
+  private isPrivateOrLocalIPv6(ip: string): boolean {
+    const normalized = ip.toLowerCase();
+    if (normalized === '::1') return true;         // loopback
+    if (normalized === '::') return true;          // unspecified
+    if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true; // ULA fc00::/7
+    if (normalized.startsWith('fe8') || normalized.startsWith('fe9') || normalized.startsWith('fea') || normalized.startsWith('feb')) {
+      return true; // link-local fe80::/10
+    }
+    if (normalized.startsWith('ff')) return true;  // multicast ff00::/8
+    return false;
   }
 
   private hashUrl(url: string): string {
