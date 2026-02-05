@@ -19,22 +19,28 @@ export class MIDISearchService {
       try {
         const results = await adapter.search(query);
         console.log(`${adapter.name}: Found ${results.length} results`);
-        return results;
+        return { ok: true, results } as const;
       } catch (error) {
         console.error(`${adapter.name} search failed:`, error);
-        return [];
+        return { ok: false, results: [] as MIDICandidate[] } as const;
       }
     });
 
     const results = await Promise.all(searchPromises);
+    const allFailed = results.length > 0 && results.every(r => !r.ok);
     
     // Combine and deduplicate results
     for (const adapterResults of results) {
-      allResults.push(...adapterResults);
+      allResults.push(...adapterResults.results);
     }
 
     // Remove duplicates (same MIDI URL)
     const uniqueResults = this.deduplicateResults(allResults);
+
+    // Distinguish provider outage from "no matches found"
+    if (uniqueResults.length === 0 && allFailed) {
+      throw new Error('MIDI_SOURCE_UNAVAILABLE');
+    }
     
     // Sort by confidence score
     uniqueResults.sort((a, b) => b.confidence - a.confidence);

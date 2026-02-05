@@ -78,7 +78,16 @@ export class MIDIService {
 
   async search(query: string): Promise<MIDISearchResult[]> {
     const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/search?q=${encodeURIComponent(query)}`);
-    if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+    if (!response.ok) {
+      let message = `Search failed: ${response.status}`;
+      try {
+        const body = await response.json() as { error?: string };
+        if (body?.error) message = body.error;
+      } catch {
+        // ignore JSON parse errors and keep generic message
+      }
+      throw new Error(message);
+    }
     const data: MIDISearchResponse = await response.json();
     return data.results;
   }
