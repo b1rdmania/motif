@@ -4,6 +4,7 @@ import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { getAudioContext, isAudioReady, peekAudioContext, unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
+import * as lamejs from 'lamejs';
 
 class MotifApp {
   private motifEngine: MotifEngine;
@@ -58,6 +59,10 @@ class MotifApp {
   private downloadMp3Btn!: HTMLButtonElement;
   private shareFallback!: HTMLElement;
   private shareFallbackInput!: HTMLInputElement;
+
+  private downloadMp3BtnLabel = 'Download MP3';
+  private preparedMp3: { url: string; filename: string } | null = null;
+  private preparedMp3RevokeTimeout: number | null = null;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -131,6 +136,7 @@ class MotifApp {
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
     this.shareToXBtn = document.getElementById('shareToXBtn') as HTMLButtonElement;
     this.downloadMp3Btn = document.getElementById('downloadMp3Btn') as HTMLButtonElement;
+    this.downloadMp3BtnLabel = (this.downloadMp3Btn.textContent || '').trim() || 'Download MP3';
     this.shareFallback = document.getElementById('shareFallback')!;
     this.shareFallbackInput = document.getElementById('shareFallbackInput') as HTMLInputElement;
 
@@ -227,6 +233,7 @@ class MotifApp {
     // Stop all audio and return to the search workbench.
     this.stopPreview();
     this.handleMotifStop();
+    this.clearPreparedMp3();
     this.hasGenerated = false;
     this.isMotifPlaying = false;
     this.motifResumeProgress = 0;
@@ -406,6 +413,7 @@ class MotifApp {
     // Stop any playing preview audio
     this.soundfontPlayer?.stop();
     this.stopPreview();
+    this.clearPreparedMp3();
     this.hasGenerated = false;
 
     this.selectedResultIndex = index;
@@ -508,6 +516,7 @@ class MotifApp {
     try {
       // Audio exclusivity
       this.stopPreview();
+      this.clearPreparedMp3();
       // Best-effort: ensure iOS audio is unlocked from this user gesture.
       await unlockAudio();
       this.updateIOSAudioBanner();
@@ -829,11 +838,54 @@ class MotifApp {
     return out;
   }
 
+  private clearPreparedMp3(): void {
+    if (this.preparedMp3RevokeTimeout !== null) {
+      window.clearTimeout(this.preparedMp3RevokeTimeout);
+      this.preparedMp3RevokeTimeout = null;
+    }
+    if (this.preparedMp3) {
+      try {
+        URL.revokeObjectURL(this.preparedMp3.url);
+      } catch {
+        // ignore
+      }
+      this.preparedMp3 = null;
+    }
+    if (this.downloadMp3Btn) {
+      this.downloadMp3Btn.textContent = this.downloadMp3BtnLabel;
+    }
+  }
+
+  private startBlobDownload(url: string, filename: string): void {
+    // This MUST run inside a user gesture to avoid modern download blocking.
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   private async handleDownloadMp3(): Promise<void> {
     if (!this.hasGenerated || !this.currentMIDI) return;
 
+    // If we already prepared an MP3, do the *actual* download synchronously in the click handler.
+    // Many browsers block downloads that occur after an async chain (user activation is lost).
+    if (this.preparedMp3) {
+      try {
+        this.startBlobDownload(this.preparedMp3.url, this.preparedMp3.filename);
+        this.updateStatus('Downloading…');
+        window.setTimeout(() => this.updateStatus(''), 800);
+      } catch (e) {
+        this.updateStatus(`Download blocked: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      }
+      return;
+    }
+
     try {
       this.downloadMp3Btn.disabled = true;
+      this.downloadMp3Btn.textContent = 'Preparing…';
       this.updateStatus('Rendering audio…');
 
       // Stop any current playback
@@ -849,8 +901,7 @@ class MotifApp {
 
       this.updateStatus('Encoding MP3…');
 
-      // Use lamejs from CDN (global)
-      const Mp3Encoder = (window as any).lamejs?.Mp3Encoder;
+      const Mp3Encoder = (lamejs as any)?.Mp3Encoder;
       if (!Mp3Encoder) throw new Error('MP3 encoder not loaded');
 
       const channels = audioBuffer.numberOfChannels;
@@ -880,22 +931,24 @@ class MotifApp {
       const result = this.searchResults[this.selectedResultIndex];
       const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
 
-      // Download
-      const a = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      a.href = url;
-      a.download = `${safeTitle}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const filename = `${safeTitle}.mp3`;
 
-      this.updateStatus('MP3 downloaded!');
-      setTimeout(() => this.updateStatus(''), 1500);
+      // Store prepared download and let the user click once more to save.
+      this.preparedMp3 = { url, filename };
+      this.downloadMp3Btn.textContent = 'Tap to download';
+      this.updateStatus('MP3 ready. Tap Download MP3 again to save.');
+
+      // Auto-cleanup to avoid leaking blob URLs.
+      this.preparedMp3RevokeTimeout = window.setTimeout(() => {
+        this.clearPreparedMp3();
+      }, 5 * 60 * 1000);
     } catch (e) {
       this.updateStatus(`MP3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      this.clearPreparedMp3();
     } finally {
       this.downloadMp3Btn.disabled = false;
+      if (!this.preparedMp3) this.downloadMp3Btn.textContent = this.downloadMp3BtnLabel;
     }
   }
 
