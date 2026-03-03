@@ -61,7 +61,7 @@ class MotifApp {
   private shareFallbackInput!: HTMLInputElement;
 
   private downloadMp3BtnLabel = 'Download MP3';
-  private preparedMp3: { url: string; filename: string } | null = null;
+  private preparedMp3: { url: string; filename: string; blob: Blob } | null = null;
   private preparedMp3RevokeTimeout: number | null = null;
   private isMp3Preparing = false;
 
@@ -880,11 +880,41 @@ class MotifApp {
     }
   }
 
-  private startBlobDownload(url: string, filename: string): void {
-    // This MUST run inside a user gesture to avoid modern download blocking.
+  private async trySavePreparedMp3(prepared: { url: string; filename: string; blob: Blob }): Promise<void> {
+    // Best effort ordering:
+    // 1) Share sheet (iOS Safari often can't "download" blob URLs reliably)
+    // 2) Open in a new tab (lets user use the browser's share/save UI)
+    // 3) Regular anchor download
+    const file = new File([prepared.blob], prepared.filename, { type: 'audio/mpeg' });
+
+    const canShareFiles =
+      typeof navigator !== 'undefined' &&
+      typeof (navigator as any).share === 'function' &&
+      typeof (navigator as any).canShare === 'function' &&
+      (navigator as any).canShare({ files: [file] });
+
+    if (canShareFiles) {
+      await (navigator as any).share({
+        files: [file],
+        title: prepared.filename,
+      });
+      return;
+    }
+
+    // iOS-like browsers: open blob in a new tab/window (download attr is unreliable)
+    if (this.isIOSLike()) {
+      const opened = window.open(prepared.url, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        // popup blocked: navigate current tab
+        window.location.href = prepared.url;
+      }
+      return;
+    }
+
+    // Default: anchor download (must run inside a user gesture)
     const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
+    a.href = prepared.url;
+    a.download = prepared.filename;
     a.rel = 'noopener';
     document.body.appendChild(a);
     a.click();
@@ -903,9 +933,11 @@ class MotifApp {
     // Many browsers block downloads that occur after an async chain (user activation is lost).
     if (this.preparedMp3) {
       try {
-        this.startBlobDownload(this.preparedMp3.url, this.preparedMp3.filename);
-        this.updateStatus('Downloading…');
-        window.setTimeout(() => this.updateStatus(''), 800);
+        await this.trySavePreparedMp3(this.preparedMp3);
+        this.updateStatus(this.isIOSLike() ? 'Opened MP3. Use Share/Save.' : 'Downloading…');
+        window.setTimeout(() => this.updateStatus(''), 1200);
+        // Reset after a save attempt so the button doesn't feel “dead”.
+        this.clearPreparedMp3();
       } catch (e) {
         this.updateStatus(`Download blocked: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
@@ -929,14 +961,25 @@ class MotifApp {
       const MAX_EXPORT_SEC = 180; // 3 minutes max by default (keeps export fast/reliable)
       let exportSec = durationSec;
       if (durationSec > MAX_EXPORT_SEC) {
-        const ok = window.confirm(
-          `This track is about ${Math.round(durationSec)}s long. Exporting the full thing can take a long time.\n\nExport the first ${MAX_EXPORT_SEC}s instead?`
+        const promptVal = window.prompt(
+          `This track is about ${Math.round(durationSec)}s long.\n\nEnter seconds to export (e.g. ${MAX_EXPORT_SEC}), or leave blank for full song:`,
+          String(MAX_EXPORT_SEC)
         );
-        if (!ok) {
+        if (promptVal === null) {
           this.updateStatus('MP3 export cancelled.');
           return;
         }
-        exportSec = MAX_EXPORT_SEC;
+        const trimmed = promptVal.trim();
+        if (trimmed.length === 0) {
+          exportSec = durationSec; // full
+        } else {
+          const n = Number(trimmed);
+          if (!Number.isFinite(n) || n <= 0) {
+            this.updateStatus('Invalid export duration.');
+            return;
+          }
+          exportSec = Math.min(durationSec, n);
+        }
       }
 
       const exportEvents = this.trimEventsForDuration(this.currentMIDI.events, exportSec);
@@ -1049,9 +1092,9 @@ class MotifApp {
         const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
         const url = URL.createObjectURL(blob);
 
-        this.preparedMp3 = { url, filename };
-        this.downloadMp3Btn.textContent = 'Download MP3 (ready)';
-        this.updateStatus('MP3 ready. Click Download MP3 again to save.');
+        this.preparedMp3 = { url, filename, blob };
+        this.downloadMp3Btn.textContent = this.isIOSLike() ? 'Save MP3 (ready)' : 'Download MP3 (ready)';
+        this.updateStatus(this.isIOSLike() ? 'MP3 ready. Tap Save MP3 to open/share.' : 'MP3 ready. Click Download MP3 again to save.');
 
         // Auto-cleanup to avoid leaking blob URLs.
         this.preparedMp3RevokeTimeout = window.setTimeout(() => {
