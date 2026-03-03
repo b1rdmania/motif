@@ -885,8 +885,8 @@ class MotifApp {
 
     try {
       this.downloadMp3Btn.disabled = true;
-      this.downloadMp3Btn.textContent = 'Preparing…';
-      this.updateStatus('Rendering audio…');
+      this.downloadMp3Btn.textContent = 'Preparing MP3…';
+      this.updateStatus('Preparing MP3… this can take a bit. When it says “Ready”, click Download MP3 again to save.');
 
       // Stop any current playback
       this.handleMotifStop();
@@ -899,7 +899,7 @@ class MotifApp {
         sampleRate
       );
 
-      this.updateStatus('Encoding MP3…');
+      this.updateStatus('Encoding MP3… (almost there)');
 
       const Mp3Encoder = (lamejs as any)?.Mp3Encoder;
       if (!Mp3Encoder) throw new Error('MP3 encoder not loaded');
@@ -936,8 +936,8 @@ class MotifApp {
 
       // Store prepared download and let the user click once more to save.
       this.preparedMp3 = { url, filename };
-      this.downloadMp3Btn.textContent = 'Tap to download';
-      this.updateStatus('MP3 ready. Tap Download MP3 again to save.');
+      this.downloadMp3Btn.textContent = 'Download MP3 (ready)';
+      this.updateStatus('MP3 ready. Click Download MP3 again to save.');
 
       // Auto-cleanup to avoid leaking blob URLs.
       this.preparedMp3RevokeTimeout = window.setTimeout(() => {
