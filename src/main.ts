@@ -833,34 +833,49 @@ class MotifApp {
     return out;
   }
 
-  private downloadBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } finally {
-      window.setTimeout(() => {
-        try {
-          URL.revokeObjectURL(url);
-        } catch {
-          // ignore
-        }
-      }, 2000);
-    }
-  }
-
   private async handleDownloadMp3(): Promise<void> {
     if (!this.hasGenerated || !this.currentMIDI) return;
+
+    const result = this.searchResults[this.selectedResultIndex];
+    const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
+    const fileName = `${safeTitle}.mp3`;
+    let fileHandle: any = null;
+    let popup: Window | null = null;
 
     try {
       this.downloadMp3Btn.disabled = true;
       this.downloadMp3Btn.textContent = 'Rendering…';
       this.updateStatus('Rendering audio…');
+
+      // Capture user activation up-front when possible.
+      const maybeShowSaveFilePicker = (window as any).showSaveFilePicker;
+      if (typeof maybeShowSaveFilePicker === 'function') {
+        try {
+          fileHandle = await maybeShowSaveFilePicker({
+            suggestedName: fileName,
+            types: [{
+              description: 'MP3 audio',
+              accept: { 'audio/mpeg': ['.mp3'] },
+            }],
+          });
+        } catch (e: any) {
+          if (e?.name === 'AbortError') {
+            this.updateStatus('Download cancelled.');
+            return;
+          }
+        }
+      } else {
+        // Fallback for browsers without file picker: pre-open a window from the click gesture.
+        popup = window.open('', '_blank');
+        if (popup && !popup.closed) {
+          try {
+            popup.document.title = 'Preparing MP3';
+            popup.document.body.innerHTML = '<p style="font-family:sans-serif;padding:16px">Preparing MP3…</p>';
+          } catch {
+            // ignore cross-window access issues
+          }
+        }
+      }
 
       // Stop any current playback
       this.handleMotifStop();
@@ -878,10 +893,9 @@ class MotifApp {
 
       const Mp3Encoder = (lamejs as any)?.Mp3Encoder;
       if (!Mp3Encoder) throw new Error('MP3 encoder not loaded');
-
       const channels = audioBuffer.numberOfChannels;
       const kbps = 128;
-      const encoder = new Mp3Encoder(channels, sampleRate, kbps);
+      const encoder = new (lamejs as any).Mp3Encoder(channels, sampleRate, kbps);
       const mp3Chunks: BlobPart[] = [];
 
       // Get audio data
@@ -903,15 +917,45 @@ class MotifApp {
       if (tail && tail.length) mp3Chunks.push(tail);
 
       const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
-      const result = this.searchResults[this.selectedResultIndex];
-      const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
-      const filename = `${safeTitle}.mp3`;
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        this.updateStatus('MP3 downloaded!');
+        setTimeout(() => this.updateStatus(''), 1500);
+        return;
+      }
 
-      this.downloadMp3Btn.textContent = 'Downloading…';
-      this.updateStatus('Downloading…');
-      this.downloadBlob(blob, filename);
+      const url = URL.createObjectURL(blob);
+      let attemptedDownload = false;
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        attemptedDownload = true;
+      } catch {
+        // fallback below
+      }
 
-      window.setTimeout(() => this.updateStatus(''), 1200);
+      if (popup && !popup.closed) {
+        popup.location.href = url;
+        if (attemptedDownload) {
+          popup.close();
+        }
+      } else if (!attemptedDownload) {
+        window.open(url, '_blank');
+      }
+
+      if (attemptedDownload) {
+        this.updateStatus('MP3 downloaded!');
+        setTimeout(() => this.updateStatus(''), 1500);
+      } else {
+        this.updateStatus('MP3 opened in a new tab. Save it from there.');
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
       this.updateStatus(`MP3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
