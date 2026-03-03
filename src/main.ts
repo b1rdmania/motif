@@ -63,6 +63,7 @@ class MotifApp {
   private downloadMp3BtnLabel = 'Download MP3';
   private preparedMp3: { url: string; filename: string } | null = null;
   private preparedMp3RevokeTimeout: number | null = null;
+  private isMp3Preparing = false;
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -838,6 +839,29 @@ class MotifApp {
     return out;
   }
 
+  private getEventsDurationSec(events: NoteEvent[]): number {
+    let maxEnd = 0;
+    for (const e of events) {
+      const end = (e.time || 0) + (e.duration || 0);
+      if (end > maxEnd) maxEnd = end;
+    }
+    return maxEnd;
+  }
+
+  private trimEventsForDuration(events: NoteEvent[], maxSec: number): NoteEvent[] {
+    if (!Number.isFinite(maxSec) || maxSec <= 0) return [];
+    const out: NoteEvent[] = [];
+    for (const e of events) {
+      const t = e.time || 0;
+      if (t >= maxSec) continue;
+      const maxDur = maxSec - t;
+      const dur = Math.max(0, Math.min(e.duration || 0, maxDur));
+      if (dur <= 0) continue;
+      out.push({ ...e, duration: dur });
+    }
+    return out;
+  }
+
   private clearPreparedMp3(): void {
     if (this.preparedMp3RevokeTimeout !== null) {
       window.clearTimeout(this.preparedMp3RevokeTimeout);
@@ -870,6 +894,11 @@ class MotifApp {
   private async handleDownloadMp3(): Promise<void> {
     if (!this.hasGenerated || !this.currentMIDI) return;
 
+    if (this.isMp3Preparing) {
+      this.updateStatus('Still preparing MP3…');
+      return;
+    }
+
     // If we already prepared an MP3, do the *actual* download synchronously in the click handler.
     // Many browsers block downloads that occur after an async chain (user activation is lost).
     if (this.preparedMp3) {
@@ -884,22 +913,79 @@ class MotifApp {
     }
 
     try {
+      this.isMp3Preparing = true;
       this.downloadMp3Btn.disabled = true;
       this.downloadMp3Btn.textContent = 'Preparing MP3…';
-      this.updateStatus('Preparing MP3… this can take a bit. When it says “Ready”, click Download MP3 again to save.');
 
       // Stop any current playback
       this.handleMotifStop();
 
+      const result = this.searchResults[this.selectedResultIndex];
+      const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
+      const filename = `${safeTitle}.mp3`;
+
+      // Guard against huge exports that feel like a “stall”.
+      const durationSec = this.getEventsDurationSec(this.currentMIDI.events);
+      const MAX_EXPORT_SEC = 180; // 3 minutes max by default (keeps export fast/reliable)
+      let exportSec = durationSec;
+      if (durationSec > MAX_EXPORT_SEC) {
+        const ok = window.confirm(
+          `This track is about ${Math.round(durationSec)}s long. Exporting the full thing can take a long time.\n\nExport the first ${MAX_EXPORT_SEC}s instead?`
+        );
+        if (!ok) {
+          this.updateStatus('MP3 export cancelled.');
+          return;
+        }
+        exportSec = MAX_EXPORT_SEC;
+      }
+
+      const exportEvents = this.trimEventsForDuration(this.currentMIDI.events, exportSec);
+      if (exportEvents.length === 0) {
+        throw new Error('Nothing to export (empty clip)');
+      }
+
+      // Prefer File System Access API when available (single click, no download blocking).
+      const picker = (window as any).showSaveFilePicker as
+        | undefined
+        | ((opts: any) => Promise<any>);
+      let writable: any = null;
+
+      if (typeof picker === 'function') {
+        try {
+          this.downloadMp3Btn.textContent = 'Choose save location…';
+          this.updateStatus('Choose where to save the MP3…');
+          const handle = await picker({
+            suggestedName: filename,
+            types: [
+              {
+                description: 'MP3 Audio',
+                accept: { 'audio/mpeg': ['.mp3'] },
+              },
+            ],
+          });
+          writable = await handle.createWritable();
+        } catch (e: any) {
+          if (e?.name === 'AbortError') {
+            this.updateStatus('MP3 export cancelled.');
+            return;
+          }
+          throw e;
+        }
+      }
+
+      this.downloadMp3Btn.textContent = 'Rendering…';
+      this.updateStatus('Rendering audio…');
+
       // Render offline
       const sampleRate = 44100;
       const audioBuffer = await this.motifEngine.renderOffline(
-        this.currentMIDI.events,
+        exportEvents,
         'procedural',
         sampleRate
       );
 
-      this.updateStatus('Encoding MP3… (almost there)');
+      this.downloadMp3Btn.textContent = 'Encoding… 0%';
+      this.updateStatus('Encoding MP3… 0%');
 
       const Mp3Encoder = (lamejs as any)?.Mp3Encoder;
       if (!Mp3Encoder) throw new Error('MP3 encoder not loaded');
@@ -917,36 +1003,66 @@ class MotifApp {
 
       // Encode in 1152-sample frames
       const frameSize = 1152;
+      const totalFrames = Math.max(1, Math.ceil(left.length / frameSize));
+      let framesDone = 0;
+
       for (let i = 0; i < left.length; i += frameSize) {
         const l = left.subarray(i, i + frameSize);
         const r = right.subarray(i, i + frameSize);
         const buf = encoder.encodeBuffer(l, r);
-        if (buf && buf.length) mp3Chunks.push(buf);
+        if (buf && buf.length) {
+          if (writable) {
+            await writable.write(new Uint8Array(buf));
+          } else {
+            mp3Chunks.push(buf);
+          }
+        }
+
+        framesDone++;
+        if (framesDone % 64 === 0 || framesDone === totalFrames) {
+          const pct = Math.min(99, Math.floor((framesDone / totalFrames) * 100));
+          this.downloadMp3Btn.textContent = `Encoding… ${pct}%`;
+          this.updateStatus(`Encoding MP3… ${pct}%`);
+          // Yield to the UI thread so the page doesn't feel frozen.
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
       }
 
       const tail = encoder.flush();
-      if (tail && tail.length) mp3Chunks.push(tail);
+      if (tail && tail.length) {
+        if (writable) {
+          await writable.write(new Uint8Array(tail));
+        } else {
+          mp3Chunks.push(tail);
+        }
+      }
 
-      const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
-      const result = this.searchResults[this.selectedResultIndex];
-      const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
+      if (writable) {
+        this.downloadMp3Btn.textContent = 'Saving…';
+        this.updateStatus('Saving MP3…');
+        await writable.close();
+        this.updateStatus('MP3 saved!');
+        window.setTimeout(() => this.updateStatus(''), 1200);
+      } else {
+        // Fallback: create a Blob URL and require a second click to save (avoids download blocking).
+        const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
 
-      const url = URL.createObjectURL(blob);
-      const filename = `${safeTitle}.mp3`;
+        this.preparedMp3 = { url, filename };
+        this.downloadMp3Btn.textContent = 'Download MP3 (ready)';
+        this.updateStatus('MP3 ready. Click Download MP3 again to save.');
 
-      // Store prepared download and let the user click once more to save.
-      this.preparedMp3 = { url, filename };
-      this.downloadMp3Btn.textContent = 'Download MP3 (ready)';
-      this.updateStatus('MP3 ready. Click Download MP3 again to save.');
-
-      // Auto-cleanup to avoid leaking blob URLs.
-      this.preparedMp3RevokeTimeout = window.setTimeout(() => {
-        this.clearPreparedMp3();
-      }, 5 * 60 * 1000);
+        // Auto-cleanup to avoid leaking blob URLs.
+        this.preparedMp3RevokeTimeout = window.setTimeout(() => {
+          this.clearPreparedMp3();
+        }, 5 * 60 * 1000);
+      }
     } catch (e) {
       this.updateStatus(`MP3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
       this.clearPreparedMp3();
     } finally {
+      this.isMp3Preparing = false;
       this.downloadMp3Btn.disabled = false;
       if (!this.preparedMp3) this.downloadMp3Btn.textContent = this.downloadMp3BtnLabel;
     }
