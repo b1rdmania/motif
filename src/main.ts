@@ -880,7 +880,14 @@ class MotifApp {
     }
   }
 
-  private async trySavePreparedMp3(prepared: { url: string; filename: string; blob: Blob }): Promise<void> {
+  private isSafariDesktop(): boolean {
+    // Safari on macOS often has flaky behavior with <a download> + blob URLs.
+    const ua = navigator.userAgent || '';
+    const isSafari = /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR/.test(ua);
+    return isSafari && !this.isIOSLike();
+  }
+
+  private trySavePreparedMp3(prepared: { url: string; filename: string; blob: Blob }): void {
     // Best effort ordering:
     // 1) Share sheet (iOS Safari often can't "download" blob URLs reliably)
     // 2) Open in a new tab (lets user use the browser's share/save UI)
@@ -894,15 +901,16 @@ class MotifApp {
       (navigator as any).canShare({ files: [file] });
 
     if (canShareFiles) {
-      await (navigator as any).share({
+      // Don't await: keep this in the user gesture task.
+      void (navigator as any).share({
         files: [file],
         title: prepared.filename,
       });
       return;
     }
 
-    // iOS-like browsers: open blob in a new tab/window (download attr is unreliable)
-    if (this.isIOSLike()) {
+    // iOS-like browsers + Safari desktop: open blob in a new tab/window (download attr is unreliable)
+    if (this.isIOSLike() || this.isSafariDesktop()) {
       const opened = window.open(prepared.url, '_blank', 'noopener,noreferrer');
       if (!opened) {
         // popup blocked: navigate current tab
@@ -933,8 +941,8 @@ class MotifApp {
     // Many browsers block downloads that occur after an async chain (user activation is lost).
     if (this.preparedMp3) {
       try {
-        await this.trySavePreparedMp3(this.preparedMp3);
-        this.updateStatus(this.isIOSLike() ? 'Opened MP3. Use Share/Save.' : 'Downloading…');
+        this.trySavePreparedMp3(this.preparedMp3);
+        this.updateStatus((this.isIOSLike() || this.isSafariDesktop()) ? 'Opened MP3. Use Share/Save.' : 'Downloading…');
         window.setTimeout(() => this.updateStatus(''), 1200);
         // Reset after a save attempt so the button doesn't feel “dead”.
         this.clearPreparedMp3();
