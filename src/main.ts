@@ -4,7 +4,6 @@ import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { getAudioContext, isAudioReady, peekAudioContext, unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
-import * as lamejs from 'lamejs';
 
 class MotifApp {
   private motifEngine: MotifEngine;
@@ -56,11 +55,8 @@ class MotifApp {
 
   private copyLinkBtn!: HTMLButtonElement;
   private shareToXBtn!: HTMLButtonElement;
-  private downloadMp3Btn!: HTMLButtonElement;
   private shareFallback!: HTMLElement;
   private shareFallbackInput!: HTMLInputElement;
-
-  private downloadMp3BtnLabel = 'Download MP3';
 
   // Embed snippet UI
   private embedSection: HTMLElement | null = null;
@@ -133,8 +129,6 @@ class MotifApp {
 
     this.copyLinkBtn = document.getElementById('copyLinkBtn') as HTMLButtonElement;
     this.shareToXBtn = document.getElementById('shareToXBtn') as HTMLButtonElement;
-    this.downloadMp3Btn = document.getElementById('downloadMp3Btn') as HTMLButtonElement;
-    this.downloadMp3BtnLabel = (this.downloadMp3Btn.textContent || '').trim() || 'Download MP3';
     this.shareFallback = document.getElementById('shareFallback')!;
     this.shareFallbackInput = document.getElementById('shareFallbackInput') as HTMLInputElement;
 
@@ -195,7 +189,6 @@ class MotifApp {
 
     this.copyLinkBtn.addEventListener('click', () => void this.handleCopyLink());
     this.shareToXBtn.addEventListener('click', () => void this.handleShareToX());
-    this.downloadMp3Btn.addEventListener('click', () => void this.handleDownloadMp3());
 
     // Embed snippet copy (may be disabled / not-live)
     this.copyEmbedBtn?.addEventListener('click', () => void this.copyEmbedSnippet());
@@ -824,146 +817,6 @@ class MotifApp {
     }
   }
 
-  private floatToInt16(input: Float32Array): Int16Array {
-    const out = new Int16Array(input.length);
-    for (let i = 0; i < input.length; i++) {
-      const s = Math.max(-1, Math.min(1, input[i]));
-      out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-    }
-    return out;
-  }
-
-  private async handleDownloadMp3(): Promise<void> {
-    if (!this.hasGenerated || !this.currentMIDI) return;
-
-    const result = this.searchResults[this.selectedResultIndex];
-    const safeTitle = this.cleanSongTitle(result?.title || 'wario-synth').slice(0, 80) || 'wario-synth';
-    const fileName = `${safeTitle}.mp3`;
-    let fileHandle: any = null;
-    let popup: Window | null = null;
-
-    try {
-      this.downloadMp3Btn.disabled = true;
-      this.downloadMp3Btn.textContent = 'Rendering…';
-      this.updateStatus('Rendering audio…');
-
-      // Capture user activation up-front when possible.
-      const maybeShowSaveFilePicker = (window as any).showSaveFilePicker;
-      if (typeof maybeShowSaveFilePicker === 'function') {
-        try {
-          fileHandle = await maybeShowSaveFilePicker({
-            suggestedName: fileName,
-            types: [{
-              description: 'MP3 audio',
-              accept: { 'audio/mpeg': ['.mp3'] },
-            }],
-          });
-        } catch (e: any) {
-          if (e?.name === 'AbortError') {
-            this.updateStatus('Download cancelled.');
-            return;
-          }
-        }
-      } else {
-        // Fallback for browsers without file picker: pre-open a window from the click gesture.
-        popup = window.open('', '_blank');
-        if (popup && !popup.closed) {
-          try {
-            popup.document.title = 'Preparing MP3';
-            popup.document.body.innerHTML = '<p style="font-family:sans-serif;padding:16px">Preparing MP3…</p>';
-          } catch {
-            // ignore cross-window access issues
-          }
-        }
-      }
-
-      // Stop any current playback
-      this.handleMotifStop();
-
-      // Render offline (full song)
-      const sampleRate = 44100;
-      const audioBuffer = await this.motifEngine.renderOffline(
-        this.currentMIDI.events,
-        'procedural',
-        sampleRate
-      );
-
-      this.downloadMp3Btn.textContent = 'Encoding…';
-      this.updateStatus('Encoding MP3…');
-
-      const Mp3Encoder = (lamejs as any)?.Mp3Encoder;
-      if (!Mp3Encoder) throw new Error('MP3 encoder not loaded');
-      const channels = audioBuffer.numberOfChannels;
-      const kbps = 128;
-      const encoder = new (lamejs as any).Mp3Encoder(channels, sampleRate, kbps);
-      const mp3Chunks: BlobPart[] = [];
-
-      // Get audio data
-      const leftData = audioBuffer.getChannelData(0);
-      const rightData = channels > 1 ? audioBuffer.getChannelData(1) : leftData;
-      const left = this.floatToInt16(leftData);
-      const right = this.floatToInt16(rightData);
-
-      // Encode in 1152-sample frames
-      const frameSize = 1152;
-      for (let i = 0; i < left.length; i += frameSize) {
-        const l = left.subarray(i, i + frameSize);
-        const r = right.subarray(i, i + frameSize);
-        const buf = encoder.encodeBuffer(l, r);
-        if (buf && buf.length) mp3Chunks.push(buf);
-      }
-
-      const tail = encoder.flush();
-      if (tail && tail.length) mp3Chunks.push(tail);
-
-      const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
-      if (fileHandle) {
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        this.updateStatus('MP3 downloaded!');
-        setTimeout(() => this.updateStatus(''), 1500);
-        return;
-      }
-
-      const url = URL.createObjectURL(blob);
-      let attemptedDownload = false;
-      try {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        attemptedDownload = true;
-      } catch {
-        // fallback below
-      }
-
-      if (popup && !popup.closed) {
-        popup.location.href = url;
-        if (attemptedDownload) {
-          popup.close();
-        }
-      } else if (!attemptedDownload) {
-        window.open(url, '_blank');
-      }
-
-      if (attemptedDownload) {
-        this.updateStatus('MP3 downloaded!');
-        setTimeout(() => this.updateStatus(''), 1500);
-      } else {
-        this.updateStatus('MP3 opened in a new tab. Save it from there.');
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (e) {
-      this.updateStatus(`MP3 failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
-    } finally {
-      this.downloadMp3Btn.disabled = false;
-      this.downloadMp3Btn.textContent = this.downloadMp3BtnLabel;
-    }
-  }
-
   private setState(state: 'idle' | 'results' | 'selected' | 'generated'): void {
     // results - keep visible in all states except idle so user can pick a different source
     const hasResults = state === 'results' || state === 'selected' || state === 'generated';
@@ -979,8 +832,6 @@ class MotifApp {
     this.copyLinkBtn.disabled = !(state === 'generated' && this.hasGenerated);
     this.shareToXBtn.style.display = state === 'generated' ? 'inline-block' : 'none';
     this.shareToXBtn.disabled = !(state === 'generated' && this.hasGenerated);
-    this.downloadMp3Btn.style.display = state === 'generated' ? 'inline-block' : 'none';
-    this.downloadMp3Btn.disabled = !(state === 'generated' && this.hasGenerated);
     // Hide share fallback when state changes
     this.shareFallback.style.display = 'none';
 

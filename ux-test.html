@@ -512,9 +512,6 @@
                 <button id="copyLinkBtn" disabled>Copy link</button>
                 <button id="shareXBtn" disabled>Share on X</button>
             </div>
-            <div class="share-row">
-                <button id="downloadMp3Btn" disabled>Download MP3</button>
-            </div>
             <div id="shareHint" class="share-hint"></div>
 
             <div class="volume-row">
@@ -562,7 +559,6 @@
         const stopBtn = document.getElementById('stopBtn');
         const copyLinkBtn = document.getElementById('copyLinkBtn');
         const shareXBtn = document.getElementById('shareXBtn');
-        const downloadMp3Btn = document.getElementById('downloadMp3Btn');
         const shareHint = document.getElementById('shareHint');
         const searchBtn = document.getElementById('searchBtn');
         const songInput = document.getElementById('songInput');
@@ -718,7 +714,6 @@
                 playBtn.disabled = false;
                 copyLinkBtn.disabled = false;
                 shareXBtn.disabled = false;
-                downloadMp3Btn.disabled = false;
                 setStatus('Ready to play');
                 shareHint.textContent = '';
 
@@ -761,83 +756,6 @@
             stopVisualizer();
         }
 
-        function downloadBlob(blob, filename) {
-            const a = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }
-
-        function floatToInt16(input) {
-            const out = new Int16Array(input.length);
-            for (let i = 0; i < input.length; i++) {
-                const s = Math.max(-1, Math.min(1, input[i]));
-                out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-            }
-            return out;
-        }
-
-        async function downloadMp3() {
-            if (!currentEvents) return;
-            try {
-                downloadMp3Btn.disabled = true;
-                shareHint.textContent = 'Rendering audio…';
-
-                // Stop any current playback first
-                stopPlayback();
-
-                // Ensure Motif engine exists
-                if (!motifEngine) motifEngine = new MotifEngine();
-
-                // Render offline (faster than real-time!)
-                const sampleRate = 44100;
-                const audioBuffer = await motifEngine.renderOffline(currentEvents, 'procedural', sampleRate);
-
-                shareHint.textContent = 'Encoding MP3…';
-
-                // Use lamejs from CDN (global)
-                const Mp3Encoder = window.lamejs?.Mp3Encoder;
-                if (!Mp3Encoder) throw new Error('MP3 encoder not available - lamejs not loaded');
-
-                const channels = audioBuffer.numberOfChannels;
-                const kbps = 128;
-                const encoder = new Mp3Encoder(channels, sampleRate, kbps);
-                const mp3Chunks = [];
-
-                // Get audio data from buffer
-                const leftData = audioBuffer.getChannelData(0);
-                const rightData = channels > 1 ? audioBuffer.getChannelData(1) : leftData;
-                const left = floatToInt16(leftData);
-                const right = floatToInt16(rightData);
-
-                // Encode in 1152-sample frames
-                const frameSize = 1152;
-                for (let i = 0; i < left.length; i += frameSize) {
-                    const l = left.subarray(i, i + frameSize);
-                    const r = right.subarray(i, i + frameSize);
-                    const buf = encoder.encodeBuffer(l, r);
-                    if (buf && buf.length) mp3Chunks.push(buf);
-                }
-
-                const tail = encoder.flush();
-                if (tail && tail.length) mp3Chunks.push(tail);
-
-                const blob = new Blob(mp3Chunks, { type: 'audio/mpeg' });
-                const safeTitle = cleanTitleForShare(currentTitle || 'motif').slice(0, 80) || 'motif';
-                downloadBlob(blob, `${safeTitle}.mp3`);
-                shareHint.textContent = 'MP3 downloaded.';
-                window.setTimeout(() => (shareHint.textContent = ''), 1400);
-            } catch (e) {
-                shareHint.textContent = `MP3 failed: ${e && e.message ? e.message : 'Unknown error'}`;
-                console.error('MP3 download error:', e);
-            } finally {
-                downloadMp3Btn.disabled = false;
-            }
-        }
 
         async function copyShareLink() {
             if (!currentMidiUrl) return;
@@ -958,7 +876,6 @@
         stopBtn.addEventListener('click', stopPlayback);
         copyLinkBtn.addEventListener('click', () => void copyShareLink());
         shareXBtn.addEventListener('click', shareOnX);
-        downloadMp3Btn.addEventListener('click', () => downloadMp3());
 
         // Init
         createBars();
