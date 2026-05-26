@@ -387,9 +387,13 @@ class MotifApp {
       this.updateIOSAudioBanner();
 
     } catch (error) {
-      this.updateStatus(`Search error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (requestId === this.searchRequestId) {
+        this.updateStatus(`Search error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } finally {
-      this.searchBtn.disabled = false;
+      if (requestId === this.searchRequestId) {
+        this.searchBtn.disabled = false;
+      }
     }
   }
 
@@ -402,7 +406,7 @@ class MotifApp {
   }
 
   private async handleUploadedMIDI(file: File): Promise<void> {
-    this.searchRequestId++;
+    const requestId = ++this.searchRequestId;
     const lowerName = file.name.toLowerCase();
     const validExt = lowerName.endsWith('.mid') || lowerName.endsWith('.midi');
     const validType = file.type === 'audio/midi' || file.type === 'audio/x-midi';
@@ -423,16 +427,19 @@ class MotifApp {
 
     try {
       const midiBuffer = await file.arrayBuffer();
+      if (requestId !== this.searchRequestId) return;
       if (midiBuffer.byteLength < 14) {
         throw new Error('File is too small to be valid MIDI.');
       }
 
       const events = MIDIParser.parseMIDI(midiBuffer);
+      if (requestId !== this.searchRequestId) return;
       if (events.length === 0) {
         throw new Error('No playable notes found in this MIDI.');
       }
 
       const metadata = MIDIParser.getMIDIInfo(midiBuffer);
+      if (requestId !== this.searchRequestId) return;
       let actualDuration = metadata.duration || 0;
       if (actualDuration === 0 && events.length > 0) {
         actualDuration = Math.max(...events.map((e) => e.time + e.duration));
@@ -444,6 +451,8 @@ class MotifApp {
       this.disablePlayerControls();
       this.currentMIDI = { events, metadata: { ...metadata, duration: actualDuration } };
       this.currentSource = { type: 'upload', fileName: file.name };
+      if (this.embedSection) this.embedSection.style.display = 'none';
+      if (this.embedCodeEl) this.embedCodeEl.textContent = '';
       this.selectedTitle.textContent = this.cleanSongTitle(file.name);
       this.selectedMeta.textContent = 'Source: Local Upload';
       this.clearSelectedResultHighlight();
@@ -454,7 +463,9 @@ class MotifApp {
       this.playerSection.classList.add('visible');
       this.resultsSection.classList.add('collapsed');
     } catch (error) {
-      this.updateStatus(`Upload error: ${error instanceof Error ? error.message : 'Failed to load MIDI.'}`);
+      if (requestId === this.searchRequestId) {
+        this.updateStatus(`Upload error: ${error instanceof Error ? error.message : 'Failed to load MIDI.'}`);
+      }
     }
   }
 
