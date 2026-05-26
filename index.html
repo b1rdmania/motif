@@ -569,6 +569,14 @@
             margin: 0 0 calc(var(--spacing-unit) * 2) 0;
         }
         .results-header h3 { margin: 0; }
+        .upload-helper {
+            margin: 10px 0 0 0;
+            color: var(--gb-medium);
+            font-size: 8px;
+        }
+        .upload-inline-input {
+            display: none;
+        }
         
         .confidence-bar {
             width: 60px;
@@ -1149,7 +1157,10 @@
         <div class="controls">
             <input type="text" id="songInput" placeholder="Search for a song…" />
             <button id="searchBtn" class="primary">Search</button>
+            <button id="uploadBtn" type="button">Upload MIDI</button>
+            <input id="uploadInput" class="upload-inline-input" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" />
         </div>
+        <p class="upload-helper">Optional: upload your own MIDI.</p>
 
         <div id="status">Ready. Search any song to make a Game Boy version.</div>
 
@@ -1190,6 +1201,10 @@
                         <span id="previewState" class="preview-state">Previewing…</span>
                         <button id="previewStopBtn" type="button" class="linklike" style="display:none;">Stop preview</button>
                     </div>
+                    <div class="preview-inline">
+                        <button id="replaceUploadBtn" type="button" class="linklike">Replace with uploaded MIDI</button>
+                        <input id="replaceUploadInput" class="upload-inline-input" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" />
+                    </div>
                 </div>
 
                 <div id="iosAudioBanner" class="ios-audio-banner" aria-live="polite">
@@ -1220,8 +1235,13 @@
                     </div>
 
                     <div style="margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button id="saveAudioBtn" type="button" disabled>Save Audio</button>
+                        <button id="saveMidiBtn" type="button" disabled>Save MIDI</button>
                         <button id="copyLinkBtn" type="button" disabled>Copy link</button>
                         <button id="shareToXBtn" type="button" disabled>Share to X</button>
+                    </div>
+                    <div id="shareUploadNotice" style="display:none; margin-top: 10px; font-size: 8px; color: var(--gb-light);">
+                        Local uploads can be played/generated but not shared.
                     </div>
                     <div id="shareFallback" style="display: none; margin-top: 12px;">
                         <p style="font-size: 8px; margin: 0 0 8px 0; color: var(--gb-light);">Sorry, copy doesn't work on your device. Here's the link:</p>
