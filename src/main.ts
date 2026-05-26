@@ -11,6 +11,7 @@ type CurrentSource =
 
 class MotifApp {
   private static readonly MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+  private searchRequestId = 0;
   private motifEngine: MotifEngine;
   private midiService: MIDIService;
 
@@ -335,6 +336,7 @@ class MotifApp {
   }
 
   private async handleSearch(): Promise<void> {
+    const requestId = ++this.searchRequestId;
     console.log('[MotifApp] handleSearch called');
     const songName = this.songInput.value.trim();
     console.log('[MotifApp] songName:', songName);
@@ -356,6 +358,7 @@ class MotifApp {
 
     try {
       const results = await this.midiService.search(songName);
+      if (requestId !== this.searchRequestId) return;
       
       if (results.length === 0) {
         this.searchResults = [];
@@ -369,11 +372,14 @@ class MotifApp {
       // Parse metadata for results
       this.updateStatus('Analyzing MIDI files...');
       for (let i = 0; i < Math.min(results.length, 3); i++) {
+        if (requestId !== this.searchRequestId) return;
         const metadata = await this.midiService.parseMIDI(results[i].midiUrl);
+        if (requestId !== this.searchRequestId) return;
         if (metadata) {
           results[i].parsed = metadata;
         }
       }
+      if (requestId !== this.searchRequestId) return;
 
       this.displayResults();
       this.setState('results');
@@ -396,6 +402,7 @@ class MotifApp {
   }
 
   private async handleUploadedMIDI(file: File): Promise<void> {
+    this.searchRequestId++;
     const lowerName = file.name.toLowerCase();
     const validExt = lowerName.endsWith('.mid') || lowerName.endsWith('.midi');
     const validType = file.type === 'audio/midi' || file.type === 'audio/x-midi';
