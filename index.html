@@ -66,6 +66,11 @@
             image-rendering: pixelated;
         }
 
+
+        input, button {
+            font-family: 'Press Start 2P', monospace;
+            border: var(--pixel-border) solid var(--gb-dark);
+        }
         body {
             font-family: 'Press Start 2P', monospace;
             background: var(--color-bg);
@@ -394,6 +399,49 @@
         button.primary:hover:not(:disabled) {
             background: var(--gb-darkest);
             color: var(--gb-lightest);
+        }
+
+        /* Styled file upload control */
+        .file-upload {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        .file-btn {
+            display: inline-block;
+            background: var(--color-surface);
+            color: var(--color-text);
+            border: var(--pixel-border) solid var(--gb-dark);
+            padding: 12px 16px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: inset -3px -3px 0 var(--gb-medium), inset 3px 3px 0 var(--gb-lightest);
+        }
+
+        .file-btn:hover:not(:disabled) {
+            background: var(--gb-lightest);
+            color: var(--gb-darkest);
+        }
+
+        .file-name {
+            font-size: 8px;
+            color: var(--gb-dark);
+            max-width: 360px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Search button */
@@ -1151,7 +1199,16 @@
             <button id="searchBtn" class="primary">Search</button>
         </div>
 
-        <div id="status">Ready. Search any song to make a Game Boy version.</div>
+        <!-- Styled file upload that matches chunky 8-bit buttons -->
+        <div class="controls" style="margin-top:8px;">
+            <div class="file-upload">
+                <label class="file-btn" for="midiFileInput">Choose MIDI File</label>
+                <input type="file" id="midiFileInput" accept=".mid,.midi" aria-label="Upload MIDI file" />
+                <span id="midiFileName" class="file-name">No file chosen</span>
+            </div>
+        </div>
+
+        <div id="status">Ready. Search any song or upload a midi file to make a Game Boy version.</div>
 
         <div id="resultsSection" class="results-section">
             <div id="chooseHelper" class="chooser-helper" style="display:none;">

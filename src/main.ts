@@ -84,6 +84,12 @@ class MotifApp {
 
     // Always play at 100%
     this.motifEngine.setVolume(1);
+
+
+      this.midiFileInput = document.getElementById("midiFileInput") as HTMLInputElement | null;
+    if (this.midiFileInput) {
+      this.midiFileInput.addEventListener("change", this.handleChange);
+    }
   }
 
   /**
@@ -230,7 +236,7 @@ class MotifApp {
     this.currentMIDI = null;
 
     this.setState('idle');
-    this.updateStatus('Ready. Search any song to make a Game Boy version.');
+    this.updateStatus('Ready. Search any song or upload a midi file to make a Game Boy version.');
 
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -304,6 +310,58 @@ class MotifApp {
       this.enableAudioBtn.disabled = false;
     }
   }
+
+  
+
+
+  // Properly typed property
+  midiFileInput: HTMLInputElement | null = null;
+
+
+  // Event handler as an arrow function to keep `this` context
+  handleChange = (event: Event): void => {
+    this.handleMotifStop();
+    console.log("File input change event triggered");
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.handleUploadFile(file);   // call your async method
+    }
+  };
+
+  async handleUploadFile(file: File): Promise<void> {
+    try {
+      this.updateStatus(`Loading ${file.name}…`);
+      // Show selected filename in the UI (truncate if needed)
+      try {
+        const nameEl = document.getElementById('midiFileName');
+        if (nameEl) nameEl.textContent = file.name;
+      } catch {}
+      const arrayBuffer = await file.arrayBuffer();
+
+      // Parse locally (client-side)
+      const events = MIDIParser.parseMIDI(arrayBuffer);
+      const info = MIDIParser.getMIDIInfo(arrayBuffer);
+
+      // Set currentMIDI so preview/generation reuse existing flows
+      this.currentMIDI = { events, metadata: { ...info, title: file.name, duration: info.duration } };
+
+      // Update UI similar to selectResult()
+      this.selectedTitle.textContent = this.cleanSongTitle(file.name);
+      this.selectedMeta.textContent = 'Source: Uploaded';
+      this.playerSection.classList.add('visible');
+      this.resultsSection.classList.add('collapsed');
+      this.enablePlayerControls();
+      this.updateStatus('');
+      this.setState('selected');
+    } catch (err) {
+      console.error('Upload parse error', err);
+      this.updateStatus('Failed to load MIDI file.');
+    }
+  }
+
+
+
 
   private async handleSearch(): Promise<void> {
     console.log('[MotifApp] handleSearch called');
