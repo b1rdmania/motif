@@ -4,6 +4,11 @@ import { resolve } from 'node:path'
 export default defineConfig({
   server: {
     port: 3000,
+    proxy: {
+      '/api': 'http://localhost:3001',
+      '/health': 'http://localhost:3001',
+      '^/s/[^/]+$': { target: 'http://localhost:3001', rewrite: (path) => path },
+    },
   },
   build: {
     outDir: 'dist',
