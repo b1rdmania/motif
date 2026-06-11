@@ -39,9 +39,6 @@ class MotifApp {
   private previewBtn!: HTMLButtonElement;
   private previewStopBtn!: HTMLButtonElement;
   private previewState!: HTMLElement;
-  private replaceUploadBtn!: HTMLButtonElement;
-  private replaceUploadInput!: HTMLInputElement;
-
   private isPreviewPlaying = false;
   private hasGenerated = false;
   private isMotifPlaying = false;
@@ -134,9 +131,6 @@ class MotifApp {
     this.previewBtn = document.getElementById('previewBtn') as HTMLButtonElement;
     this.previewStopBtn = document.getElementById('previewStopBtn') as HTMLButtonElement;
     this.previewState = document.getElementById('previewState')!;
-    this.replaceUploadBtn = document.getElementById('replaceUploadBtn') as HTMLButtonElement;
-    this.replaceUploadInput = document.getElementById('replaceUploadInput') as HTMLInputElement;
-
     // Motif controls
     this.motifBtn = document.getElementById('motifBtn') as HTMLButtonElement;
     this.motifProgressContainer = document.getElementById('motifProgressContainer')!;
@@ -186,9 +180,6 @@ class MotifApp {
     this.searchBtn.addEventListener('click', doSearch);
     this.uploadBtn.addEventListener('click', () => this.uploadInput.click());
     this.uploadInput.addEventListener('change', (e) => void this.handleUploadInputChange(e));
-    this.replaceUploadBtn.addEventListener('click', () => this.replaceUploadInput.click());
-    this.replaceUploadInput.addEventListener('change', (e) => void this.handleUploadInputChange(e));
-
     this.songInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         doSearch();
