@@ -563,7 +563,22 @@ export class SynthesisEngine {
 
     // Schedule all events for each assignment
     for (const assignment of assignments) {
-      const { role, events, chords } = assignment;
+      const { role } = assignment;
+      let { events, chords } = assignment;
+
+      // Cap note density to avoid overwhelming the offline audio context with
+      // dense MIDIs (e.g. 4000+ notes on a single channel). Keep evenly-spaced
+      // notes so the rhythm is preserved across the full duration.
+      const MAX_EVENTS = 800;
+      if (events.length > MAX_EVENTS) {
+        const step = events.length / MAX_EVENTS;
+        events = Array.from({ length: MAX_EVENTS }, (_, i) => events[Math.round(i * step)]);
+      }
+      const MAX_CHORDS = 400;
+      if (chords.length > MAX_CHORDS) {
+        const step = chords.length / MAX_CHORDS;
+        chords = Array.from({ length: MAX_CHORDS }, (_, i) => chords[Math.round(i * step)]);
+      }
 
       // Create layer nodes for this role
       const { filterNode } = SynthesisEngine.createOfflineLayer(offlineCtx, masterGain, role);
