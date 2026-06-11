@@ -5,6 +5,7 @@ import { MIDIService } from '../services/MIDIService';
 import { RoleMapper } from './RoleMapper';
 import { SynthesisEngine } from '../synthesis/SynthesisEngine';
 import { unlockAudio } from '../utils/audioUnlock';
+import { audioBufferToWavBytes, noteEventsToMidiBytes } from '../utils/export';
 
 export class MotifEngine {
   private audioContext: AudioContext | null = null;
@@ -13,6 +14,9 @@ export class MotifEngine {
   private midiService: MIDIService;
   private roleMapper: RoleMapper;
   private synthesisEngine: SynthesisEngine | null = null;
+  private lastInputEvents: NoteEvent[] = [];
+  private lastTransformMode: 'passthrough' | 'procedural' = 'passthrough';
+  private lastGeneratedEvents: NoteEvent[] = [];
 
   constructor() {
     this.config = {
@@ -37,6 +41,8 @@ export class MotifEngine {
     }
 
     this.synthesisEngine = new SynthesisEngine(this.audioContext, this.config);
+    this.lastInputEvents = [];
+    this.lastGeneratedEvents = [];
 
     if (transformMode === 'passthrough') {
       // Direct playback mode - play MIDI as-is without transformations
@@ -61,12 +67,18 @@ export class MotifEngine {
       }];
 
       this.synthesisEngine.setupLayers(passthroughAssignment);
+      this.lastInputEvents = events.map((e) => ({ ...e }));
+      this.lastTransformMode = transformMode;
+      this.lastGeneratedEvents = passthroughAssignment.flatMap((a) => a.events.map((e) => ({ ...e })));
       console.log('Motif: Passthrough mode - playing original MIDI patterns');
     } else {
       // Procedural mode - transform the MIDI with role mapping
       const features = this.midiProcessor.extractFeatures(events);
       const roleAssignments = this.roleMapper.assignRoles(features, events);
       this.synthesisEngine.setupLayers(roleAssignments);
+      this.lastInputEvents = events.map((e) => ({ ...e }));
+      this.lastTransformMode = transformMode;
+      this.lastGeneratedEvents = roleAssignments.flatMap((a) => a.events.map((e) => ({ ...e })));
       console.log('Motif: Procedural mode - transforming MIDI with role mapping');
     }
   }
@@ -182,6 +194,29 @@ export class MotifEngine {
       return this.synthesisEngine.getDuration();
     }
     return 0;
+  }
+
+  hasGeneratedContent(): boolean {
+    return this.lastInputEvents.length > 0 && this.lastGeneratedEvents.length > 0;
+  }
+
+  exportMotifMIDIBytes(): Uint8Array {
+    if (!this.hasGeneratedContent()) {
+      throw new Error('No generated motif to export');
+    }
+    return noteEventsToMidiBytes(this.lastGeneratedEvents, 480, 120);
+  }
+
+  async exportMotifWAVBytes(sampleRate = 44100): Promise<Uint8Array> {
+    if (!this.hasGeneratedContent()) {
+      throw new Error('No generated motif to export');
+    }
+    const rendered = await this.renderOffline(
+      this.lastInputEvents.map((e) => ({ ...e })),
+      this.lastTransformMode,
+      sampleRate
+    );
+    return audioBufferToWavBytes(rendered);
   }
 
   /**
