@@ -31,10 +31,14 @@ Zero samples. Zero server audio. Just raw oscillators having the time of their l
 ## Features
 
 - **MIDI search** from BitMidi and other sources
+- **Local MIDI upload** — load your own `.mid` / `.midi` files (client-side only)
 - **Browser playback** with soundfont piano preview
 - **Wario Synthesis Engine**: procedural Game Boy-style synthesis from parsed MIDI structure
-- **Share links** with dynamic social previews
+- **Save Audio (WAV) and Save MIDI** — export the generated result after playback
+- **Share links** with dynamic social previews (remote MIDI sources only)
 - **Works on mobile** (iOS audio unlock included)
+
+See [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ## Quick Start (Local)
 
@@ -54,12 +58,13 @@ npm run dev
 
 ## How It Works
 
-1. User searches for a song
-2. Backend searches MIDI sources and returns ranked candidates
-3. User picks a MIDI source
+1. User searches for a song **or uploads a local MIDI file**
+2. Backend searches MIDI sources and returns ranked candidates (search path only)
+3. User picks a MIDI source or uploaded file
 4. Frontend parses MIDI into normalized note events
 5. Wario Synthesis Engine maps tracks to Game Boy sound channels
 6. Web Audio oscillators generate the retro sound
+7. Optional: save the generated result as WAV or MIDI
 
 ## Embed Widget
 

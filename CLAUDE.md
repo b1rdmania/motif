@@ -7,9 +7,11 @@
 
 ## Scope (what is in-bounds right now)
 - **Search + ranking** of MIDI candidates from multiple sources
+- **Local MIDI upload** (client-side parse; no server upload endpoint)
 - **Fetch + validate + cache** MIDI bytes via the backend (with SSRF protection)
 - **Parse** MIDI and show basic metadata (duration, track count, issues) - now deterministic
 - **Playback of the fetched MIDI** (this is the current priority)
+- **Export** generated results as WAV or MIDI after playback
 - **Error handling**: Clear user feedback when upstream services fail
 - Keep Motif generation working, but don't block MVP playback on it
 
@@ -39,6 +41,11 @@ A change is successful if someone can:
 - select a result
 - hit Play and hear it
 - hit Stop and try another result
+
+## Recent Improvements (2026-06-15)
+- **v1.6 — Local MIDI upload + export**: Upload `.mid`/`.midi` client-side; Save Audio (WAV) and Save MIDI after generation; share links remain remote-only ([#2](https://github.com/b1rdmania/motif/pull/2), [@RobertAgee](https://github.com/RobertAgee))
+- **Offline export stability**: Dense MIDIs capped during offline render so exports do not choke the audio context
+- **Live at**: [www.wario.style](https://www.wario.style/)
 
 ## Recent Improvements (2026-02-05)
 - **SSRF Protection**: All MIDI fetch endpoints now validate URLs and block private/local targets (localhost, 10.x, 192.168.x, 169.254.x, etc.)
