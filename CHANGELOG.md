@@ -17,7 +17,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Offline export rendering caps note density on very busy MIDIs so exports stay reliable
 
 ### Notes
-- Local uploads can be played, generated, and exported, but share links remain remote-only (they require a fetchable MIDI URL)
+- **Sharing still works** for searched/online MIDI sources (Copy link, Share to X after Generate)
+- Local uploads can be played, generated, and exported, but not shared — there is no online URL to link to
 - Contributed by [@RobertAgee](https://github.com/RobertAgee) in [#2](https://github.com/b1rdmania/motif/pull/2)
 
 ## [1.5.0] - 2026-03-05

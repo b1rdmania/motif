@@ -43,7 +43,7 @@ A change is successful if someone can:
 - hit Stop and try another result
 
 ## Recent Improvements (2026-06-15)
-- **v1.6 — Local MIDI upload + export**: Upload `.mid`/`.midi` client-side; Save Audio (WAV) and Save MIDI after generation; share links remain remote-only ([#2](https://github.com/b1rdmania/motif/pull/2), [@RobertAgee](https://github.com/RobertAgee))
+- **v1.6 — Local MIDI upload + export**: Upload `.mid`/`.midi` client-side; Save Audio (WAV) and Save MIDI after generation. Sharing (Copy link, Share to X) still works for searched MIDI; local uploads are export-only ([#2](https://github.com/b1rdmania/motif/pull/2), [@RobertAgee](https://github.com/RobertAgee))
 - **Offline export stability**: Dense MIDIs capped during offline render so exports do not choke the audio context
 - **Live at**: [www.wario.style](https://www.wario.style/)
 

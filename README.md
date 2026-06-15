@@ -35,7 +35,7 @@ Zero samples. Zero server audio. Just raw oscillators having the time of their l
 - **Browser playback** with soundfont piano preview
 - **Wario Synthesis Engine**: procedural Game Boy-style synthesis from parsed MIDI structure
 - **Save Audio (WAV) and Save MIDI** — export the generated result after playback
-- **Share links** with dynamic social previews (remote MIDI sources only)
+- **Share links** with dynamic social previews — works for searched MIDI sources; not available for local uploads
 - **Works on mobile** (iOS audio unlock included)
 
 See [CHANGELOG.md](./CHANGELOG.md) for release history.
