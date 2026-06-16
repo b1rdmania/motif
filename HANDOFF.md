@@ -22,14 +22,14 @@ Branch: `codex/security-and-parse-fixes`
 
 ### 2) BitMidi outage UX (clear retry message)
 
-- `server/src/adapters/BitMidiAdapter.ts`
-  - Propagates adapter failures instead of silently returning empty results.
-- `server/src/services/MIDISearchService.ts`
-  - Distinguishes "all providers failed" from "no matches".
-- `server/src/server.ts`
-  - Returns `503` + explicit message when MIDI source is unavailable.
-- `src/services/MIDIService.ts`
-  - Surfaces backend JSON error messages to the frontend.
+> **Superseded (2026-06-16).** The server-side BitMidi search path described
+> here was removed. Search now runs entirely in the browser against BitMidi's
+> CORS-enabled JSON API (`https://bitmidi.com/api/midi/search`), so the old
+> `503` outage flow no longer exists. `server/src/adapters/BitMidiAdapter.ts`
+> and `server/src/services/MIDISearchService.ts` were deleted. See
+> `src/services/BitMidiClient.ts` and `src/services/MIDIService.ts` for the
+> current implementation; the server now only proxies MIDI fetches (for
+> non-CORS hosts) and mints share links.
 
 ## Build/Checks Run Locally
 
@@ -44,8 +44,9 @@ Branch: `codex/security-and-parse-fixes`
 1. Successful flow:
    - search song -> results load -> select result -> preview/generate works.
 2. Source outage flow:
-   - when BitMidi fails upstream, user sees:
-     - `BitMidi is temporarily unavailable. Please try again in a minute.`
+   - search runs browser-side against BitMidi; if BitMidi is unreachable the
+     UI shows a "Search error" status, and "No MIDI files found" when a query
+     simply has no matches.
 3. SSRF guard:
    - blocked URL example returns `403`:
      - `/api/midi/fetch?u=http://127.0.0.1:3001/health`

@@ -3,7 +3,6 @@ import cors from 'cors';
 import crypto from 'node:crypto';
 import { kv } from '@vercel/kv';
 import { createClient } from 'redis';
-import { MIDISearchService } from './services/MIDISearchService.js';
 import { MIDIFetchService } from './services/MIDIFetchService.js';
 import { MIDIParseService } from './services/MIDIParseService.js';
 
@@ -13,7 +12,6 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-const searchService = new MIDISearchService();
 const fetchService = new MIDIFetchService();
 const parseService = new MIDIParseService();
 
@@ -134,27 +132,11 @@ async function shareGet(code: string): Promise<SharePayload | null> {
   return localShareStore.get(code) ?? null;
 }
 
-// Search for MIDI files
-app.get('/api/midi/search', async (req, res) => {
-  try {
-    const query = req.query.q as string;
-    if (!query) {
-      return res.status(400).json({ error: 'Query parameter "q" is required' });
-    }
-
-    console.log(`Searching for: ${query}`);
-    const results = await searchService.search(query);
-    res.json({ results, count: results.length });
-  } catch (error) {
-    console.error('Search error:', error);
-    if (error instanceof Error && error.message === 'MIDI_SOURCE_UNAVAILABLE') {
-      return res.status(503).json({
-        error: 'MIDI search sources are temporarily unavailable from our server. Try Upload MIDI, or try again in a minute.',
-      });
-    }
-    res.status(500).json({ error: 'Search failed' });
-  }
-});
+// Note: MIDI search now runs entirely in the browser against BitMidi's
+// CORS-enabled JSON API (see src/services/BitMidiClient.ts). The old
+// server-side scrape endpoint was removed — it kept getting blocked/garbled
+// from Vercel's datacenter IPs. The server still proxies MIDI fetches below
+// for non-CORS hosts and mints share links.
 
 // Create a short share link
 app.post('/api/share', async (req, res) => {

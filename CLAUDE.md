@@ -42,6 +42,9 @@ A change is successful if someone can:
 - hit Play and hear it
 - hit Stop and try another result
 
+## Recent Improvements (2026-06-16)
+- **Browser-direct MIDI search**: Search now runs entirely client-side against BitMidi's CORS-enabled JSON API (`https://bitmidi.com/api/midi/search`) via `src/services/BitMidiClient.ts`. This fixed the production outage where BitMidi blocked/garbled the old server-side HTML scrape from Vercel's datacenter IPs. Removed the `/api/midi/search` endpoint, the server-side scraper (`BitMidiAdapter.ts`, `MIDISearchService.ts`), and the unused Dongrays/FreeMidi/Mock adapters. The server now only proxies MIDI fetches (non-CORS hosts) and mints share links.
+
 ## Recent Improvements (2026-06-15)
 - **v1.6 — Local MIDI upload + export**: Upload `.mid`/`.midi` client-side; Save Audio (WAV) and Save MIDI after generation. Sharing (Copy link, Share to X) still works for searched MIDI; local uploads are export-only ([#2](https://github.com/b1rdmania/motif/pull/2), [@RobertAgee](https://github.com/RobertAgee))
 - **Offline export stability**: Dense MIDIs capped during offline render so exports do not choke the audio context
@@ -50,5 +53,5 @@ A change is successful if someone can:
 ## Recent Improvements (2026-02-05)
 - **SSRF Protection**: All MIDI fetch endpoints now validate URLs and block private/local targets (localhost, 10.x, 192.168.x, 169.254.x, etc.)
 - **Deterministic MIDI Parsing**: Replaced random placeholder metadata with real track analysis (stable note counts, tempo, time signatures)
-- **BitMidi Outage UX**: When upstream MIDI sources fail, users see clear retry messages instead of silent failures (returns 503 with actionable message)
+- **BitMidi Outage UX**: When upstream MIDI sources fail, users see clear retry messages instead of silent failures (returns 503 with actionable message) _(superseded 2026-06-16 — search is now browser-direct; the 503 server path was removed)_
 - **Verified**: All changes tested and merged to master (commits 5e81227, 686c961)

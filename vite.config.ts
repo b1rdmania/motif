@@ -19,13 +19,12 @@ export default defineConfig({
         // Existing pages (keep for backward compatibility)
         embed: resolve(__dirname, 'embed.html'),
         models: resolve(__dirname, 'models.html'),
-        // Sharing trial pages
+        // Share link landing page
         play: resolve(__dirname, 'play.html'),
-        ux_test: resolve(__dirname, 'ux-test.html'),
-        // V2 Game Boy Sound Engine (isolated from v1)
-        v2: resolve(__dirname, 'v2.html'),
-        v2_test: resolve(__dirname, 'v2-test.html'),
-        v2_diagnostic: resolve(__dirname, 'v2-diagnostic.html'),
+        // Note: internal dev/diagnostic pages (ux-test, v2, v2-test,
+        // v2-diagnostic) are intentionally excluded from the production build.
+        // The .html files remain in the repo for local development; add them
+        // back here to ship them.
       },
     },
   },

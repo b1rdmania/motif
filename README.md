@@ -30,7 +30,7 @@ Zero samples. Zero server audio. Just raw oscillators having the time of their l
 
 ## Features
 
-- **MIDI search** from BitMidi and other sources
+- **MIDI search** from BitMidi, called directly from the browser (no server round-trip)
 - **Local MIDI upload** — load your own `.mid` / `.midi` files (client-side only)
 - **Browser playback** with soundfont piano preview
 - **Wario Synthesis Engine**: procedural Game Boy-style synthesis from parsed MIDI structure
@@ -59,7 +59,7 @@ npm run dev
 ## How It Works
 
 1. User searches for a song **or uploads a local MIDI file**
-2. Backend searches MIDI sources and returns ranked candidates (search path only)
+2. The browser queries BitMidi's CORS-enabled JSON API directly and ranks the candidates client-side
 3. User picks a MIDI source or uploaded file
 4. Frontend parses MIDI into normalized note events
 5. Wario Synthesis Engine maps tracks to Game Boy sound channels

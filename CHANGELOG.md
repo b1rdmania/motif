@@ -4,6 +4,15 @@ All notable changes to [Wario Synth](https://www.wario.style/) are documented he
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.1] - 2026-06-16
+
+### Fixed
+- **Search restored on production** — MIDI search now runs entirely in the browser against BitMidi's CORS-enabled JSON API instead of a server-side HTML scrape, which BitMidi blocked from Vercel's datacenter IPs
+
+### Changed
+- Search, MIDI fetch, and metadata parsing now happen client-side (BitMidi serves both its search API and `.mid` files with open CORS); the server only proxies non-CORS MIDI fetches and mints share links
+- Removed the dead server-side search path (BitMidi/Dongrays/FreeMidi/Mock adapters, the search service and endpoint) and two now-unused dependencies (`cheerio`, `midi-writer-js`)
+
 ## [1.6.0] - 2026-06-15
 
 ### Added

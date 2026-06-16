@@ -1,3 +1,6 @@
+import { searchBitMidi } from './BitMidiClient';
+import { MIDIParser } from '../midi/MIDIParser';
+
 interface MIDISearchResult {
   id: string;
   title: string;
@@ -24,11 +27,6 @@ interface TrackInfo {
   noteCount: number;
   channel?: number;
   register: 'low' | 'mid' | 'high';
-}
-
-interface MIDISearchResponse {
-  results: MIDISearchResult[];
-  count: number;
 }
 
 export class MIDIService {
@@ -77,25 +75,33 @@ export class MIDIService {
   }
 
   async search(query: string): Promise<MIDISearchResult[]> {
-    const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/search?q=${encodeURIComponent(query)}`);
-    if (!response.ok) {
-      let message = `Search failed: ${response.status}`;
-      try {
-        const body = await response.json() as { error?: string };
-        if (body?.error) message = body.error;
-      } catch {
-        // ignore JSON parse errors and keep generic message
-      }
-      throw new Error(message);
-    }
-    const data: MIDISearchResponse = await response.json();
-    return data.results;
+    // Search BitMidi directly from the browser. BitMidi's JSON API is
+    // CORS-enabled, so we skip the Vercel function entirely — which also fixes
+    // the production outage where BitMidi rejected/garbled the server-side
+    // HTML scrape from datacenter IPs. A thrown error here means the source is
+    // unreachable; an empty array means no matches (handled separately in the UI).
+    return await searchBitMidi(query);
   }
 
   async fetchMIDI(url: string): Promise<ArrayBuffer | null> {
+    // BitMidi serves MIDI files with permissive CORS, so fetch them straight
+    // from the browser. For any other host (e.g. arbitrary shared `?u=` links
+    // on /play that may lack CORS) fall back to the SSRF-safe server proxy.
+    if (this.isBitMidiUrl(url)) {
+      try {
+        const direct = await this.fetchWithRetry(url);
+        if (direct.ok) {
+          const buffer = await direct.arrayBuffer();
+          if (buffer.byteLength >= 14) return buffer;
+        }
+      } catch {
+        // fall through to the server proxy
+      }
+    }
+
     try {
       const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/fetch?u=${encodeURIComponent(url)}`);
-      
+
       if (!response.ok) {
         throw new Error(`Fetch failed: ${response.status}`);
       }
@@ -108,17 +114,32 @@ export class MIDIService {
   }
 
   async parseMIDI(url: string): Promise<ParsedMIDIInfo | null> {
+    // Parse client-side off the fetched buffer so no server round-trip is
+    // needed. Returns null on failure; callers fall back to parsing on select.
     try {
-      const response = await this.fetchWithRetry(`${this.baseUrl}/api/midi/parse?u=${encodeURIComponent(url)}`);
-      
-      if (!response.ok) {
-        throw new Error(`Parse failed: ${response.status}`);
-      }
+      const buffer = await this.fetchMIDI(url);
+      if (!buffer) return null;
 
-      return await response.json();
+      const info = MIDIParser.getMIDIInfo(buffer);
+      return {
+        durationSec: info.duration,
+        tempoBpm: info.tempo,
+        tracks: [],
+        noteCount: info.noteCount,
+        issues: [],
+      };
     } catch (error) {
       console.error('MIDI parse error:', error);
       return null;
+    }
+  }
+
+  private isBitMidiUrl(url: string): boolean {
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      return host === 'bitmidi.com' || host.endsWith('.bitmidi.com');
+    } catch {
+      return false;
     }
   }
 
