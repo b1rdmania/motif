@@ -10,8 +10,10 @@ export class BitMidiAdapter implements SearchAdapter {
       const searchUrl = `${this.baseUrl}/search?q=${encodeURIComponent(query)}`;
       const response = await fetch(searchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; MotifBot/1.0)'
-        }
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

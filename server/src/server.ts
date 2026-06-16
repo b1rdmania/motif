@@ -148,7 +148,9 @@ app.get('/api/midi/search', async (req, res) => {
   } catch (error) {
     console.error('Search error:', error);
     if (error instanceof Error && error.message === 'MIDI_SOURCE_UNAVAILABLE') {
-      return res.status(503).json({ error: 'BitMidi is temporarily unavailable. Please try again in a minute.' });
+      return res.status(503).json({
+        error: 'MIDI search sources are temporarily unavailable from our server. Try Upload MIDI, or try again in a minute.',
+      });
     }
     res.status(500).json({ error: 'Search failed' });
   }
