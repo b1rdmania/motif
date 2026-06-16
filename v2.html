@@ -397,8 +397,12 @@
       </div>
     </div>
     
-    <div class="panel">
+    <div class="panel" id="playback-panel">
       <h2>PLAYBACK</h2>
+      <div id="now-playing" style="display:none; margin-bottom:0.75rem; font-size:0.7rem; line-height:1.6; color:var(--gb-green);">
+        ♪ NOW LOADED: <span id="now-playing-title"></span> — press <strong>▶ PLAY</strong>
+        &nbsp;·&nbsp; <a id="make-your-own" href="/v2.html" style="color:var(--gb-green); text-decoration:underline;">Make your own →</a>
+      </div>
       <div class="controls">
         <button id="btn-play" class="primary" disabled>▶ PLAY</button>
         <button id="btn-stop" disabled>■ STOP</button>
@@ -811,10 +815,23 @@
         log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks. Press PLAY.`, 'success');
         btnPlay.disabled = false;
         setStatus('READY');
+        return true;
       } catch (error) {
         log(`Link load error: ${error.message}`, 'error');
         setStatus('ERROR');
+        return false;
       }
+    }
+
+    // Bring a shared-link arrival straight to a "press PLAY" state, the way
+    // v1's /play page does, instead of leaving the song loaded below the fold.
+    function focusSharedPlayback(title) {
+      const banner = document.getElementById('now-playing');
+      const titleEl = document.getElementById('now-playing-title');
+      if (titleEl) titleEl.textContent = title || 'your track';
+      if (banner) banner.style.display = 'block';
+      const panel = document.getElementById('playback-panel');
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     // Deep links: ?id=<bitmidi id>&title=...  loads that track directly;
@@ -827,11 +844,15 @@
       const title = params.get('title') || '';
       if (id && /^\d+$/.test(id)) {
         if (title) searchInput.value = title;
-        await loadFromBitMidiId(id, title);
+        const ok = await loadFromBitMidiId(id, title);
+        if (ok) focusSharedPlayback(title);
       } else if (q) {
         searchInput.value = q;
         await handleSearch();
-        if (searchResults.length > 0) await selectResult(0);
+        if (searchResults.length > 0) {
+          await selectResult(0);
+          focusSharedPlayback(searchResults[0]?.title || q);
+        }
       }
     }
 
