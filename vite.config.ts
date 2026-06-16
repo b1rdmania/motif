@@ -21,10 +21,12 @@ export default defineConfig({
         models: resolve(__dirname, 'models.html'),
         // Share link landing page
         play: resolve(__dirname, 'play.html'),
-        // Note: internal dev/diagnostic pages (ux-test, v2, v2-test,
-        // v2-diagnostic) are intentionally excluded from the production build.
-        // The .html files remain in the repo for local development; add them
-        // back here to ship them.
+        // V2 authentic Game Boy engine (experimental, unlinked from the main
+        // app — shipped so people can try it from the open issue).
+        v2: resolve(__dirname, 'v2.html'),
+        // Note: internal test/diagnostic pages (ux-test, v2-test,
+        // v2-diagnostic) stay out of the production build. The .html files
+        // remain in the repo for local development; add them back to ship.
       },
     },
   },
