@@ -171,10 +171,51 @@ export class GameBoyAPU {
   
   /**
    * Resume audio context if suspended.
+   *
+   * iOS/Safari will not start a suspended context on resume() alone. The
+   * reliable unlock is to play a one-sample silent buffer synchronously inside
+   * the user gesture, then resume. Without this the scheduler and channel
+   * visuals run (the UI "flashes") but no sound is produced.
    */
   async resume(): Promise<void> {
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+    const ctx = this.audioContext;
+    if (ctx.state === 'running') return;
+
+    // Must run synchronously in the user gesture, before any await.
+    try {
+      const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+      source.stop(0.001);
+    } catch {
+      // Best-effort unlock; ignore failures.
+    }
+
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch {
+        // ignore
+      }
+    }
+
+    // iOS can need a couple of nudges; poll briefly without blocking forever.
+    if ((ctx.state as string) !== 'running') {
+      await new Promise<void>((resolve) => {
+        let waited = 0;
+        const tick = () => {
+          if ((ctx.state as string) === 'running' || waited >= 500) {
+            resolve();
+            return;
+          }
+          waited += 50;
+          ctx.resume().catch(() => {});
+          setTimeout(tick, 50);
+        };
+        tick();
+      });
     }
   }
   
