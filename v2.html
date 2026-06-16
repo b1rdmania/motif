@@ -796,9 +796,49 @@
       if (e.key === 'Enter') handleSearch();
     });
     
+    // Load a BitMidi track straight from a shareable URL.
+    async function loadFromBitMidiId(id, title) {
+      const midiUrl = `https://bitmidi.com/uploads/${id}.mid`;
+      log(`Loading from link: ${title || id}...`);
+      setStatus('LOADING');
+      try {
+        const midiBuffer = await midiService.fetchMIDI(midiUrl);
+        if (!midiBuffer) throw new Error('Failed to fetch MIDI');
+        currentMIDI = midiBuffer;
+        const info = player.analyzeMIDI(midiBuffer);
+        updateInfo(info);
+        updateChannels(info.assignments);
+        log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks. Press PLAY.`, 'success');
+        btnPlay.disabled = false;
+        setStatus('READY');
+      } catch (error) {
+        log(`Link load error: ${error.message}`, 'error');
+        setStatus('ERROR');
+      }
+    }
+
+    // Deep links: ?id=<bitmidi id>&title=...  loads that track directly;
+    // ?q=<search> searches and picks the top hit. Audio still needs a tap
+    // on PLAY (browsers block autoplay), so we load and wait.
+    async function initFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const q = params.get('q');
+      const title = params.get('title') || '';
+      if (id && /^\d+$/.test(id)) {
+        if (title) searchInput.value = title;
+        await loadFromBitMidiId(id, title);
+      } else if (q) {
+        searchInput.value = q;
+        await handleSearch();
+        if (searchResults.length > 0) await selectResult(0);
+      }
+    }
+
     // Initialize
     log('Wario Synth v2 initialized', 'success');
     log('Search BitMidi or drop a MIDI file');
+    initFromUrl();
   </script>
 </body>
 </html>
