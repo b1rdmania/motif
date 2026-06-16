@@ -81,37 +81,6 @@
       border-bottom: 2px solid var(--gb-light-green);
     }
     
-    .upload-zone {
-      border: 3px dashed var(--gb-light-green);
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .upload-zone:hover {
-      background: rgba(155, 188, 15, 0.1);
-    }
-    
-    .upload-zone.dragover {
-      background: rgba(155, 188, 15, 0.2);
-      border-color: var(--gb-green);
-    }
-    
-    .upload-zone p {
-      margin-bottom: 1rem;
-      font-size: 0.7rem;
-    }
-    
-    .upload-zone .icon {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-    
-    input[type="file"] {
-      display: none;
-    }
-    
     button {
       background: var(--bg-dark);
       color: var(--gb-green);
@@ -349,26 +318,6 @@
       color: var(--gb-light-green);
     }
     
-    .divider {
-      text-align: center;
-      font-size: 0.6rem;
-      color: var(--gb-light-green);
-      margin: 1rem 0;
-      position: relative;
-    }
-    
-    .divider::before,
-    .divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 40%;
-      height: 2px;
-      background: var(--gb-light-green);
-    }
-    
-    .divider::before { left: 0; }
-    .divider::after { right: 0; }
   </style>
 </head>
 <body>
@@ -386,15 +335,6 @@
         <button id="btn-search">SEARCH</button>
       </div>
       <div id="results-list" class="results-list"></div>
-      
-      <div class="divider">OR</div>
-      
-      <div class="upload-zone" id="upload-zone">
-        <div class="icon">🎵</div>
-        <p>Drop a MIDI file here or click to browse</p>
-        <button>Choose File</button>
-        <input type="file" id="file-input" accept=".mid,.midi">
-      </div>
     </div>
     
     <div class="panel" id="playback-panel">
@@ -412,7 +352,16 @@
         </div>
         <span id="status" class="status">READY</span>
       </div>
-      
+
+      <div id="progress-row" style="display:none; margin:0.85rem 0 0.25rem;">
+        <div style="display:flex; justify-content:space-between; font-size:0.55rem; opacity:0.8; margin-bottom:0.3rem;">
+          <span id="play-current">0:00</span><span id="play-total">0:00</span>
+        </div>
+        <div style="height:8px; background:rgba(0,0,0,0.4); border:1px solid var(--gb-green); border-radius:2px; overflow:hidden;">
+          <div id="play-progress-fill" style="height:100%; width:0%; background:var(--gb-green); transition:width 0.2s linear;"></div>
+        </div>
+      </div>
+
       <div class="info-grid">
         <div class="info-item">
           <div class="label">DURATION</div>
@@ -446,19 +395,21 @@
         <div class="channel" id="ch-n2"><div class="id">N2</div><div class="role">-</div></div>
       </div>
       
-      <div class="quick-test">
-        <span style="font-size: 0.6rem; opacity: 0.7;">Quick test:</span>
-        <button id="btn-c4">C4</button>
-        <button id="btn-chord">Chord</button>
-        <button id="btn-bass">Bass</button>
-        <button id="btn-drum">Drum</button>
-      </div>
-      
-      
-      <div class="quick-test" style="margin-top: 0.5rem;">
-        <span style="font-size: 0.6rem; opacity: 0.7;">Arranger:</span>
-        <button id="btn-arranger" class="active" style="background: var(--gb-green); color: var(--bg-dark);">ON</button>
-        <span style="font-size: 0.5rem; opacity: 0.6; margin-left: 0.5rem;">Makes sparse MIDIs sound full</span>
+      <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--gb-green);">
+        <div style="font-size: 0.7rem; color: var(--gb-green); letter-spacing: 1px;">🧪 LABS · ENGINE TESTS</div>
+        <p style="font-size: 0.5rem; opacity: 0.6; margin: 0.35rem 0 0.7rem; line-height: 1.5;">Experimental v2 engine. Fire raw channels to hear the chip directly, or toggle the arranger. For tinkering, not polished playback.</p>
+        <div class="quick-test">
+          <span style="font-size: 0.6rem; opacity: 0.7;">Channels:</span>
+          <button id="btn-c4">C4</button>
+          <button id="btn-chord">Chord</button>
+          <button id="btn-bass">Bass</button>
+          <button id="btn-drum">Drum</button>
+        </div>
+        <div class="quick-test" style="margin-top: 0.5rem;">
+          <span style="font-size: 0.6rem; opacity: 0.7;">Arranger:</span>
+          <button id="btn-arranger" class="active" style="background: var(--gb-green); color: var(--bg-dark);">ON</button>
+          <span style="font-size: 0.5rem; opacity: 0.6; margin-left: 0.5rem;">Makes sparse MIDIs sound full</span>
+        </div>
       </div>
     </div>
     
@@ -488,13 +439,18 @@
     const searchInput = document.getElementById('search-input');
     const btnSearch = document.getElementById('btn-search');
     const resultsList = document.getElementById('results-list');
-    const uploadZone = document.getElementById('upload-zone');
-    const fileInput = document.getElementById('file-input');
     const btnPlay = document.getElementById('btn-play');
     const btnStop = document.getElementById('btn-stop');
     const volumeSlider = document.getElementById('volume');
     const statusEl = document.getElementById('status');
     const logEl = document.getElementById('log');
+
+    // Progress bar
+    const progressRow = document.getElementById('progress-row');
+    const progressFill = document.getElementById('play-progress-fill');
+    const playCurrentEl = document.getElementById('play-current');
+    const playTotalEl = document.getElementById('play-total');
+    let progressInterval = null;
     
     // Info elements
     const durationEl = document.getElementById('duration');
@@ -562,50 +518,39 @@
       }
     }
     
-    // File upload handling
-    uploadZone.addEventListener('click', () => fileInput.click());
-    
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-    
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('dragover');
-    });
-    
-    uploadZone.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file) await loadMIDI(file);
-    });
-    
-    fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (file) await loadMIDI(file);
-    });
-    
-    async function loadMIDI(file) {
-      try {
-        log(`Loading: ${file.name}`);
-        const buffer = await file.arrayBuffer();
-        currentMIDI = buffer;
-        
-        // Analyze without playing
-        const info = player.analyzeMIDI(buffer);
-        updateInfo(info);
-        updateChannels(info.assignments);
-        
-        log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks`, 'success');
-        
-        btnPlay.disabled = false;
-        setStatus('LOADED');
-      } catch (error) {
-        log(`Error: ${error.message}`, 'error');
+    // Progress bar along the song. Read-only (the v2 engine has no seek yet).
+    function startProgress(duration) {
+      progressRow.style.display = 'block';
+      playTotalEl.textContent = formatTime(duration);
+      playCurrentEl.textContent = '0:00';
+      progressFill.style.width = '0%';
+      if (progressInterval) clearInterval(progressInterval);
+      progressInterval = setInterval(() => {
+        const elapsed = player.getElapsedTime();
+        if (!player.getIsPlaying() || (duration > 0 && elapsed >= duration)) {
+          stopProgress(true);
+          return;
+        }
+        const pct = duration > 0 ? Math.min(100, (elapsed / duration) * 100) : 0;
+        progressFill.style.width = `${pct}%`;
+        playCurrentEl.textContent = formatTime(elapsed);
+      }, 200);
+    }
+
+    function stopProgress(complete) {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      if (complete) {
+        progressFill.style.width = '100%';
+        playCurrentEl.textContent = playTotalEl.textContent;
+      } else {
+        progressFill.style.width = '0%';
+        playCurrentEl.textContent = '0:00';
       }
     }
-    
+
     // Playback controls
     btnPlay.addEventListener('click', async () => {
       if (!currentMIDI) return;
@@ -619,25 +564,28 @@
         btnStop.disabled = false;
         
         log('Playback started', 'success');
-        
+        startProgress(info.duration);
+
         // Auto-reset when done
         setTimeout(() => {
           if (!player.getIsPlaying()) {
             setStatus('FINISHED');
             btnPlay.disabled = false;
             btnStop.disabled = true;
+            stopProgress(true);
           }
         }, (info.duration + 1) * 1000);
       } catch (error) {
         log(`Playback error: ${error.message}`, 'error');
       }
     });
-    
+
     btnStop.addEventListener('click', () => {
       player.stop();
       setStatus('STOPPED');
       btnPlay.disabled = false;
       btnStop.disabled = true;
+      stopProgress(false);
       log('Playback stopped');
     });
     
