@@ -75,6 +75,15 @@
           </div>
           <div id="iosAudioState" class="state"></div>
         </div>
+
+        <div id="shareRow" class="selected-actions" style="display:none; margin-top:14px;">
+          <button id="copyLinkBtn" type="button">Copy link</button>
+          <button id="shareToXBtn" type="button">Share to X</button>
+        </div>
+        <div id="shareFallback" style="display:none; margin-top:12px;">
+          <p style="font-size:8px; margin:0 0 8px 0; color:var(--gb-medium);">Copy didn't work on your device. Here's the link:</p>
+          <input id="shareFallbackInput" type="text" readonly style="width:100%; padding:8px; font-size:8px; font-family:'Press Start 2P', monospace; background:var(--gb-darkest); color:var(--gb-lightest); border:2px solid var(--gb-light);" />
+        </div>
       </div>
     </div>
 
@@ -126,6 +135,14 @@
     const iosBanner = document.getElementById('iosAudioBanner');
     const enableAudioBtn = document.getElementById('enableAudioBtn');
     const iosState = document.getElementById('iosAudioState');
+
+    const shareRow = document.getElementById('shareRow');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    const shareToXBtn = document.getElementById('shareToXBtn');
+    const shareFallback = document.getElementById('shareFallback');
+    const shareFallbackInput = document.getElementById('shareFallbackInput');
+    let shareId = null;     // BitMidi id of the loaded song
+    let shareTitle = '';    // raw title of the loaded song
 
     function setStatus(msg) { statusEl.textContent = msg; }
 
@@ -246,6 +263,10 @@
       seekBar.value = '0';
       playCurrentEl.textContent = '0:00';
       playTotalEl.textContent = '0:00';
+      shareRow.style.display = 'none';
+      shareFallback.style.display = 'none';
+      shareId = null;
+      shareTitle = '';
     }
 
     // --- search ---
@@ -306,6 +327,10 @@
         const info = player.analyzeMIDI(buffer);
         songDuration = info.duration;
 
+        const m = String(result.midiUrl || '').match(/\/uploads\/(\d+)\.mid/i);
+        shareId = m && m[1] ? m[1] : null;
+        shareTitle = result.title || '';
+
         selectedTitle.textContent = cleanTitle(result.title);
         selectedMeta.textContent = `Source: ${formatSource(result.source)} · ${info.noteCount} notes · ${formatTime(info.duration)}`;
         if (v1Tab) v1Tab.href = `/?song=${encodeURIComponent(result.title || '')}`;
@@ -314,6 +339,7 @@
         resultsSection.classList.add('collapsed');
         progressRow.style.display = 'block';
         updateProgressUI(0);
+        if (shareId) shareRow.style.display = 'flex';
         btnPlay.disabled = false;
         setStatus('');
         updateIOSBanner();
@@ -358,6 +384,51 @@
     seekBar.addEventListener('input', handleSeek);
     seekBar.addEventListener('change', handleSeek);
 
+    // --- share (mirrors v1: copy a deep link + tweet it) ---
+    function buildShareUrl() {
+      const base = `${window.location.origin}/v2.html`;
+      if (!shareId) return base;
+      return `${base}?id=${encodeURIComponent(shareId)}&title=${encodeURIComponent(shareTitle || '')}`;
+    }
+
+    async function handleCopyLink() {
+      const url = buildShareUrl();
+      let copied = false;
+      try {
+        if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); copied = true; }
+      } catch {}
+      if (!copied) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = url; ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.setAttribute('readonly', '');
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          try { ta.setSelectionRange(0, url.length); } catch {}
+          copied = document.execCommand('copy'); document.body.removeChild(ta);
+        } catch {}
+      }
+      if (copied) {
+        const orig = copyLinkBtn.textContent;
+        copyLinkBtn.textContent = 'Copied!';
+        shareFallback.style.display = 'none';
+        setTimeout(() => { copyLinkBtn.textContent = orig; }, 1500);
+      } else {
+        shareFallbackInput.value = url;
+        shareFallback.style.display = 'block';
+        shareFallbackInput.focus();
+        shareFallbackInput.select();
+      }
+    }
+
+    function handleShareToX() {
+      const url = buildShareUrl();
+      const title = cleanTitle(shareTitle || 'a song');
+      const text = `I made a Game Boy version of ${title}\n\nUsing @b1rdmania's Wario Synth (v2 engine)\n\nCheck it out`;
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    }
+
+    copyLinkBtn.addEventListener('click', () => void handleCopyLink());
+    shareToXBtn.addEventListener('click', handleShareToX);
+
     enableAudioBtn.addEventListener('click', async () => {
       iosState.textContent = 'Audio: enabling…';
       try { await player.resume(); } catch {}
@@ -378,12 +449,15 @@
         currentMIDI = buffer;
         const info = player.analyzeMIDI(buffer);
         songDuration = info.duration;
+        shareId = id;
+        shareTitle = title || '';
         selectedTitle.textContent = cleanTitle(title || `BitMidi ${id}`);
         selectedMeta.textContent = `Source: BitMidi · ${info.noteCount} notes · ${formatTime(info.duration)}`;
         if (v1Tab) v1Tab.href = `/?song=${encodeURIComponent(title || '')}`;
         playerSection.classList.add('visible');
         progressRow.style.display = 'block';
         updateProgressUI(0);
+        shareRow.style.display = 'flex';
         btnPlay.disabled = false;
         setStatus('Loaded. Press Play.');
         updateIOSBanner();
