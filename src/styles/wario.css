@@ -1158,3 +1158,18 @@
 .v2-channel .role { font-size: 7px; margin-top: 4px; opacity: 0.8; }
 .labs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; font-size: 8px; }
 .labs-row .hint { font-size: 7px; color: var(--gb-medium); opacity: 0.8; }
+
+/* v2 work-in-progress disclaimer */
+.v2-disclaimer {
+    border: 2px solid var(--gb-medium);
+    background: var(--gb-shell);
+    color: var(--gb-dark);
+    padding: 12px 14px;
+    margin: 14px 0;
+    font-size: 9px;
+    line-height: 1.8;
+    border-radius: 4px;
+}
+.v2-disclaimer p { margin: 0 0 8px; }
+.v2-disclaimer p:last-child { margin-bottom: 0; }
+.v2-disclaimer strong { color: var(--gb-darkest); }

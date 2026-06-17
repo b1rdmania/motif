@@ -19,11 +19,15 @@
       </div>
     </div>
 
+    <div class="v2-disclaimer">
+      <p><strong>Heads up:</strong> v1 is honestly closer to a SNES sound card. v2 is our go at the real Game Boy chip, the Sharp LR35902: a true 15-bit LFSR noise channel, pulse channels with proper duty cycles, and custom wavetables.</p>
+      <p>It's experimental right now. The noise channels have some low-mid distortion, so take it as a fun work in progress.</p>
+    </div>
+
     <div class="controls">
       <input type="text" id="songInput" placeholder="Search for a song…" />
       <button id="searchBtn" class="primary">Search</button>
     </div>
-    <p class="upload-helper">Authentic Game Boy chip: real 15-bit noise, duty cycles, wavetables. Experimental beta.</p>
 
     <div id="status">Ready. Search any song to hear it on the Game Boy chip.</div>
 
@@ -73,34 +77,6 @@
       </div>
     </div>
 
-    <div class="results-section" style="display:block; margin-top:18px;">
-      <div class="results-header">
-        <h3>🧪 Labs · engine internals</h3>
-      </div>
-      <p class="upload-helper" style="text-align:left;">The v2 channels light up as a song plays. Fire raw voices to hear the chip directly, or toggle the arranger. For tinkering, not polished playback.</p>
-      <div class="v2-channels" id="channels">
-        <div class="v2-channel" id="ch-p1">P1<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-p2">P2<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-p3">P3<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-p4">P4<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-w1">W1<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-w2">W2<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-n1">N1<div class="role">-</div></div>
-        <div class="v2-channel" id="ch-n2">N2<div class="role">-</div></div>
-      </div>
-      <div class="labs-row">
-        <span>Channels:</span>
-        <button id="btn-c4" type="button">C4</button>
-        <button id="btn-chord" type="button">Chord</button>
-        <button id="btn-bass" type="button">Bass</button>
-        <button id="btn-drum" type="button">Drum</button>
-      </div>
-      <div class="labs-row">
-        <span>Arranger:</span>
-        <button id="btn-arranger" type="button">ON</button>
-        <span class="hint">Makes sparse MIDIs sound full</span>
-      </div>
-    </div>
   </div>
 
   <div class="footer-mascot">
@@ -144,13 +120,6 @@
     const enableAudioBtn = document.getElementById('enableAudioBtn');
     const iosState = document.getElementById('iosAudioState');
 
-    const channelEls = {
-      p1: document.getElementById('ch-p1'), p2: document.getElementById('ch-p2'),
-      p3: document.getElementById('ch-p3'), p4: document.getElementById('ch-p4'),
-      w1: document.getElementById('ch-w1'), w2: document.getElementById('ch-w2'),
-      n1: document.getElementById('ch-n1'), n2: document.getElementById('ch-n2'),
-    };
-
     function setStatus(msg) { statusEl.textContent = msg; }
 
     function formatTime(seconds) {
@@ -187,22 +156,6 @@
 
     function updateIOSBanner() {
       iosBanner.style.display = (isIOSLike() && !audioRunning()) ? 'block' : 'none';
-    }
-
-    function updateChannels(assignments) {
-      Object.values(channelEls).forEach(el => {
-        el.classList.remove('active');
-        el.querySelector('.role').textContent = '-';
-      });
-      for (const a of (assignments || [])) {
-        const el = channelEls[a.channelId];
-        if (el) {
-          el.classList.add('active');
-          let role = a.channelId.startsWith('p') ? 'PULSE' : a.channelId.startsWith('w') ? 'WAVE' : 'NOISE';
-          if (a.shouldArpeggiate) role = 'ARP';
-          el.querySelector('.role').textContent = role;
-        }
-      }
     }
 
     // --- progress bar (read-only; v2 engine has no seek yet) ---
@@ -281,7 +234,6 @@
         if (!buffer) throw new Error('Failed to fetch MIDI');
         currentMIDI = buffer;
         const info = player.analyzeMIDI(buffer);
-        updateChannels(info.assignments);
 
         selectedTitle.textContent = cleanTitle(result.title);
         selectedMeta.textContent = `Source: ${formatSource(result.source)} · ${info.noteCount} notes · ${formatTime(info.duration)}`;
@@ -337,31 +289,6 @@
       updateIOSBanner();
     });
 
-    // --- labs ---
-    document.getElementById('btn-c4').addEventListener('click', async () => { await player.resume(); player.getAPU().getPulseChannel('p1')?.playNote(60, 0.3, 100); });
-    document.getElementById('btn-chord').addEventListener('click', async () => {
-      await player.resume();
-      const apu = player.getAPU(); const now = apu.getCurrentTime();
-      apu.getPulseChannel('p1')?.playNote(60, 0.4, 80, now);
-      apu.getPulseChannel('p2')?.playNote(64, 0.4, 80, now);
-      apu.getPulseChannel('p3')?.playNote(67, 0.4, 80, now);
-    });
-    document.getElementById('btn-bass').addEventListener('click', async () => { await player.resume(); player.getAPU().getWaveChannel('w1')?.playNote(36, 0.5, 100); });
-    document.getElementById('btn-drum').addEventListener('click', async () => { await player.resume(); player.getAPU().getNoiseChannel('n1')?.playKick(100); });
-
-    const arrangerBtn = document.getElementById('btn-arranger');
-    let arrangerEnabled = true;
-    function paintArranger() {
-      arrangerBtn.textContent = arrangerEnabled ? 'ON' : 'OFF';
-      arrangerBtn.classList.toggle('primary', arrangerEnabled);
-    }
-    paintArranger();
-    arrangerBtn.addEventListener('click', () => {
-      arrangerEnabled = !arrangerEnabled;
-      player.setArrangerEnabled(arrangerEnabled);
-      paintArranger();
-    });
-
     searchBtn.addEventListener('click', handleSearch);
     songInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
 
@@ -373,7 +300,6 @@
         if (!buffer) throw new Error('Failed to fetch MIDI');
         currentMIDI = buffer;
         const info = player.analyzeMIDI(buffer);
-        updateChannels(info.assignments);
         selectedTitle.textContent = cleanTitle(title || `BitMidi ${id}`);
         selectedMeta.textContent = `Source: BitMidi · ${info.noteCount} notes · ${formatTime(info.duration)}`;
         if (v1Tab) v1Tab.href = `/?song=${encodeURIComponent(title || '')}`;
