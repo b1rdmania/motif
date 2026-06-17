@@ -461,7 +461,7 @@
         if (!buffer) throw new Error('Nothing to render');
         const bytes = audioBufferToWavBytes(buffer);
         downloadBytes(bytes, `${sanitizeFileBase(shareTitle)}-gameboy.wav`, 'audio/wav');
-        setStatus('Saved a 30s clip (.wav). Full-length export is coming.');
+        setStatus('Saved a 30s clip (.wav).');
       } catch (e) {
         setStatus(`Export error: ${e && e.message ? e.message : 'unknown'}`);
       } finally {
