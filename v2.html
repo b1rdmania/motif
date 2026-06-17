@@ -63,6 +63,7 @@
             <span id="play-total">0:00</span>
           </div>
           <div class="progress-bar-wrapper">
+            <input type="range" id="play-seek" class="progress-bar" min="0" max="100" value="0" step="0.1" />
             <div class="progress-fill" id="play-progress-fill" style="width:0%;"></div>
           </div>
         </div>
@@ -113,8 +114,14 @@
 
     const progressRow = document.getElementById('progress-row');
     const progressFill = document.getElementById('play-progress-fill');
+    const seekBar = document.getElementById('play-seek');
     const playCurrentEl = document.getElementById('play-current');
     const playTotalEl = document.getElementById('play-total');
+
+    let songDuration = 0;   // seconds, set when a song is loaded
+    let resumeOffset = 0;   // where Play resumes / where a seek landed
+    let uiPlaying = false;  // actively playing (vs paused/stopped)
+    let hasLoaded = false;  // has playMIDI run for the current song
 
     const iosBanner = document.getElementById('iosAudioBanner');
     const enableAudioBtn = document.getElementById('enableAudioBtn');
@@ -158,24 +165,87 @@
       iosBanner.style.display = (isIOSLike() && !audioRunning()) ? 'block' : 'none';
     }
 
-    // --- progress bar (read-only; v2 engine has no seek yet) ---
-    function startProgress(duration) {
-      progressRow.style.display = 'block';
-      playTotalEl.textContent = formatTime(duration);
-      playCurrentEl.textContent = '0:00';
-      progressFill.style.width = '0%';
+    // --- playback controls (mirrors v1: Play/Pause toggle + seekable bar) ---
+    function paintPlayButton() {
+      btnPlay.textContent = uiPlaying ? 'Pause' : 'Play';
+    }
+
+    function updateProgressUI(posSec) {
+      const pct = songDuration > 0 ? Math.max(0, Math.min(100, (posSec / songDuration) * 100)) : 0;
+      progressFill.style.width = `${pct}%`;
+      seekBar.value = String(pct);
+      playCurrentEl.textContent = formatTime(posSec);
+      playTotalEl.textContent = formatTime(songDuration);
+    }
+
+    function startTicker() {
       if (progressInterval) clearInterval(progressInterval);
       progressInterval = setInterval(() => {
-        const elapsed = player.getElapsedTime();
-        if (!player.getIsPlaying() || (duration > 0 && elapsed >= duration)) { stopProgress(true); return; }
-        progressFill.style.width = `${duration > 0 ? Math.min(100, (elapsed / duration) * 100) : 0}%`;
-        playCurrentEl.textContent = formatTime(elapsed);
-      }, 200);
+        const pos = player.getElapsedTime();
+        if (songDuration > 0 && pos >= songDuration) { onPlaybackEnded(); return; }
+        if (!player.getIsPlaying() && uiPlaying) { onPlaybackEnded(); return; }
+        updateProgressUI(pos);
+      }, 150);
     }
-    function stopProgress(complete) {
+    function stopTicker() {
       if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
-      if (complete) { progressFill.style.width = '100%'; playCurrentEl.textContent = playTotalEl.textContent; }
-      else { progressFill.style.width = '0%'; playCurrentEl.textContent = '0:00'; }
+    }
+
+    function onPlaybackEnded() {
+      stopTicker();
+      uiPlaying = false;
+      resumeOffset = 0;
+      player.stop();
+      paintPlayButton();
+      btnStop.disabled = true;
+      updateProgressUI(songDuration);
+      setStatus('');
+    }
+
+    async function play() {
+      await player.resume();
+      updateIOSBanner();
+      if (resumeOffset > 0 && hasLoaded) {
+        player.playFrom(resumeOffset);
+      } else {
+        const info = await player.playMIDI(currentMIDI);
+        hasLoaded = true;
+        songDuration = info.duration;
+      }
+      uiPlaying = true;
+      paintPlayButton();
+      btnStop.disabled = false;
+      progressRow.style.display = 'block';
+      startTicker();
+      setStatus('Playing…');
+    }
+
+    function pause() {
+      const pos = Math.max(0, Math.min(songDuration, player.getElapsedTime()));
+      resumeOffset = pos;
+      player.stop();
+      uiPlaying = false;
+      stopTicker();
+      paintPlayButton();
+      updateProgressUI(pos);
+      setStatus('Paused.');
+    }
+
+    // Reset playback state for a freshly loaded song.
+    function resetPlayback() {
+      stopTicker();
+      player.stop();
+      uiPlaying = false;
+      hasLoaded = false;
+      resumeOffset = 0;
+      songDuration = 0;
+      btnStop.disabled = true;
+      paintPlayButton();
+      progressRow.style.display = 'none';
+      progressFill.style.width = '0%';
+      seekBar.value = '0';
+      playCurrentEl.textContent = '0:00';
+      playTotalEl.textContent = '0:00';
     }
 
     // --- search ---
@@ -226,7 +296,7 @@
       const rows = resultsBody.querySelectorAll('tr');
       rows.forEach((r, i) => r.classList.toggle('selected', i === index));
 
-      handleStop();
+      resetPlayback();
       setStatus('Loading…');
       btnPlay.disabled = true;
       try {
@@ -234,6 +304,7 @@
         if (!buffer) throw new Error('Failed to fetch MIDI');
         currentMIDI = buffer;
         const info = player.analyzeMIDI(buffer);
+        songDuration = info.duration;
 
         selectedTitle.textContent = cleanTitle(result.title);
         selectedMeta.textContent = `Source: ${formatSource(result.source)} · ${info.noteCount} notes · ${formatTime(info.duration)}`;
@@ -241,6 +312,8 @@
 
         playerSection.classList.add('visible');
         resultsSection.classList.add('collapsed');
+        progressRow.style.display = 'block';
+        updateProgressUI(0);
         btnPlay.disabled = false;
         setStatus('');
         updateIOSBanner();
@@ -254,33 +327,36 @@
     btnPlay.addEventListener('click', async () => {
       if (!currentMIDI) return;
       try {
-        await player.resume();
-        updateIOSBanner();
-        const info = await player.playMIDI(currentMIDI);
-        setStatus('Playing…');
-        btnPlay.disabled = true;
-        btnStop.disabled = false;
-        startProgress(info.duration);
-        setTimeout(() => {
-          if (!player.getIsPlaying()) {
-            setStatus('');
-            btnPlay.disabled = false;
-            btnStop.disabled = true;
-            stopProgress(true);
-          }
-        }, (info.duration + 1) * 1000);
+        if (uiPlaying) { pause(); } else { await play(); }
       } catch (e) {
         setStatus(`Playback error: ${e && e.message ? e.message : 'unknown'}`);
       }
     });
 
-    function handleStop() {
+    btnStop.addEventListener('click', () => {
+      stopTicker();
       player.stop();
-      btnPlay.disabled = currentMIDI == null;
+      uiPlaying = false;
+      resumeOffset = 0;
       btnStop.disabled = true;
-      stopProgress(false);
+      paintPlayButton();
+      updateProgressUI(0);
+      setStatus('');
+    });
+
+    // Seek: drag the bar to jump. While playing, relaunch from the new spot.
+    function handleSeek() {
+      if (songDuration <= 0) return;
+      const target = (parseFloat(seekBar.value) / 100) * songDuration;
+      resumeOffset = target;
+      updateProgressUI(target);
+      if (uiPlaying) {
+        player.playFrom(target);
+        startTicker();
+      }
     }
-    btnStop.addEventListener('click', () => { handleStop(); setStatus(''); });
+    seekBar.addEventListener('input', handleSeek);
+    seekBar.addEventListener('change', handleSeek);
 
     enableAudioBtn.addEventListener('click', async () => {
       iosState.textContent = 'Audio: enabling…';
@@ -294,16 +370,20 @@
 
     // --- deep links: ?id=<bitmidi>&title=...  or  ?q=<search> ---
     async function loadFromBitMidiId(id, title) {
+      resetPlayback();
       setStatus(`Loading ${title || id}…`);
       try {
         const buffer = await midiService.fetchMIDI(`https://bitmidi.com/uploads/${id}.mid`);
         if (!buffer) throw new Error('Failed to fetch MIDI');
         currentMIDI = buffer;
         const info = player.analyzeMIDI(buffer);
+        songDuration = info.duration;
         selectedTitle.textContent = cleanTitle(title || `BitMidi ${id}`);
         selectedMeta.textContent = `Source: BitMidi · ${info.noteCount} notes · ${formatTime(info.duration)}`;
         if (v1Tab) v1Tab.href = `/?song=${encodeURIComponent(title || '')}`;
         playerSection.classList.add('visible');
+        progressRow.style.display = 'block';
+        updateProgressUI(0);
         btnPlay.disabled = false;
         setStatus('Loaded. Press Play.');
         updateIOSBanner();

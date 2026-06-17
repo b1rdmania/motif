@@ -56,6 +56,10 @@ export class GameBoyPlayer {
   // Progressive scheduling state
   private pendingNotes: ChannelNote[] = [];
   private scheduleIndex: number = 0;
+  // Cache of the last arranged song so pause/resume/seek can restart from an
+  // offset without re-parsing and (importantly) re-randomising the arrangement.
+  private loadedNotes: ChannelNote[] = [];
+  private loadedDuration: number = 0;
   private schedulerInterval: ReturnType<typeof setInterval> | null = null;
   private readonly SCHEDULE_AHEAD_TIME = 2.0; // Schedule 2 seconds ahead
   private readonly SCHEDULER_INTERVAL_MS = 250; // Check every 250ms
@@ -81,7 +85,7 @@ export class GameBoyPlayer {
    * @param midiData - MIDI file as ArrayBuffer
    * @returns Playback information
    */
-  async playMIDI(midiData: ArrayBuffer): Promise<PlaybackInfo> {
+  async playMIDI(midiData: ArrayBuffer, startOffset: number = 0): Promise<PlaybackInfo> {
     // Resume audio context if needed
     if (this.config.autoResume) {
       await this.apu.resume();
@@ -118,40 +122,58 @@ export class GameBoyPlayer {
       console.log(`Arranger: Added ${result.stats.addedNotes} notes (${result.stats.originalNotes} → ${gbNotes.length})`);
     }
     
-    // Get current time for scheduling
-    const startTime = this.apu.getCurrentTime() + 0.1; // Small lookahead
-    this.playbackStartTime = startTime;
-    
-    // Store notes for progressive scheduling
-    this.pendingNotes = gbNotes;
-    this.scheduleIndex = 0;
-    
-    // Schedule initial batch
-    this.scheduleNextBatch();
-    
-    // Start the scheduler for progressive note scheduling
-    this.startScheduler();
-    
-    this.isPlaying = true;
-    
-    // Create playback info
+    // Cache the arranged song so pause/resume/seek can restart from an offset.
+    this.loadedNotes = gbNotes;
+    this.loadedDuration = midi.duration;
     this.currentPlaybackInfo = {
       duration: midi.duration,
       assignments,
       noteCount: gbNotes.length,
     };
-    
+
     console.log(`Playing MIDI: ${gbNotes.length} notes, ${assignments.length} channels, ${midi.duration.toFixed(1)}s duration`);
-    
-    // Schedule auto-stop
-    const stopDelay = (midi.duration + 1) * 1000;
+
+    this.startFromOffset(startOffset);
+    return this.currentPlaybackInfo;
+  }
+
+  /**
+   * (Re)start playback of the currently loaded song from a time offset in
+   * seconds. This is the primitive that pause/resume and seeking are built on.
+   */
+  playFrom(offsetSec: number): void {
+    if (this.loadedNotes.length === 0) return;
+    this.startFromOffset(Math.max(0, offsetSec));
+  }
+
+  private startFromOffset(offsetSec: number): void {
+    this.stopScheduler();
+    this.apu.stopAll();
+
+    this.pendingNotes = this.loadedNotes;
+    // Skip notes that start before the offset (pendingNotes is sorted by time).
+    let idx = 0;
+    while (idx < this.pendingNotes.length && this.pendingNotes[idx].startTime < offsetSec) {
+      idx++;
+    }
+    this.scheduleIndex = idx;
+
+    // Shift the timeline origin back by the offset so getElapsedTime() reports
+    // the song position and notes schedule at the right absolute times.
+    const startTime = this.apu.getCurrentTime() + 0.1 - offsetSec;
+    this.playbackStartTime = startTime;
+    this.isPlaying = true;
+
+    this.scheduleNextBatch();
+    this.startScheduler();
+
+    // Auto-stop after the remaining duration.
+    const stopDelay = (this.loadedDuration - offsetSec + 1) * 1000;
     setTimeout(() => {
       if (this.isPlaying && this.playbackStartTime === startTime) {
         this.isPlaying = false;
       }
-    }, stopDelay);
-    
-    return this.currentPlaybackInfo;
+    }, Math.max(0, stopDelay));
   }
   
   /**
