@@ -95,6 +95,21 @@ class MotifApp {
 
     // Always play at 100%
     this.motifEngine.setVolume(1);
+
+    // Carry a song over from a ?song= link (e.g. the v2 beta tab).
+    this.initFromQuery();
+  }
+
+  private initFromQuery(): void {
+    try {
+      const q = new URLSearchParams(window.location.search).get('song');
+      if (q) {
+        this.songInput.value = q;
+        void this.handleSearch();
+      }
+    } catch {
+      // ignore
+    }
   }
 
   /**
@@ -553,8 +568,9 @@ class MotifApp {
       this.selectedMeta.textContent = `Source: ${this.formatSourceLabel(result.source)}`;
 
       this.updateEmbedSnippet(result.title);
+      this.updateV2Tab(result);
       this.updateIOSAudioBanner();
-      
+
       this.playerSection.classList.add('visible');
       this.resultsSection.classList.add('collapsed');
       this.enablePlayerControls();
@@ -1079,6 +1095,23 @@ class MotifApp {
     } catch {
       // ignore
     }
+  }
+
+  // Point the "v2 beta" tab at the currently selected song so switching
+  // engines carries the track across (by BitMidi id, falling back to a query).
+  private updateV2Tab(result: any): void {
+    const tab = document.getElementById('v2Tab') as HTMLAnchorElement | null;
+    if (!tab) return;
+    const title = encodeURIComponent(result?.title || '');
+    let href = '/v2.html';
+    if (result?.source === 'bitmidi') {
+      const m = String(result.midiUrl || '').match(/\/uploads\/(\d+)\.mid/i);
+      if (m?.[1]) href = `/v2.html?id=${m[1]}&title=${title}`;
+    }
+    if (href === '/v2.html' && result?.title) {
+      href = `/v2.html?q=${title}`;
+    }
+    tab.href = href;
   }
 
   private updateEmbedSnippet(songTitle: string): void {

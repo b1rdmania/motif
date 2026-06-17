@@ -1,524 +1,211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wario Synth v2 - Game Boy Sound Engine</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-dark: #0f380f;
-      --bg-panel: #306230;
-      --gb-green: #9bbc0f;
-      --gb-dark-green: #0f380f;
-      --gb-light-green: #8bac0f;
-      --gb-cream: #e0f8d0;
-      --text: #9bbc0f;
-      --text-dim: #306230;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Press Start 2P', monospace;
-      background: var(--bg-dark);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 1rem;
-      font-size: 10px;
-      line-height: 1.6;
-    }
-    
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    
-    header {
-      text-align: center;
-      padding: 2rem 0;
-      border-bottom: 4px solid var(--gb-light-green);
-      margin-bottom: 2rem;
-    }
-    
-    h1 {
-      font-size: 1.4rem;
-      margin-bottom: 0.5rem;
-      text-shadow: 2px 2px 0 #0a280a;
-    }
-    
-    .subtitle {
-      font-size: 0.7rem;
-      color: var(--gb-light-green);
-    }
-    
-    .version-badge {
-      display: inline-block;
-      background: var(--gb-green);
-      color: var(--bg-dark);
-      padding: 0.3rem 0.6rem;
-      font-size: 0.6rem;
-      margin-top: 0.5rem;
-    }
-    
-    .panel {
-      background: var(--bg-panel);
-      border: 4px solid var(--gb-light-green);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    
-    .panel h2 {
-      font-size: 0.8rem;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--gb-light-green);
-    }
-    
-    button {
-      background: var(--bg-dark);
-      color: var(--gb-green);
-      border: 3px solid var(--gb-green);
-      padding: 0.75rem 1.5rem;
-      font-family: inherit;
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    
-    button:hover:not(:disabled) {
-      background: var(--gb-green);
-      color: var(--bg-dark);
-    }
-    
-    button:active:not(:disabled) {
-      transform: scale(0.98);
-    }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    button.primary {
-      background: var(--gb-green);
-      color: var(--bg-dark);
-    }
-    
-    button.primary:hover:not(:disabled) {
-      background: var(--gb-cream);
-    }
-    
-    .controls {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    
-    .volume-control {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .volume-control input[type="range"] {
-      width: 100px;
-      accent-color: var(--gb-green);
-    }
-    
-    .status {
-      padding: 0.3rem 0.6rem;
-      font-size: 0.6rem;
-      background: var(--bg-dark);
-      border: 2px solid var(--gb-light-green);
-    }
-    
-    .status.playing {
-      background: var(--gb-green);
-      color: var(--bg-dark);
-      animation: blink 1s infinite;
-    }
-    
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-    
-    .channels {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    
-    .channel {
-      background: var(--bg-dark);
-      border: 2px solid var(--gb-light-green);
-      padding: 0.5rem;
-      text-align: center;
-      font-size: 0.6rem;
-    }
-    
-    .channel.active {
-      border-color: var(--gb-green);
-      background: rgba(155, 188, 15, 0.2);
-    }
-    
-    .channel .id {
-      font-size: 0.7rem;
-      margin-bottom: 0.3rem;
-    }
-    
-    .channel .role {
-      color: var(--gb-light-green);
-      font-size: 0.5rem;
-    }
-    
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    
-    .info-item {
-      background: var(--bg-dark);
-      padding: 0.75rem;
-      border: 2px solid var(--gb-light-green);
-    }
-    
-    .info-item .label {
-      font-size: 0.55rem;
-      color: var(--gb-light-green);
-      margin-bottom: 0.3rem;
-    }
-    
-    .info-item .value {
-      font-size: 0.8rem;
-    }
-    
-    .log {
-      background: #000;
-      border: 2px solid var(--gb-light-green);
-      padding: 0.75rem;
-      height: 150px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 0.65rem;
-      color: var(--gb-green);
-    }
-    
-    .log-entry {
-      margin-bottom: 0.25rem;
-      line-height: 1.4;
-    }
-    
-    .log-entry.error { color: #ff6b6b; }
-    .log-entry.success { color: var(--gb-cream); }
-    
-    footer {
-      text-align: center;
-      padding: 2rem 0;
-      font-size: 0.6rem;
-      color: var(--gb-light-green);
-    }
-    
-    footer a {
-      color: var(--gb-green);
-    }
-    
-    .quick-test {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-top: 1rem;
-    }
-    
-    .quick-test button {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.6rem;
-    }
-    
-    .quick-test button.active {
-      background: var(--gb-green);
-      color: var(--bg-dark);
-    }
-    
-    .search-box {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    
-    .search-box input[type="text"] {
-      flex: 1;
-      background: var(--bg-dark);
-      border: 3px solid var(--gb-green);
-      color: var(--gb-green);
-      padding: 0.75rem;
-      font-family: inherit;
-      font-size: 0.7rem;
-    }
-    
-    .search-box input[type="text"]::placeholder {
-      color: var(--gb-light-green);
-      opacity: 0.7;
-    }
-    
-    .search-box input[type="text"]:focus {
-      outline: none;
-      background: rgba(155, 188, 15, 0.1);
-    }
-    
-    .results-list {
-      margin-top: 1rem;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    
-    .result-item {
-      background: var(--bg-dark);
-      border: 2px solid var(--gb-light-green);
-      padding: 0.5rem 0.75rem;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .result-item:hover {
-      background: rgba(155, 188, 15, 0.15);
-      border-color: var(--gb-green);
-    }
-    
-    .result-item.selected {
-      background: rgba(155, 188, 15, 0.25);
-      border-color: var(--gb-green);
-    }
-    
-    .result-item .title {
-      font-size: 0.65rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 70%;
-    }
-    
-    .result-item .confidence {
-      font-size: 0.5rem;
-      color: var(--gb-light-green);
-    }
-    
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wario Synth v2 beta - Authentic Game Boy Engine</title>
+  <meta name="description" content="Turn any song into an authentic Game Boy chiptune in the browser. Experimental v2 engine: real 15-bit noise, duty cycles, wavetables." />
+  <link rel="stylesheet" href="/src/styles/wario.css" />
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>🎮 WARIO SYNTH</h1>
-      <p class="subtitle">Game Boy Sound Engine</p>
-      <span class="version-badge">v2.0 BETA</span>
-    </header>
-    
-    <div class="panel">
-      <h2>SEARCH BITMIDI</h2>
-      <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search for a song...">
-        <button id="btn-search">SEARCH</button>
+    <div class="hero">
+      <div class="hero-top">
+        <h1>WARIO SYNTH <span class="version-tag">v2 beta</span></h1>
       </div>
-      <div id="results-list" class="results-list"></div>
+      <div class="engine-tabs">
+        <a id="v1Tab" href="/" class="engine-tab">v1</a>
+        <a href="/v2.html" class="engine-tab active">v2 beta</a>
+      </div>
     </div>
-    
-    <div class="panel" id="playback-panel">
-      <h2>PLAYBACK</h2>
-      <div id="now-playing" style="display:none; margin-bottom:0.75rem; font-size:0.7rem; line-height:1.6; color:var(--gb-green);">
-        ♪ NOW LOADED: <span id="now-playing-title"></span> — press <strong>▶ PLAY</strong>
-        &nbsp;·&nbsp; <a id="make-your-own" href="/v2.html" style="color:var(--gb-green); text-decoration:underline;">Make your own →</a>
-      </div>
-      <div class="controls">
-        <button id="btn-play" class="primary" disabled>▶ PLAY</button>
-        <button id="btn-stop" disabled>■ STOP</button>
-        <div class="volume-control">
-          <span>VOL:</span>
-          <input type="range" id="volume" min="0" max="100" value="70">
-        </div>
-        <span id="status" class="status">READY</span>
-      </div>
 
-      <div id="progress-row" style="display:none; margin:0.85rem 0 0.25rem;">
-        <div style="display:flex; justify-content:space-between; font-size:0.55rem; opacity:0.8; margin-bottom:0.3rem;">
-          <span id="play-current">0:00</span><span id="play-total">0:00</span>
-        </div>
-        <div style="height:8px; background:rgba(0,0,0,0.4); border:1px solid var(--gb-green); border-radius:2px; overflow:hidden;">
-          <div id="play-progress-fill" style="height:100%; width:0%; background:var(--gb-green); transition:width 0.2s linear;"></div>
-        </div>
-      </div>
+    <div class="controls">
+      <input type="text" id="songInput" placeholder="Search for a song…" />
+      <button id="searchBtn" class="primary">Search</button>
+    </div>
+    <p class="upload-helper">Authentic Game Boy chip: real 15-bit noise, duty cycles, wavetables. Experimental beta.</p>
 
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="label">DURATION</div>
-          <div class="value" id="duration">--:--</div>
+    <div id="status">Ready. Search any song to hear it on the Game Boy chip.</div>
+
+    <div id="resultsSection" class="results-section">
+      <div class="results-header">
+        <h3>Search Results</h3>
+      </div>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Song</th>
+            <th class="source-col">Source</th>
+            <th class="action-col">Action</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <div id="playerSection" class="player-section">
+      <div class="selected-card">
+        <h2 id="selectedTitle" class="selected-title">No source selected</h2>
+        <div id="selectedMeta" class="selected-meta">Search for a song, then choose a source.</div>
+
+        <div class="selected-actions">
+          <button id="btn-play" class="primary" disabled>Play</button>
+          <button id="btn-stop" type="button" disabled>Stop</button>
         </div>
-        <div class="info-item">
-          <div class="label">NOTES</div>
-          <div class="value" id="notes">---</div>
+
+        <div class="motif-progress-container" id="progress-row" style="display:none;">
+          <div class="progress-time">
+            <span id="play-current">0:00</span>
+            <span id="play-total">0:00</span>
+          </div>
+          <div class="progress-bar-wrapper">
+            <div class="progress-fill" id="play-progress-fill" style="width:0%;"></div>
+          </div>
         </div>
-        <div class="info-item">
-          <div class="label">TEMPO</div>
-          <div class="value" id="tempo">--- BPM</div>
-        </div>
-        <div class="info-item">
-          <div class="label">TRACKS</div>
-          <div class="value" id="tracks">---</div>
+
+        <div id="iosAudioBanner" class="ios-audio-banner" aria-live="polite" style="display:none;">
+          <div class="row">
+            <div class="copy"><strong>iPhone:</strong> not on silent, volume up, Focus off. Then tap:</div>
+            <button id="enableAudioBtn" type="button">Enable Audio</button>
+          </div>
+          <div id="iosAudioState" class="state"></div>
         </div>
       </div>
     </div>
-    
-    <div class="panel">
-      <h2>CHANNELS</h2>
-      <div class="channels">
-        <div class="channel" id="ch-p1"><div class="id">P1</div><div class="role">-</div></div>
-        <div class="channel" id="ch-p2"><div class="id">P2</div><div class="role">-</div></div>
-        <div class="channel" id="ch-p3"><div class="id">P3</div><div class="role">-</div></div>
-        <div class="channel" id="ch-p4"><div class="id">P4</div><div class="role">-</div></div>
-        <div class="channel" id="ch-w1"><div class="id">W1</div><div class="role">-</div></div>
-        <div class="channel" id="ch-w2"><div class="id">W2</div><div class="role">-</div></div>
-        <div class="channel" id="ch-n1"><div class="id">N1</div><div class="role">-</div></div>
-        <div class="channel" id="ch-n2"><div class="id">N2</div><div class="role">-</div></div>
+
+    <div class="results-section" style="display:block; margin-top:18px;">
+      <div class="results-header">
+        <h3>🧪 Labs · engine internals</h3>
       </div>
-      
-      <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--gb-green);">
-        <div style="font-size: 0.7rem; color: var(--gb-green); letter-spacing: 1px;">🧪 LABS · ENGINE TESTS</div>
-        <p style="font-size: 0.5rem; opacity: 0.6; margin: 0.35rem 0 0.7rem; line-height: 1.5;">Experimental v2 engine. Fire raw channels to hear the chip directly, or toggle the arranger. For tinkering, not polished playback.</p>
-        <div class="quick-test">
-          <span style="font-size: 0.6rem; opacity: 0.7;">Channels:</span>
-          <button id="btn-c4">C4</button>
-          <button id="btn-chord">Chord</button>
-          <button id="btn-bass">Bass</button>
-          <button id="btn-drum">Drum</button>
-        </div>
-        <div class="quick-test" style="margin-top: 0.5rem;">
-          <span style="font-size: 0.6rem; opacity: 0.7;">Arranger:</span>
-          <button id="btn-arranger" class="active" style="background: var(--gb-green); color: var(--bg-dark);">ON</button>
-          <span style="font-size: 0.5rem; opacity: 0.6; margin-left: 0.5rem;">Makes sparse MIDIs sound full</span>
-        </div>
+      <p class="upload-helper" style="text-align:left;">The v2 channels light up as a song plays. Fire raw voices to hear the chip directly, or toggle the arranger. For tinkering, not polished playback.</p>
+      <div class="v2-channels" id="channels">
+        <div class="v2-channel" id="ch-p1">P1<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-p2">P2<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-p3">P3<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-p4">P4<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-w1">W1<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-w2">W2<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-n1">N1<div class="role">-</div></div>
+        <div class="v2-channel" id="ch-n2">N2<div class="role">-</div></div>
+      </div>
+      <div class="labs-row">
+        <span>Channels:</span>
+        <button id="btn-c4" type="button">C4</button>
+        <button id="btn-chord" type="button">Chord</button>
+        <button id="btn-bass" type="button">Bass</button>
+        <button id="btn-drum" type="button">Drum</button>
+      </div>
+      <div class="labs-row">
+        <span>Arranger:</span>
+        <button id="btn-arranger" type="button">ON</button>
+        <span class="hint">Makes sparse MIDIs sound full</span>
       </div>
     </div>
-    
-    <div class="panel">
-      <h2>LOG</h2>
-      <div id="log" class="log"></div>
-    </div>
-    
-    <footer>
-      <p>Wario Synth v2 - Authentic Game Boy Sound</p>
-      <p><a href="/">Back to v1</a></p>
-    </footer>
   </div>
-  
+
+  <div class="footer-mascot">
+    <img src="/wario-sprite.png" alt="Wario" class="wario-sprite" />
+  </div>
+
+  <div class="footer" style="margin-top:18px; font-size:8px; color:var(--gb-medium); text-align:center; gap:10px;">
+    <a href="https://github.com/b1rdmania/motif" target="_blank" rel="noopener noreferrer" style="color:var(--gb-dark);">GitHub</a>
+    <span style="opacity:0.75;">·</span>
+    <span>v2 is an experimental beta. <a href="https://github.com/b1rdmania/motif/issues/5" target="_blank" rel="noopener noreferrer" style="color:var(--gb-dark);">Help wanted</a></span>
+  </div>
+
   <script type="module">
     import { GameBoyPlayer } from './src-v2/core/GameBoyPlayer.ts';
     import { MIDIService } from './src/services/MIDIService.ts';
-    
-    // Initialize player and services
+
     const player = new GameBoyPlayer();
     const midiService = new MIDIService();
     let currentMIDI = null;
     let searchResults = [];
-    let selectedResultIndex = -1;
-    
-    // DOM elements
-    const searchInput = document.getElementById('search-input');
-    const btnSearch = document.getElementById('btn-search');
-    const resultsList = document.getElementById('results-list');
+    let progressInterval = null;
+
+    const songInput = document.getElementById('songInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsBody = document.getElementById('resultsBody');
+    const resultsSection = document.getElementById('resultsSection');
+    const playerSection = document.getElementById('playerSection');
+    const statusEl = document.getElementById('status');
+    const selectedTitle = document.getElementById('selectedTitle');
+    const selectedMeta = document.getElementById('selectedMeta');
     const btnPlay = document.getElementById('btn-play');
     const btnStop = document.getElementById('btn-stop');
-    const volumeSlider = document.getElementById('volume');
-    const statusEl = document.getElementById('status');
-    const logEl = document.getElementById('log');
+    const v1Tab = document.getElementById('v1Tab');
 
-    // Progress bar
     const progressRow = document.getElementById('progress-row');
     const progressFill = document.getElementById('play-progress-fill');
     const playCurrentEl = document.getElementById('play-current');
     const playTotalEl = document.getElementById('play-total');
-    let progressInterval = null;
-    
-    // Info elements
-    const durationEl = document.getElementById('duration');
-    const notesEl = document.getElementById('notes');
-    const tempoEl = document.getElementById('tempo');
-    const tracksEl = document.getElementById('tracks');
-    
-    // Channel elements
+
+    const iosBanner = document.getElementById('iosAudioBanner');
+    const enableAudioBtn = document.getElementById('enableAudioBtn');
+    const iosState = document.getElementById('iosAudioState');
+
     const channelEls = {
-      p1: document.getElementById('ch-p1'),
-      p2: document.getElementById('ch-p2'),
-      p3: document.getElementById('ch-p3'),
-      p4: document.getElementById('ch-p4'),
-      w1: document.getElementById('ch-w1'),
-      w2: document.getElementById('ch-w2'),
-      n1: document.getElementById('ch-n1'),
-      n2: document.getElementById('ch-n2'),
+      p1: document.getElementById('ch-p1'), p2: document.getElementById('ch-p2'),
+      p3: document.getElementById('ch-p3'), p4: document.getElementById('ch-p4'),
+      w1: document.getElementById('ch-w1'), w2: document.getElementById('ch-w2'),
+      n1: document.getElementById('ch-n1'), n2: document.getElementById('ch-n2'),
     };
-    
-    function log(message, type = 'info') {
-      const entry = document.createElement('div');
-      entry.className = `log-entry ${type}`;
-      entry.textContent = `> ${message}`;
-      logEl.appendChild(entry);
-      logEl.scrollTop = logEl.scrollHeight;
-      console.log(message);
-    }
-    
-    function setStatus(status, playing = false) {
-      statusEl.textContent = status;
-      statusEl.className = `status ${playing ? 'playing' : ''}`;
-    }
-    
+
+    function setStatus(msg) { statusEl.textContent = msg; }
+
     function formatTime(seconds) {
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
-    
-    function updateInfo(info) {
-      durationEl.textContent = formatTime(info.duration);
-      notesEl.textContent = info.noteCount.toString();
-      tempoEl.textContent = `${Math.round(info.bpm)} BPM`;
-      tracksEl.textContent = info.trackCount.toString();
+
+    function titleCase(input) {
+      return (input || '').split(/\s+/).filter(Boolean)
+        .map(w => /^[A-Z0-9]+$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
     }
-    
+
+    function cleanTitle(raw) {
+      const cleaned = (raw || '').replace(/\.mid$/i, '').replace(/[_.]+/g, ' ')
+        .replace(/\b(midi?)\b/gi, '').replace(/\s+/g, ' ').trim();
+      return titleCase(cleaned || 'Unknown');
+    }
+
+    function formatSource(s) {
+      const v = String(s || '').toLowerCase();
+      return v === 'bitmidi' ? 'BitMidi' : titleCase(v);
+    }
+
+    function isIOSLike() {
+      const ua = navigator.userAgent || '';
+      return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    }
+
+    function audioRunning() {
+      try { return player.getAPU().getAudioContext().state === 'running'; } catch { return false; }
+    }
+
+    function updateIOSBanner() {
+      iosBanner.style.display = (isIOSLike() && !audioRunning()) ? 'block' : 'none';
+    }
+
     function updateChannels(assignments) {
-      // Reset all
       Object.values(channelEls).forEach(el => {
         el.classList.remove('active');
         el.querySelector('.role').textContent = '-';
       });
-      
-      // Highlight assigned channels
-      for (const assignment of assignments) {
-        const el = channelEls[assignment.channelId];
+      for (const a of (assignments || [])) {
+        const el = channelEls[a.channelId];
         if (el) {
           el.classList.add('active');
-          // Get role from track analysis (simplified)
-          let role = assignment.channelId.startsWith('p') ? 'PULSE' :
-                     assignment.channelId.startsWith('w') ? 'WAVE' : 'NOISE';
-          if (assignment.shouldArpeggiate) role = 'ARP';
+          let role = a.channelId.startsWith('p') ? 'PULSE' : a.channelId.startsWith('w') ? 'WAVE' : 'NOISE';
+          if (a.shouldArpeggiate) role = 'ARP';
           el.querySelector('.role').textContent = role;
         }
       }
     }
-    
-    // Progress bar along the song. Read-only (the v2 engine has no seek yet).
+
+    // --- progress bar (read-only; v2 engine has no seek yet) ---
     function startProgress(duration) {
       progressRow.style.display = 'block';
       playTotalEl.textContent = formatTime(duration);
@@ -527,286 +214,197 @@
       if (progressInterval) clearInterval(progressInterval);
       progressInterval = setInterval(() => {
         const elapsed = player.getElapsedTime();
-        if (!player.getIsPlaying() || (duration > 0 && elapsed >= duration)) {
-          stopProgress(true);
-          return;
-        }
-        const pct = duration > 0 ? Math.min(100, (elapsed / duration) * 100) : 0;
-        progressFill.style.width = `${pct}%`;
+        if (!player.getIsPlaying() || (duration > 0 && elapsed >= duration)) { stopProgress(true); return; }
+        progressFill.style.width = `${duration > 0 ? Math.min(100, (elapsed / duration) * 100) : 0}%`;
         playCurrentEl.textContent = formatTime(elapsed);
       }, 200);
     }
-
     function stopProgress(complete) {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-      }
-      if (complete) {
-        progressFill.style.width = '100%';
-        playCurrentEl.textContent = playTotalEl.textContent;
-      } else {
-        progressFill.style.width = '0%';
-        playCurrentEl.textContent = '0:00';
+      if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+      if (complete) { progressFill.style.width = '100%'; playCurrentEl.textContent = playTotalEl.textContent; }
+      else { progressFill.style.width = '0%'; playCurrentEl.textContent = '0:00'; }
+    }
+
+    // --- search ---
+    async function handleSearch() {
+      const query = songInput.value.trim();
+      if (!query) { setStatus('Enter a song name to search.'); return; }
+      setStatus('Searching…');
+      searchBtn.disabled = true;
+      resultsBody.innerHTML = '';
+      try {
+        const results = await midiService.search(query);
+        searchResults = results;
+        if (!results.length) { setStatus('No MIDI files found. Try a different search.'); return; }
+        displayResults();
+        resultsSection.classList.add('visible');
+        setStatus('Pick a source. Try another if it sounds rough, some MIDIs map better than others.');
+        updateIOSBanner();
+      } catch (e) {
+        setStatus(`Search error: ${e && e.message ? e.message : 'unknown'}`);
+      } finally {
+        searchBtn.disabled = false;
       }
     }
 
-    // Playback controls
+    function displayResults() {
+      resultsBody.innerHTML = '';
+      searchResults.forEach((result, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${cleanTitle(result.title)}</td>
+          <td class="source-col">${formatSource(result.source)}</td>
+          <td class="action-col">
+            <div style="display:flex; gap:10px; justify-content:flex-end; align-items:center;">
+              <button type="button" class="row-use-btn">Use</button>
+            </div>
+          </td>`;
+        row.querySelector('button.row-use-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          void selectResult(index);
+        });
+        resultsBody.appendChild(row);
+      });
+    }
+
+    async function selectResult(index) {
+      if (index < 0 || index >= searchResults.length) return;
+      const result = searchResults[index];
+      const rows = resultsBody.querySelectorAll('tr');
+      rows.forEach((r, i) => r.classList.toggle('selected', i === index));
+
+      handleStop();
+      setStatus('Loading…');
+      btnPlay.disabled = true;
+      try {
+        const buffer = await midiService.fetchMIDI(result.midiUrl);
+        if (!buffer) throw new Error('Failed to fetch MIDI');
+        currentMIDI = buffer;
+        const info = player.analyzeMIDI(buffer);
+        updateChannels(info.assignments);
+
+        selectedTitle.textContent = cleanTitle(result.title);
+        selectedMeta.textContent = `Source: ${formatSource(result.source)} · ${info.noteCount} notes · ${formatTime(info.duration)}`;
+        if (v1Tab) v1Tab.href = `/?song=${encodeURIComponent(result.title || '')}`;
+
+        playerSection.classList.add('visible');
+        resultsSection.classList.add('collapsed');
+        btnPlay.disabled = false;
+        setStatus('');
+        updateIOSBanner();
+        try { playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+      } catch (e) {
+        setStatus(`Load error: ${e && e.message ? e.message : 'unknown'}`);
+      }
+    }
+
+    // --- playback ---
     btnPlay.addEventListener('click', async () => {
       if (!currentMIDI) return;
-      
       try {
         await player.resume();
+        updateIOSBanner();
         const info = await player.playMIDI(currentMIDI);
-        
-        setStatus('PLAYING', true);
+        setStatus('Playing…');
         btnPlay.disabled = true;
         btnStop.disabled = false;
-        
-        log('Playback started', 'success');
         startProgress(info.duration);
-
-        // Auto-reset when done
         setTimeout(() => {
           if (!player.getIsPlaying()) {
-            setStatus('FINISHED');
+            setStatus('');
             btnPlay.disabled = false;
             btnStop.disabled = true;
             stopProgress(true);
           }
         }, (info.duration + 1) * 1000);
-      } catch (error) {
-        log(`Playback error: ${error.message}`, 'error');
+      } catch (e) {
+        setStatus(`Playback error: ${e && e.message ? e.message : 'unknown'}`);
       }
     });
 
-    btnStop.addEventListener('click', () => {
+    function handleStop() {
       player.stop();
-      setStatus('STOPPED');
-      btnPlay.disabled = false;
+      btnPlay.disabled = currentMIDI == null;
       btnStop.disabled = true;
       stopProgress(false);
-      log('Playback stopped');
+    }
+    btnStop.addEventListener('click', () => { handleStop(); setStatus(''); });
+
+    enableAudioBtn.addEventListener('click', async () => {
+      iosState.textContent = 'Audio: enabling…';
+      try { await player.resume(); } catch {}
+      iosState.textContent = audioRunning() ? 'Audio: running' : 'Still locked. Tap again.';
+      updateIOSBanner();
     });
-    
-    // Volume control
-    volumeSlider.addEventListener('input', (e) => {
-      player.setVolume(e.target.value / 100);
-    });
-    
-    // Quick test buttons
-    document.getElementById('btn-c4').addEventListener('click', async () => {
-      await player.resume();
-      const apu = player.getAPU();
-      apu.getPulseChannel('p1')?.playNote(60, 0.3, 100);
-    });
-    
+
+    // --- labs ---
+    document.getElementById('btn-c4').addEventListener('click', async () => { await player.resume(); player.getAPU().getPulseChannel('p1')?.playNote(60, 0.3, 100); });
     document.getElementById('btn-chord').addEventListener('click', async () => {
       await player.resume();
-      const apu = player.getAPU();
-      const now = apu.getCurrentTime();
+      const apu = player.getAPU(); const now = apu.getCurrentTime();
       apu.getPulseChannel('p1')?.playNote(60, 0.4, 80, now);
       apu.getPulseChannel('p2')?.playNote(64, 0.4, 80, now);
       apu.getPulseChannel('p3')?.playNote(67, 0.4, 80, now);
     });
-    
-    document.getElementById('btn-bass').addEventListener('click', async () => {
-      await player.resume();
-      const apu = player.getAPU();
-      apu.getWaveChannel('w1')?.playNote(36, 0.5, 100);
-    });
-    
-    document.getElementById('btn-drum').addEventListener('click', async () => {
-      await player.resume();
-      const apu = player.getAPU();
-      apu.getNoiseChannel('n1')?.playKick(100);
-    });
-    
-    // ===== ARRANGER TOGGLE =====
-    
+    document.getElementById('btn-bass').addEventListener('click', async () => { await player.resume(); player.getAPU().getWaveChannel('w1')?.playNote(36, 0.5, 100); });
+    document.getElementById('btn-drum').addEventListener('click', async () => { await player.resume(); player.getAPU().getNoiseChannel('n1')?.playKick(100); });
+
     const arrangerBtn = document.getElementById('btn-arranger');
     let arrangerEnabled = true;
-    
+    function paintArranger() {
+      arrangerBtn.textContent = arrangerEnabled ? 'ON' : 'OFF';
+      arrangerBtn.classList.toggle('primary', arrangerEnabled);
+    }
+    paintArranger();
     arrangerBtn.addEventListener('click', () => {
       arrangerEnabled = !arrangerEnabled;
       player.setArrangerEnabled(arrangerEnabled);
-      
-      if (arrangerEnabled) {
-        arrangerBtn.textContent = 'ON';
-        arrangerBtn.style.background = 'var(--gb-green)';
-        arrangerBtn.style.color = 'var(--bg-dark)';
-        log('Arranger ON - sparse MIDIs will be enhanced');
-      } else {
-        arrangerBtn.textContent = 'OFF';
-        arrangerBtn.style.background = 'transparent';
-        arrangerBtn.style.color = 'var(--gb-green)';
-        log('Arranger OFF - playing raw MIDI data');
-      }
+      paintArranger();
     });
-    
-    // ===== BITMIDI SEARCH =====
-    
-    async function handleSearch() {
-      const query = searchInput.value.trim();
-      if (!query) {
-        log('Enter a song name to search');
-        return;
-      }
-      
-      log(`Searching: "${query}"...`);
-      setStatus('SEARCHING');
-      btnSearch.disabled = true;
-      resultsList.innerHTML = '';
-      
-      try {
-        const results = await midiService.search(query);
-        searchResults = results;
-        
-        if (results.length === 0) {
-          log('No MIDI files found. Try a different search.', 'error');
-          setStatus('NO RESULTS');
-          return;
-        }
-        
-        log(`Found ${results.length} results`, 'success');
-        setStatus('SELECT MIDI');
-        displayResults();
-        
-      } catch (error) {
-        log(`Search error: ${error.message}`, 'error');
-        setStatus('ERROR');
-      } finally {
-        btnSearch.disabled = false;
-      }
-    }
-    
-    function displayResults() {
-      resultsList.innerHTML = '';
-      
-      for (let i = 0; i < Math.min(searchResults.length, 10); i++) {
-        const result = searchResults[i];
-        const item = document.createElement('div');
-        item.className = 'result-item';
-        item.setAttribute('role', 'button');
-        item.setAttribute('tabindex', '0');
-        item.innerHTML = `
-          <span class="title">${result.title}</span>
-          <span class="confidence">${Math.round((result.confidence || 0) * 100)}%</span>
-        `;
-        item.addEventListener('click', () => selectResult(i));
-        item.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            selectResult(i);
-          }
-        });
-        resultsList.appendChild(item);
-      }
-    }
-    
-    async function selectResult(index) {
-      if (index < 0 || index >= searchResults.length) return;
-      
-      selectedResultIndex = index;
-      const result = searchResults[index];
-      
-      // Update UI to show selection
-      document.querySelectorAll('.result-item').forEach((el, i) => {
-        el.classList.toggle('selected', i === index);
-      });
-      
-      log(`Loading: ${result.title}...`);
-      setStatus('LOADING');
-      
-      try {
-        const midiBuffer = await midiService.fetchMIDI(result.midiUrl);
-        
-        if (!midiBuffer) {
-          throw new Error('Failed to fetch MIDI');
-        }
-        
-        currentMIDI = midiBuffer;
-        
-        // Analyze without playing
-        const info = player.analyzeMIDI(midiBuffer);
-        updateInfo(info);
-        updateChannels(info.assignments);
-        
-        log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks`, 'success');
-        
-        btnPlay.disabled = false;
-        setStatus('READY');
-        
-      } catch (error) {
-        log(`Load error: ${error.message}`, 'error');
-        setStatus('ERROR');
-      }
-    }
-    
-    // Search event listeners
-    btnSearch.addEventListener('click', handleSearch);
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSearch();
-    });
-    
-    // Load a BitMidi track straight from a shareable URL.
+
+    searchBtn.addEventListener('click', handleSearch);
+    songInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
+
+    // --- deep links: ?id=<bitmidi>&title=...  or  ?q=<search> ---
     async function loadFromBitMidiId(id, title) {
-      const midiUrl = `https://bitmidi.com/uploads/${id}.mid`;
-      log(`Loading from link: ${title || id}...`);
-      setStatus('LOADING');
+      setStatus(`Loading ${title || id}…`);
       try {
-        const midiBuffer = await midiService.fetchMIDI(midiUrl);
-        if (!midiBuffer) throw new Error('Failed to fetch MIDI');
-        currentMIDI = midiBuffer;
-        const info = player.analyzeMIDI(midiBuffer);
-        updateInfo(info);
+        const buffer = await midiService.fetchMIDI(`https://bitmidi.com/uploads/${id}.mid`);
+        if (!buffer) throw new Error('Failed to fetch MIDI');
+        currentMIDI = buffer;
+        const info = player.analyzeMIDI(buffer);
         updateChannels(info.assignments);
-        log(`Loaded: ${info.noteCount} notes, ${info.trackCount} tracks. Press PLAY.`, 'success');
+        selectedTitle.textContent = cleanTitle(title || `BitMidi ${id}`);
+        selectedMeta.textContent = `Source: BitMidi · ${info.noteCount} notes · ${formatTime(info.duration)}`;
+        if (v1Tab) v1Tab.href = `/?song=${encodeURIComponent(title || '')}`;
+        playerSection.classList.add('visible');
         btnPlay.disabled = false;
-        setStatus('READY');
+        setStatus('Loaded. Press Play.');
+        updateIOSBanner();
+        try { playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
         return true;
-      } catch (error) {
-        log(`Link load error: ${error.message}`, 'error');
-        setStatus('ERROR');
+      } catch (e) {
+        setStatus(`Link load error: ${e && e.message ? e.message : 'unknown'}`);
         return false;
       }
     }
 
-    // Bring a shared-link arrival straight to a "press PLAY" state, the way
-    // v1's /play page does, instead of leaving the song loaded below the fold.
-    function focusSharedPlayback(title) {
-      const banner = document.getElementById('now-playing');
-      const titleEl = document.getElementById('now-playing-title');
-      if (titleEl) titleEl.textContent = title || 'your track';
-      if (banner) banner.style.display = 'block';
-      const panel = document.getElementById('playback-panel');
-      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    // Deep links: ?id=<bitmidi id>&title=...  loads that track directly;
-    // ?q=<search> searches and picks the top hit. Audio still needs a tap
-    // on PLAY (browsers block autoplay), so we load and wait.
     async function initFromUrl() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
       const q = params.get('q');
       const title = params.get('title') || '';
       if (id && /^\d+$/.test(id)) {
-        if (title) searchInput.value = title;
-        const ok = await loadFromBitMidiId(id, title);
-        if (ok) focusSharedPlayback(title);
+        if (title) songInput.value = title;
+        await loadFromBitMidiId(id, title);
       } else if (q) {
-        searchInput.value = q;
+        songInput.value = q;
         await handleSearch();
-        if (searchResults.length > 0) {
-          await selectResult(0);
-          focusSharedPlayback(searchResults[0]?.title || q);
-        }
+        if (searchResults.length > 0) await selectResult(0);
       }
     }
 
-    // Initialize
-    log('Wario Synth v2 initialized', 'success');
-    log('Search BitMidi or drop a MIDI file');
+    updateIOSBanner();
     initFromUrl();
   </script>
 </body>
