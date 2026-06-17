@@ -77,6 +77,7 @@
         </div>
 
         <div id="shareRow" class="selected-actions" style="display:none; margin-top:14px;">
+          <button id="saveAudioBtn" type="button">Save Audio</button>
           <button id="copyLinkBtn" type="button">Copy link</button>
           <button id="shareToXBtn" type="button">Share to X</button>
         </div>
@@ -102,6 +103,7 @@
   <script type="module">
     import { GameBoyPlayer } from './src-v2/core/GameBoyPlayer.ts';
     import { MIDIService } from './src/services/MIDIService.ts';
+    import { audioBufferToWavBytes } from './src/utils/export.ts';
 
     const player = new GameBoyPlayer();
     const midiService = new MIDIService();
@@ -137,6 +139,7 @@
     const iosState = document.getElementById('iosAudioState');
 
     const shareRow = document.getElementById('shareRow');
+    const saveAudioBtn = document.getElementById('saveAudioBtn');
     const copyLinkBtn = document.getElementById('copyLinkBtn');
     const shareToXBtn = document.getElementById('shareToXBtn');
     const shareFallback = document.getElementById('shareFallback');
@@ -428,6 +431,44 @@
 
     copyLinkBtn.addEventListener('click', () => void handleCopyLink());
     shareToXBtn.addEventListener('click', handleShareToX);
+
+    // --- save audio (WAV) — offline-render the GB engine ---
+    function sanitizeFileBase(name) {
+      const clean = cleanTitle(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return clean || 'wario-synth';
+    }
+
+    function downloadBytes(bytes, fileName, mime) {
+      const raw = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      const blob = new Blob([raw], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    saveAudioBtn.addEventListener('click', async () => {
+      if (!currentMIDI) return;
+      const orig = saveAudioBtn.textContent;
+      saveAudioBtn.disabled = true;
+      saveAudioBtn.textContent = 'Rendering…';
+      setStatus('Rendering audio…');
+      try {
+        // Make sure the engine has arranged the current song (no sound).
+        if (!hasLoaded) { player.prepareMIDI(currentMIDI); hasLoaded = true; }
+        const buffer = await player.renderToBuffer();
+        if (!buffer) throw new Error('Nothing to render');
+        const bytes = audioBufferToWavBytes(buffer);
+        downloadBytes(bytes, `${sanitizeFileBase(shareTitle)}-gameboy.wav`, 'audio/wav');
+        setStatus('Saved a 30s clip (.wav). Full-length export is coming.');
+      } catch (e) {
+        setStatus(`Export error: ${e && e.message ? e.message : 'unknown'}`);
+      } finally {
+        saveAudioBtn.disabled = false;
+        saveAudioBtn.textContent = orig;
+      }
+    });
 
     enableAudioBtn.addEventListener('click', async () => {
       iosState.textContent = 'Audio: enabling…';

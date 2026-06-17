@@ -60,6 +60,7 @@ export class GameBoyPlayer {
   // offset without re-parsing and (importantly) re-randomising the arrangement.
   private loadedNotes: ChannelNote[] = [];
   private loadedDuration: number = 0;
+  private loadedAssignments: ChannelAssignment[] = [];
   private schedulerInterval: ReturnType<typeof setInterval> | null = null;
   private readonly SCHEDULE_AHEAD_TIME = 2.0; // Schedule 2 seconds ahead
   private readonly SCHEDULER_INTERVAL_MS = 250; // Check every 250ms
@@ -96,45 +97,45 @@ export class GameBoyPlayer {
       this.stop();
     }
     
-    // Parse MIDI file
+    const info = this.prepare(midiData);
+    this.startFromOffset(startOffset);
+    return info;
+  }
+
+  /**
+   * Parse, map and arrange a MIDI into GB channel notes and cache the result,
+   * WITHOUT starting playback. Lets the WAV export render without a sound.
+   */
+  prepareMIDI(midiData: ArrayBuffer): PlaybackInfo {
+    return this.prepare(midiData);
+  }
+
+  private prepare(midiData: ArrayBuffer): PlaybackInfo {
     const midi = new Midi(midiData);
     const bpm = midi.header.tempos[0]?.bpm || this.config.defaultBPM;
-    
-    // Update arpeggiator and arranger BPM
     this.arpeggiator.setBPM(bpm);
     this.arranger.setBPM(bpm);
-    
-    // Convert to our track format
+
     const tracks = this.convertMIDITracks(midi);
-    
-    // Analyze and map tracks to channels
     const assignments = this.mapper.mapTracks(tracks);
-    
-    // Convert to scheduled notes
     let gbNotes = this.convertToGBNotes(tracks, assignments);
-    
-    // Apply arranger for fuller sound (if enabled)
-    let arrangerStats = null;
+
     if (this.config.enableArranger) {
       const result = this.arranger.arrange(gbNotes, assignments, midi.duration);
       gbNotes = result.notes;
-      arrangerStats = result.stats;
-      console.log(`Arranger: Added ${result.stats.addedNotes} notes (${result.stats.originalNotes} → ${gbNotes.length})`);
     }
-    
-    // Cache the arranged song so pause/resume/seek can restart from an offset.
+
+    // Cache the arranged song so pause/resume/seek/export reuse the same notes.
     this.loadedNotes = gbNotes;
     this.loadedDuration = midi.duration;
-    this.currentPlaybackInfo = {
+    this.loadedAssignments = assignments;
+    const info = {
       duration: midi.duration,
       assignments,
       noteCount: gbNotes.length,
     };
-
-    console.log(`Playing MIDI: ${gbNotes.length} notes, ${assignments.length} channels, ${midi.duration.toFixed(1)}s duration`);
-
-    this.startFromOffset(startOffset);
-    return this.currentPlaybackInfo;
+    this.currentPlaybackInfo = info;
+    return info;
   }
 
   /**
@@ -144,6 +145,48 @@ export class GameBoyPlayer {
   playFrom(offsetSec: number): void {
     if (this.loadedNotes.length === 0) return;
     this.startFromOffset(Math.max(0, offsetSec));
+  }
+
+  /**
+   * Render the currently loaded song to an AudioBuffer offline (faster than
+   * real time). Used to export a WAV. Returns null if nothing is loaded.
+   */
+  async renderToBuffer(sampleRate: number = 22050, maxSeconds: number = 30): Promise<AudioBuffer | null> {
+    if (this.loadedNotes.length === 0) return null;
+
+    // The authentic APU (per-note LFSR noise buffers etc.) is heavy to render
+    // offline, so bound the work to a short clip from the start of the song and
+    // a chiptune-appropriate sample rate. Otherwise a 5-minute song can take
+    // tens of seconds in-browser.
+    const clipSeconds = Math.min(this.loadedDuration, maxSeconds);
+    const totalDuration = clipSeconds + 0.5; // small release tail
+    let notes = this.loadedNotes.filter(n => n.startTime < clipSeconds);
+
+    const MAX_NOTES = 1500;
+    if (notes.length > MAX_NOTES) {
+      const step = notes.length / MAX_NOTES;
+      notes = Array.from({ length: MAX_NOTES }, (_, i) => notes[Math.round(i * step)]);
+    }
+
+    const offline = new OfflineAudioContext(2, Math.ceil(totalDuration * sampleRate), sampleRate);
+    const offlineApu = new GameBoyAPU(offline as unknown as AudioContext, this.config);
+
+    // Re-apply the per-channel settings this arrangement used.
+    for (const a of this.loadedAssignments) {
+      if (a.channelId.startsWith('p') && a.dutyCycle !== undefined) {
+        offlineApu.setPulseDuty(a.channelId as any, a.dutyCycle);
+      } else if (a.channelId.startsWith('w') && a.wavePreset) {
+        offlineApu.setWavePreset(a.channelId as any, a.wavePreset);
+      } else if (a.channelId.startsWith('n') && a.noiseMode) {
+        offlineApu.setNoiseMode(a.channelId as any, a.noiseMode);
+      }
+    }
+
+    for (const note of notes) {
+      offlineApu.scheduleNote(note);
+    }
+
+    return offline.startRendering();
   }
 
   private startFromOffset(offsetSec: number): void {
