@@ -4,6 +4,17 @@ All notable changes to [Wario Synth](https://www.wario.style/) are documented he
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.0] - 2026-06-17
+
+### Added
+- **v2 beta engine** — a new "v2 beta" tab offering an experimental engine that targets the actual Game Boy sound chip (Sharp LR35902): a real 15-bit/7-bit LFSR noise channel, pulse channels with proper duty cycles, and custom wavetables. v1 remains the default, polished engine; v2 is an honest work in progress with some low-mid distortion on the noise channels
+- **Engine tabs** — switch between v1 and v2 from either page; the selected song carries across
+- **Shareable v2 deep links** — `…/v2.html?id=<bitmidi>&title=…` (or `?q=<search>`) loads a song straight into the v2 engine
+
+### Changed
+- Extracted the shared design into a single stylesheet so v1 and v2 look identical
+- v2 page mirrors v1's look and flow (search, pick, play, progress)
+
 ## [1.6.1] - 2026-06-16
 
 ### Fixed

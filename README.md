@@ -37,6 +37,7 @@ Zero samples. Zero server audio. Just raw oscillators having the time of their l
 - **Save Audio (WAV) and Save MIDI** — export the generated result after playback
 - **Share links** with dynamic social previews — works for searched MIDI sources; not available for local uploads
 - **Works on mobile** (iOS audio unlock included)
+- **v2 beta engine** (`/v2.html`, or the "v2 beta" tab): an experimental engine that targets the real Game Boy chip (Sharp LR35902) with a 15-bit LFSR noise channel, proper pulse duty cycles, and custom wavetables. The synthesis is authentic; arranging arbitrary MIDI onto 4-8 fixed voices is the open problem — see [issue #5](https://github.com/b1rdmania/motif/issues/5)
 
 See [CHANGELOG.md](./CHANGELOG.md) for release history.
 
