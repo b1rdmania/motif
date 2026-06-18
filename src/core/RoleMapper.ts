@@ -36,7 +36,33 @@ export class RoleMapper {
     }
 
     console.log('Role assignments:', Array.from(assignedRoles.entries()));
-    return assignments;
+    return this.mergeSameRole(assignments);
+  }
+
+  /**
+   * Combine assignments that share a role (e.g. multiple `texture` tracks) into
+   * one, so the synthesis layer for that role plays all of their notes instead
+   * of only the last (the layer map is keyed by role, so duplicates used to
+   * overwrite each other and silently drop tracks). Roles that are already
+   * unique pass through unchanged, so the common case is unaffected.
+   */
+  private mergeSameRole(assignments: RoleAssignment[]): RoleAssignment[] {
+    const byRole = new Map<Role, RoleAssignment>();
+    for (const a of assignments) {
+      const existing = byRole.get(a.role);
+      if (!existing) {
+        byRole.set(a.role, { ...a, events: [...a.events], chords: [...a.chords] });
+        continue;
+      }
+      existing.events = existing.events.concat(a.events).sort((x, y) => x.time - y.time);
+      existing.chords = existing.chords.concat(a.chords).sort((x, y) => x.time - y.time);
+      if (a.confidence > existing.confidence) {
+        existing.confidence = a.confidence;
+        existing.features = a.features;
+        existing.sourceTrack = a.sourceTrack;
+      }
+    }
+    return Array.from(byRole.values());
   }
 
   private extractTrackFeatures(events: NoteEvent[]): TrackFeatures {
@@ -162,6 +188,26 @@ export class RoleMapper {
           // Fallback to texture
           assignments.set(trackId, 'texture');
         }
+      }
+    }
+
+    // Melody safeguard: if nothing got mapped to melody (so the tune has no
+    // clear lead), promote the strongest melody candidate. Only fires when a
+    // melody is genuinely absent, so songs that already have a lead are
+    // untouched.
+    if (!Array.from(assignments.values()).includes('melody')) {
+      let bestTrack = -1;
+      let bestMelodyScore = 0;
+      for (const [trackId, scores] of roleScores) {
+        const melodyScore = scores.get('melody') ?? 0;
+        if (melodyScore > bestMelodyScore) {
+          bestMelodyScore = melodyScore;
+          bestTrack = trackId;
+        }
+      }
+      const MELODY_THRESHOLD = 0.3;
+      if (bestTrack !== -1 && bestMelodyScore >= MELODY_THRESHOLD) {
+        assignments.set(bestTrack, 'melody');
       }
     }
 
