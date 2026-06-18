@@ -4,6 +4,11 @@ All notable changes to [Wario Synth](https://www.wario.style/) are documented he
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.1] - 2026-06-17
+
+### Fixed
+- **Clearer melodies, fuller mixes** in the procedural engine. Same-role tracks are now merged instead of overwriting each other (so a role's layer plays all its notes, not just the last), and a melody safeguard promotes the strongest lead candidate when no melody was assigned. Surgical: only affects files that were previously dropping tracks or had no clear lead. Thanks to [@joenb33](https://github.com/joenb33) ([#3](https://github.com/b1rdmania/motif/issues/3)) for the diagnosis and suggestions.
+
 ## [1.7.0] - 2026-06-17
 
 ### Added

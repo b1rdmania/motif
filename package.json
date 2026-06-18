@@ -1,6 +1,6 @@
 {
   "name": "motif",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Procedural Music Synthesis from MIDI Structure",
   "type": "module",
   "scripts": {
