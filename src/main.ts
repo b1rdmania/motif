@@ -1,5 +1,6 @@
 import { MotifEngine } from './core/MotifEngine';
 import { MIDIService } from './services/MIDIService';
+import { BITMIDI_SEARCH_UNAVAILABLE_MESSAGE } from './services/BitMidiClient';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { getAudioContext, isAudioReady, peekAudioContext, unlockAudio } from './utils/audioUnlock';
@@ -187,7 +188,7 @@ class MotifApp {
       this.status.textContent = 'Starting search...';
       this.handleSearch().catch(err => {
         console.error('[MotifApp] Search error:', err);
-        this.updateStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        this.updateStatus(err instanceof Error ? err.message : BITMIDI_SEARCH_UNAVAILABLE_MESSAGE);
       });
     };
 
@@ -394,7 +395,7 @@ class MotifApp {
 
     } catch (error) {
       if (requestId === this.searchRequestId) {
-        this.updateStatus(`Search error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        this.updateStatus(error instanceof Error ? error.message : BITMIDI_SEARCH_UNAVAILABLE_MESSAGE);
       }
     } finally {
       if (requestId === this.searchRequestId) {

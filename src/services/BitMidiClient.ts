@@ -17,6 +17,17 @@ export interface BitMidiResult {
 
 const BITMIDI_BASE = 'https://bitmidi.com';
 
+export const BITMIDI_SEARCH_UNAVAILABLE_MESSAGE =
+  'Sorry, it seems BitMidi search is down right now. Please try again later.';
+
+export class BitMidiSearchUnavailableError extends Error {
+  constructor(cause?: unknown) {
+    super(BITMIDI_SEARCH_UNAVAILABLE_MESSAGE);
+    this.name = 'BitMidiSearchUnavailableError';
+    if (cause instanceof Error) this.cause = cause;
+  }
+}
+
 interface BitMidiApiMidi {
   id: number | string;
   name?: string;
@@ -27,12 +38,23 @@ interface BitMidiApiMidi {
 
 export async function searchBitMidi(query: string): Promise<BitMidiResult[]> {
   const url = `${BITMIDI_BASE}/api/midi/search?q=${encodeURIComponent(query)}`;
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) {
-    throw new Error(`BitMidi search failed: ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(url, { cache: 'no-store' });
+  } catch (cause) {
+    throw new BitMidiSearchUnavailableError(cause);
   }
 
-  const data = (await response.json()) as { result?: { results?: BitMidiApiMidi[] } };
+  if (!response.ok) {
+    throw new BitMidiSearchUnavailableError(`HTTP ${response.status}`);
+  }
+
+  let data: { result?: { results?: BitMidiApiMidi[] } };
+  try {
+    data = (await response.json()) as { result?: { results?: BitMidiApiMidi[] } };
+  } catch (cause) {
+    throw new BitMidiSearchUnavailableError(cause);
+  }
   const rows = data?.result?.results;
   if (!Array.isArray(rows)) return [];
 

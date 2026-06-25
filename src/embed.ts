@@ -1,3 +1,4 @@
+import { BITMIDI_SEARCH_UNAVAILABLE_MESSAGE } from './services/BitMidiClient';
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
@@ -135,7 +136,7 @@ async function main(): Promise<void> {
       setStatus(`Found ${results.length}. Loading best match…`);
       await loadIndex(0);
     } catch (e) {
-      setStatus(`Search error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setStatus(e instanceof Error ? e.message : BITMIDI_SEARCH_UNAVAILABLE_MESSAGE);
     } finally {
       loadBtn.disabled = false;
     }

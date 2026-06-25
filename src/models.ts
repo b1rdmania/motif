@@ -1,3 +1,4 @@
+import { BITMIDI_SEARCH_UNAVAILABLE_MESSAGE } from './services/BitMidiClient';
 import { MIDIService } from './services/MIDIService';
 import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
@@ -155,7 +156,7 @@ class ModelsApp {
       this.resultsCard.style.display = 'block';
       this.updateStatus(`Found ${results.length}. Select one to compare models.`);
     } catch (e) {
-      this.updateStatus(`Search error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      this.updateStatus(e instanceof Error ? e.message : BITMIDI_SEARCH_UNAVAILABLE_MESSAGE);
     } finally {
       this.searchBtn.disabled = false;
     }
