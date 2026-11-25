@@ -86,10 +86,12 @@
         cursor: pointer;
         transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
       }
-      button:hover:not(:disabled) {
-        transform: translateY(-1px);
-        border-color: #444;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+      @media (hover: hover) and (pointer: fine) {
+        button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          border-color: #444;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+        }
       }
       button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
       button.primary {
@@ -162,6 +164,12 @@
         font-size: 11px;
         color: rgba(255,255,255,0.55);
       }
+    
+      /* Touch screens: 44px minimum tap targets. */
+      @media (pointer: coarse) {
+        button, input[type="text"], input[type="range"] { min-block-size: 44px; }
+      }
+      button:active:not(:disabled) { transform: scale(0.97); }
     </style>
   </head>
   <body>

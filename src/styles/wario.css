@@ -128,10 +128,12 @@
             transition: all 0.15s ease;
         }
         .version-history summary::-webkit-details-marker { display: none; }
-        .version-history summary:hover {
-            color: var(--gb-darkest);
-            border-color: var(--gb-dark);
-            background: var(--gb-lightest);
+        @media (hover: hover) and (pointer: fine) {
+          .version-history summary:hover {
+              color: var(--gb-darkest);
+              border-color: var(--gb-dark);
+              background: var(--gb-lightest);
+          }
         }
         .version-history details[open] summary {
             border-bottom: none;
@@ -175,9 +177,11 @@
                 inset 3px 3px 0 #fff;
             font-size: 8px;
         }
-        .faq-link:hover:not(:disabled) {
-            background: #fff;
-            color: var(--gb-darkest);
+        @media (hover: hover) and (pointer: fine) {
+          .faq-link:hover:not(:disabled) {
+              background: #fff;
+              color: var(--gb-darkest);
+          }
         }
 
         /* FAQ modal - Game Boy style */
@@ -237,9 +241,11 @@
             font-size: 8px;
             line-height: 1;
         }
-        .modal header .faq-header-links a:hover {
-            background: var(--gb-light);
-            color: var(--gb-darkest);
+        @media (hover: hover) and (pointer: fine) {
+          .modal header .faq-header-links a:hover {
+              background: var(--gb-light);
+              color: var(--gb-darkest);
+          }
         }
         .modal header .faq-header-links .dot {
             width: 6px;
@@ -274,8 +280,10 @@
             color: var(--gb-darkest);
             font-size: 8px;
         }
-        .modal header button:hover {
-            background: var(--gb-lightest);
+        @media (hover: hover) and (pointer: fine) {
+          .modal header button:hover {
+              background: var(--gb-lightest);
+          }
         }
         .modal main {
             padding: 16px;
@@ -354,9 +362,11 @@
             transition: none;
         }
 
-        button:hover:not(:disabled) {
-            background: var(--gb-lightest);
-            color: var(--gb-darkest);
+        @media (hover: hover) and (pointer: fine) {
+          button:hover:not(:disabled) {
+              background: var(--gb-lightest);
+              color: var(--gb-darkest);
+          }
         }
 
         button:active:not(:disabled) {
@@ -378,9 +388,11 @@
                 inset 3px 3px 0 var(--gb-medium);
         }
 
-        button.primary:hover:not(:disabled) {
-            background: var(--gb-darkest);
-            color: var(--gb-lightest);
+        @media (hover: hover) and (pointer: fine) {
+          button.primary:hover:not(:disabled) {
+              background: var(--gb-darkest);
+              color: var(--gb-lightest);
+          }
         }
 
         /* Search button */
@@ -435,8 +447,10 @@
             opacity: 0.55;
             transition: opacity 160ms ease;
         }
-        .results-section.collapsed:hover {
-            opacity: 1;
+        @media (hover: hover) and (pointer: fine) {
+          .results-section.collapsed:hover {
+              opacity: 1;
+          }
         }
 
         .chooser-helper {
@@ -501,8 +515,10 @@
             cursor: pointer;
         }
 
-        .results-table tbody tr:hover {
-            background: var(--gb-lightest);
+        @media (hover: hover) and (pointer: fine) {
+          .results-table tbody tr:hover {
+              background: var(--gb-lightest);
+          }
         }
 
         .results-table tbody tr:last-child td {
@@ -561,7 +577,9 @@
         .top-table .rank-col { width: 40px; text-align: center; }
         .top-table .plays-col { width: 80px; text-align: right; }
         .top-table td a { color: inherit; text-decoration: none; }
-        .top-table tbody tr:hover td a { text-decoration: underline; }
+        @media (hover: hover) and (pointer: fine) {
+          .top-table tbody tr:hover td a { text-decoration: underline; }
+        }
         .upload-helper {
             margin: 10px 0 0 0;
             color: var(--gb-medium);
@@ -633,8 +651,10 @@
             font-size: 8px;
             text-decoration: underline;
         }
-        .selected-support .linklike:hover {
-            color: var(--gb-light);
+        @media (hover: hover) and (pointer: fine) {
+          .selected-support .linklike:hover {
+              color: var(--gb-light);
+          }
         }
         .preview-inline {
             display: inline-flex;
@@ -652,9 +672,11 @@
         #copyLinkBtn {
             padding: 12px 16px;
         }
-        #copyLinkBtn:hover:not(:disabled) {
-            background: var(--gb-light);
-            color: var(--gb-darkest);
+        @media (hover: hover) and (pointer: fine) {
+          #copyLinkBtn:hover:not(:disabled) {
+              background: var(--gb-light);
+              color: var(--gb-darkest);
+          }
         }
         .engine-line {
             margin-top: 14px;
@@ -718,8 +740,10 @@
             border-radius: 0;
         }
 
-        .player-box:hover {
-            background: var(--gb-lightest);
+        @media (hover: hover) and (pointer: fine) {
+          .player-box:hover {
+              background: var(--gb-lightest);
+          }
         }
 
         .player-box h4 {
@@ -871,8 +895,10 @@
             padding: 12px 16px;
             font-weight: 700;
         }
-        .motif-controls button.primary:hover {
-            background: var(--gb-darkest);
+        @media (hover: hover) and (pointer: fine) {
+          .motif-controls button.primary:hover {
+              background: var(--gb-darkest);
+          }
         }
         .motif-controls .volume-control {
             flex: 1;
@@ -1156,8 +1182,10 @@
     border-radius: 4px;
     transition: all 0.12s;
 }
-.engine-tab:hover {
-    border-color: var(--gb-medium);
+@media (hover: hover) and (pointer: fine) {
+  .engine-tab:hover {
+      border-color: var(--gb-medium);
+  }
 }
 .engine-tab.active {
     background: var(--gb-dark);
@@ -1201,4 +1229,42 @@
     input[type="text"] {
         font-size: 16px !important;
     }
+}
+
+/* Touch screens: every control is at least 44px, the smallest target a
+   thumb hits reliably. Desktop (fine pointer) keeps the compact sizes.
+   The progress bar's input grows invisibly around its 8px track. */
+@media (pointer: coarse) {
+    button,
+    .faq-link,
+    .version-history summary,
+    .footer > a {
+        min-block-size: 44px;
+        min-inline-size: 44px;
+    }
+    .faq-link,
+    .version-history summary,
+    .footer > a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .progress-bar {
+        block-size: 44px;
+    }
+    .footer {
+        align-items: center;
+    }
+}
+
+/* Press feedback for links and rows: touch screens get no hover cue. */
+.version-history summary:active,
+.results-table tbody tr:active {
+    background: var(--gb-lightest);
+}
+a.faq-link:active {
+    box-shadow: inset 3px 3px 0 var(--gb-medium);
+}
+.footer a:active {
+    color: var(--gb-darkest);
 }

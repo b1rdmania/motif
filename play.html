@@ -153,9 +153,11 @@
         transition: none;
       }
 
-      button:hover:not(:disabled) {
-        background: var(--gb-lightest);
-        color: var(--gb-darkest);
+      @media (hover: hover) and (pointer: fine) {
+        button:hover:not(:disabled) {
+          background: var(--gb-lightest);
+          color: var(--gb-darkest);
+        }
       }
 
       button:active:not(:disabled) {
@@ -176,9 +178,11 @@
           inset 3px 3px 0 var(--gb-medium);
       }
 
-      button.primary:hover:not(:disabled) {
-        background: var(--gb-darkest);
-        color: var(--gb-lightest);
+      @media (hover: hover) and (pointer: fine) {
+        button.primary:hover:not(:disabled) {
+          background: var(--gb-darkest);
+          color: var(--gb-lightest);
+        }
       }
 
       /* Play button container */
@@ -288,9 +292,11 @@
         border-color: var(--gb-medium);
       }
 
-      .share-buttons button:hover:not(:disabled) {
-        background: var(--gb-medium);
-        color: var(--gb-lightest);
+      @media (hover: hover) and (pointer: fine) {
+        .share-buttons button:hover:not(:disabled) {
+          background: var(--gb-medium);
+          color: var(--gb-lightest);
+        }
       }
 
       /* CTA link (inside card) */
@@ -314,9 +320,11 @@
           inset 3px 3px 0 var(--gb-medium);
       }
 
-      .cta-link-inline a:hover {
-        background: var(--gb-darkest);
-        color: var(--gb-lightest);
+      @media (hover: hover) and (pointer: fine) {
+        .cta-link-inline a:hover {
+          background: var(--gb-darkest);
+          color: var(--gb-lightest);
+        }
       }
 
       /* iOS audio unlock banner */
@@ -365,6 +373,14 @@
         mix-blend-mode: multiply;
         opacity: 0.7;
       }
+    
+      /* Touch screens: 44px minimum tap targets; the progress bar's input
+         grows invisibly around its 8px track. */
+      @media (pointer: coarse) {
+        button { min-block-size: 44px; }
+        .progress-bar { block-size: 44px; }
+      }
+      .cta-link-inline a:active { background: var(--gb-darkest); color: var(--gb-lightest); }
     </style>
   </head>
   <body>

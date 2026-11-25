@@ -12,6 +12,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Search box on phones: it was squeezed to about 50px wide. The search row now wraps on its own, so the box takes the full row and the buttons sit below it. Desktop is unchanged.
 - `/models` lab page no longer scrolls sideways on phones.
+- Hover effects now apply only to a mouse or trackpad, so a tap no longer leaves a button stuck in its hover look.
+- On touch screens every button and link is at least 44px, including the FAQ button, Version History, footer links, guide page links, the /play buttons, the progress bar, the embed controls and the 404 page. Desktop sizes are unchanged.
+- Links and table rows show press feedback on tap.
 
 ## [2.1.0] - 2026-11-25
 

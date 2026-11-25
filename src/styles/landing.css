@@ -27,7 +27,9 @@
         inset -3px -3px 0 var(--gb-darkest),
         inset 3px 3px 0 var(--gb-medium);
 }
-.landing-cta a:hover { background: var(--gb-darkest); }
+@media (hover: hover) and (pointer: fine) {
+  .landing-cta a:hover { background: var(--gb-darkest); }
+}
 .landing-section {
     border: var(--pixel-border) solid var(--gb-dark);
     background: var(--gb-dark);
@@ -65,8 +67,17 @@
     font-size: 8px;
     line-height: 1.8;
 }
-.landing-links a:hover { border-color: var(--gb-lightest); }
+@media (hover: hover) and (pointer: fine) {
+  .landing-links a:hover { border-color: var(--gb-lightest); }
+}
 .landing-links a span { display: block; color: var(--gb-light); }
+.landing-cta a:active { box-shadow: inset 3px 3px 0 var(--gb-medium); }
+.landing-links a:active { border-color: var(--gb-lightest); }
+/* Touch screens: 44px minimum tap targets. */
+@media (pointer: coarse) {
+    .landing-cta a, .landing-links a { min-block-size: 44px; }
+    .landing-links a { display: flex; flex-direction: column; justify-content: center; }
+}
 @media (min-width: 600px) {
     .landing-section p, .landing-section li, .landing-nav, .landing-links a { font-size: 9px; }
 }
