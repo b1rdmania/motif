@@ -3,6 +3,7 @@ import { MIDIParser } from './midi/MIDIParser';
 import { MotifEngine } from './core/MotifEngine';
 import { unlockAudio, isAudioReady } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
+import { bitmidiId, track } from './services/stats';
 
 function qs(id: string): HTMLElement {
   const el = document.getElementById(id);
@@ -223,6 +224,8 @@ async function main(): Promise<void> {
     playBtn.disabled = true;
     return;
   }
+  const songId = bitmidiId(u);
+  track({ t: 'open', id: songId, title, d: 'link' }, 'play');
 
   const midiService = new MIDIService();
   const motifEngine = new MotifEngine();
@@ -365,6 +368,7 @@ async function main(): Promise<void> {
         durationEl.textContent = formatTime(durationSec);
         progressContainer.style.display = 'block';
         isGenerated = true;
+        track({ t: 'play', id: songId, title, d: songId ? 'bitmidi' : 'url' }, 'play');
         // If user scrubbed before play, carry that into seconds now that we know duration.
         playOffsetSec = resumeProgress * durationSec;
         showTimeRow();

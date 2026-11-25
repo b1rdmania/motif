@@ -8,8 +8,9 @@ import { ScoreUtils } from '../server/src/utils/ScoreUtils.js';
 import { SimpleMIDI } from '../server/src/utils/SimpleMIDI.js';
 import { MIDIParseService } from '../server/src/services/MIDIParseService.js';
 import { fetchChecked } from './guard.js';
+import { recordEvent, topPlayed } from './stats.js';
 
-// Env (ASSETS, SHARES) is generated from wrangler.jsonc: npx wrangler types worker/worker-configuration.d.ts
+// Env (ASSETS, SHARES, STATS, STATS_SALT) is generated from wrangler.jsonc: npx wrangler types worker/worker-configuration.d.ts
 
 type SharePayload =
   | { kind: 'bitmidi'; id: string; title?: string; createdAt: string; v: number }
@@ -26,7 +27,7 @@ const CORS = {
 const parseService = new MIDIParseService();
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     const path = url.pathname;
@@ -54,6 +55,12 @@ export default {
     try {
       if (path === '/health') {
         return json({ status: 'ok', timestamp: new Date().toISOString() });
+      }
+      if (path === '/api/e' && request.method === 'POST') {
+        return await recordEvent(request, env, url);
+      }
+      if (path === '/api/top' && request.method === 'GET') {
+        return await topPlayed(request, env, ctx);
       }
       if (path === '/api/share' && request.method === 'POST') {
         return await createShare(request, env);

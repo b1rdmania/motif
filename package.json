@@ -1,6 +1,6 @@
 {
   "name": "motif",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Procedural Music Synthesis from MIDI Structure",
   "type": "module",
   "scripts": {
@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "typecheck:worker": "tsc -p worker/tsconfig.json",
     "dev:worker": "npm run build && wrangler dev",
-    "deploy": "npm run build && npm run typecheck:worker && wrangler deploy"
+    "deploy": "npm run build && npm run typecheck:worker && wrangler deploy",
+    "stats": "bash scripts/stats.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

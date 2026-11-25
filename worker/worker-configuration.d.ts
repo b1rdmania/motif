@@ -3,6 +3,8 @@
 // Runtime types generated with workerd@1.20260521.1 2026-10-01 
 interface __BaseEnv_Env {
 	SHARES: KVNamespace;
+	STATS: D1Database;
+	STATS_SALT: string;
 	ASSETS: Fetcher;
 	REDIS_URL: string;
 	VERCEL_OIDC_TOKEN: string;

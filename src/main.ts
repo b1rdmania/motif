@@ -5,6 +5,7 @@ import { MIDIParser } from './midi/MIDIParser';
 import { SoundfontMIDIPlayer } from './synthesis/SoundfontMIDIPlayer';
 import { getAudioContext, isAudioReady, peekAudioContext, unlockAudio } from './utils/audioUnlock';
 import type { NoteEvent } from './types';
+import { bitmidiId, fetchTopSongs, track, type TopSong } from './services/stats';
 
 type CurrentSource =
   | { type: 'remote'; resultIndex: number }
@@ -27,6 +28,9 @@ class MotifApp {
   private status!: HTMLElement;
   
   private resultsSection!: HTMLElement;
+  private topSection!: HTMLElement;
+  private topBody!: HTMLElement;
+  private topSongs: TopSong[] = [];
   private resultsBody!: HTMLElement;
   private playerSection!: HTMLElement;
   private chooseHelper!: HTMLElement;
@@ -97,24 +101,73 @@ class MotifApp {
     this.motifEngine.setVolume(1);
 
     // Load current share links and older search-prefill links.
-    this.initFromQuery();
+    if (!this.initFromQuery()) void this.loadTopSongs();
   }
 
-  private initFromQuery(): void {
+  // Returns true when the URL loads a song or a search.
+  private initFromQuery(): boolean {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
     const u = params.get('u');
     if ((id && /^\d+$/.test(id)) || u) {
+      const title = params.get('title') || 'Shared song';
       this.searchResults = [{
-        title: params.get('title') || 'Shared song',
+        title,
         source: id ? 'bitmidi' : 'remote',
         midiUrl: id ? `https://bitmidi.com/uploads/${id}.mid` : u,
       }];
+      track({ t: 'open', id: id || undefined, title, d: 'link' });
       void this.selectResult(0);
-    } else {
-      const q = params.get('q') || params.get('song');
-      if (q) { this.songInput.value = q; void this.handleSearch(); }
+      return true;
     }
+    const q = params.get('q') || params.get('song');
+    if (q) { this.songInput.value = q; void this.handleSearch(); return true; }
+    return false;
+  }
+
+  // Home page chart: top played songs over the last 30 days.
+  private async loadTopSongs(): Promise<void> {
+    const songs = await fetchTopSongs();
+    if (songs.length < 3) return;
+    this.topSongs = songs;
+    this.topBody.replaceChildren(...songs.map((song, i) => {
+      const row = document.createElement('tr');
+      const rank = document.createElement('td');
+      rank.className = 'rank-col';
+      rank.textContent = String(i + 1);
+      const name = document.createElement('td');
+      const link = document.createElement('a');
+      link.href = `/?${new URLSearchParams({ id: song.id, title: song.title })}`;
+      link.textContent = this.cleanSongTitle(song.title);
+      name.append(link);
+      const plays = document.createElement('td');
+      plays.className = 'plays-col';
+      plays.textContent = String(song.plays);
+      row.append(rank, name, plays);
+      row.addEventListener('click', (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+        event.preventDefault();
+        this.openTopSong(song);
+      });
+      return row;
+    }));
+    // Show it only if the visitor has not started a search or picked a song yet.
+    this.topSection.classList.toggle('visible', this.searchResults.length === 0 && !this.currentSource && !this.searchBtn.disabled);
+  }
+
+  private openTopSong(song: TopSong): void {
+    ++this.searchRequestId;
+    this.stopPreview();
+    this.handleMotifStop();
+    this.hasGenerated = false;
+    this.currentMIDI = null;
+    this.searchResults = [{
+      title: song.title,
+      source: 'bitmidi',
+      midiUrl: `https://bitmidi.com/uploads/${song.id}.mid`,
+    }];
+    track({ t: 'open', id: song.id, title: song.title, d: 'top' });
+    void this.selectResult(0);
   }
 
   /**
@@ -138,6 +191,8 @@ class MotifApp {
     this.status = document.getElementById('status')!;
 
     this.resultsSection = document.getElementById('resultsSection')!;
+    this.topSection = document.getElementById('topSection')!;
+    this.topBody = document.getElementById('topBody')!;
     this.resultsBody = document.getElementById('resultsBody')!;
     this.playerSection = document.getElementById('playerSection')!;
     this.chooseHelper = document.getElementById('chooseHelper')!;
@@ -374,6 +429,8 @@ class MotifApp {
       const results = await this.midiService.search(songName);
       if (requestId !== this.searchRequestId) return;
       
+      track({ t: 'search', q: songName, d: String(results.length) });
+
       if (results.length === 0) {
         this.searchResults = [];
         this.updateStatus('No MIDI files found. Try a different search.');
@@ -685,6 +742,7 @@ class MotifApp {
 
       this.updateStatus('');
       this.hasGenerated = true;
+      this.trackSong('play');
       // Refresh generated state now that generation succeeded (enables Copy link, etc.)
       const scrollYEnd = window.scrollY;
       this.setState('generated');
@@ -856,6 +914,7 @@ class MotifApp {
       const bytes = await this.motifEngine.exportMotifWAVBytes();
       const base = this.sanitizeFileBase(this.getActiveTitle());
       this.triggerDownload(bytes, `${base}-motif.wav`, 'audio/wav');
+      this.trackSong('save');
       this.updateStatus('Saved up to 30 seconds of audio (.wav).');
     } catch (error) {
       this.updateStatus(`Export error: ${error instanceof Error ? error.message : 'Audio export failed.'}`);
@@ -874,6 +933,7 @@ class MotifApp {
     if (!result?.midiUrl) return;
 
     const shareUrl = this.buildShareUrl(result);
+    track({ t: 'share', id: bitmidiId(result.midiUrl), title: result.title, d: 'link' });
 
     // Try to copy to clipboard
     let copied = false;
@@ -943,6 +1003,7 @@ class MotifApp {
     const popup = window.open('about:blank', '_blank');
 
     const shareUrl = this.buildShareUrl(result);
+    track({ t: 'share', id: bitmidiId(result.midiUrl), title: result.title, d: 'x' });
 
     // Compose tweet text
     const tweetText = `I made a Game Boy version of ${title}\n\nUsing @b1rdmania's Wario Synthesis Midi Engine\n\nCheck it out here`;
@@ -961,6 +1022,7 @@ class MotifApp {
     // results - keep visible in all states except idle so user can pick a different source
     const hasResults = state === 'results' || ((state === 'selected' || state === 'generated') && this.searchResults.length > 0);
     this.resultsSection.classList.toggle('visible', hasResults);
+    this.topSection.classList.toggle('visible', state === 'idle' && !this.searchBtn.disabled && this.topSongs.length > 0);
     this.chooseHelper.style.display = 'none';
 
     // selected card
@@ -1033,6 +1095,18 @@ class MotifApp {
     } catch (error) {
       this.updateStatus(`Playback error: ${error instanceof Error ? error.message : 'Please try again.'}`);
     }
+  }
+
+  private trackSong(type: 'play' | 'save'): void {
+    if (this.currentSource?.type !== 'remote') {
+      if (type === 'play') track({ t: 'play', d: 'upload' });
+      else track({ t: 'save' });
+      return;
+    }
+    const result = this.searchResults[this.selectedResultIndex];
+    const id = bitmidiId(result?.midiUrl);
+    if (type === 'play') track({ t: 'play', id, title: result?.title, d: id ? 'bitmidi' : 'url' });
+    else track({ t: 'save', id, title: result?.title });
   }
 
   private buildShareUrl(result: { midiUrl: string; title: string }): string {

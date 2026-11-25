@@ -6,13 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-25
+
+### Added
+- **Top played this month** on the home page: the ten songs with the most plays in the last 30 days. Click a song to load it. The chart shows when at least three songs have plays, and it is cached for 10 minutes.
+- **Usage stats.** The site counts searches (with the number of results), plays, WAV saves, shares (Copy link or X) and opens from shared links or the chart. Events go to `POST /api/e` and are stored in the Cloudflare D1 database `wario-stats`. `GET /api/top` serves the chart. Run `npm run stats` (or `npm run stats -- 7`) to see top songs, top searches, searches with no results and most shared songs.
+- FAQ entry "What do you count?".
+
+### Privacy
+- No accounts, cookies or IP addresses. Each event has a visitor key: an HMAC of IP and user agent, keyed with a secret and the UTC day. The key changes every day, so it cannot link a visitor across days. Uploaded files are counted as plays, without a name.
+- A play counts once per visitor, per song, per day, so replays and reloads do not move the chart.
+- The Worker accepts events only from the site's own origin. A failed event never affects the player.
+
 ### Changed
 - Hosting moved from Vercel to Cloudflare Workers. Short share links moved from Redis to Workers KV. The MIDI proxy now checks every redirect hop against the SSRF rules.
 - `.html` page URLs and `/v2` now permanently redirect (301) to their clean URLs. `/v2` is removed from the sitemap.
-
-## [Unreleased]
-
-### Changed
 - Updated MIDI converter and online synth pages for the current player and 30-second WAV exports.
 - Added a Game Boy music-maker guide, internal links and sitemap entry.
 
@@ -106,4 +114,5 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 [1.5.0]: https://github.com/b1rdmania/motif/compare/v1.5.0...v1.6.0
 [1.4.0]: https://github.com/b1rdmania/motif/compare/v1.4.0...v1.5.0
 
+[2.1.0]: https://github.com/b1rdmania/motif/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/b1rdmania/motif/releases/tag/v2.0.0

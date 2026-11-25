@@ -543,6 +543,12 @@
             margin: 0 0 calc(var(--spacing-unit) * 2) 0;
         }
         .results-header h3 { margin: 0; }
+
+        /* Top played chart (home page) */
+        .top-table .rank-col { width: 40px; text-align: center; }
+        .top-table .plays-col { width: 80px; text-align: right; }
+        .top-table td a { color: inherit; text-decoration: none; }
+        .top-table tbody tr:hover td a { text-decoration: underline; }
         .upload-helper {
             margin: 10px 0 0 0;
             color: var(--gb-medium);

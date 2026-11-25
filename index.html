@@ -71,6 +71,23 @@
 
         <div id="status">Ready. Search any song to make a Game Boy version.</div>
 
+        <div id="topSection" class="results-section top-section">
+            <div class="results-header">
+                <h3>Top played this month</h3>
+            </div>
+            <table class="results-table top-table">
+                <thead>
+                    <tr>
+                        <th class="rank-col">#</th>
+                        <th>Song</th>
+                        <th class="plays-col">Plays</th>
+                    </tr>
+                </thead>
+                <tbody id="topBody">
+                </tbody>
+            </table>
+        </div>
+
         <div id="resultsSection" class="results-section">
             <div id="chooseHelper" class="chooser-helper" style="display:none;">
                 <p>Pick a midi source. Try another if it sounds bad, some work better than others.</p>
@@ -164,6 +181,7 @@
         <details>
             <summary>Version History</summary>
             <div class="version-content">
+                <div class="version-item"><strong>2.1</strong> — Top played this month on the home page.</div>
                 <div class="version-item"><strong>2.0</strong> — One Wario Synth: the new engine with MIDI uploads, original previews, audio export and sharing.</div>
                 <div class="version-item">
                     <strong>How it works:</strong> Search a song or upload your own MIDI (.mid/.midi). The Wario Synthesis Engine analyses the file, maps melody/bass/chords to Game Boy channels, and resynthesises it with Web Audio oscillators. All processing runs client-side in your browser — no server-side audio generation. Save up to 30 seconds as WAV.
@@ -251,6 +269,10 @@
                     <div class="faq-item">
                         <h4>Why can't I share an uploaded MIDI?</h4>
                         <p>Share links need a fetchable online MIDI URL. Files you upload stay on your device only, so Copy link and Share to X are hidden for those — you can still play, generate, and export them.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>What do you count?</h4>
+                        <p>Searches, plays, saves and shares, so the home page can show what's popular. No accounts, cookies or IP addresses are stored, and uploaded files are never counted by name.</p>
                     </div>
                     <div class="faq-item">
                         <h4>Why "Enable Audio" on iPhone?</h4>

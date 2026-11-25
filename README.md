@@ -37,6 +37,7 @@ Zero samples. Zero server audio. Just raw oscillators having the time of their l
 - **Save 30s WAV** — download an audio clip after playback
 - **Share links** with dynamic social previews — works for searched MIDI sources; not available for local uploads
 - **Works on mobile** (iOS audio unlock included)
+- **Top played this month** on the home page, from anonymous usage counts (no cookies, no IP addresses). `npm run stats` shows top songs, top searches, searches with no results and most shared songs
 - **Unified Game Boy engine**: the main page uses pulse, wave and noise synthesis, with MIDI upload, original preview, sharing and 30-second WAV clips. Old `/v2` links redirect to the main player; existing share pages and embeds keep their original playback.
 
 See [CHANGELOG.md](./CHANGELOG.md) for release history.
@@ -84,7 +85,7 @@ WARIO SYNTH includes an embeddable widget at **`/embed`**:
 ## Tech Stack
 
 - **Frontend**: TypeScript, Vite, Web Audio API
-- **Backend**: Cloudflare Worker (`worker/`): MIDI fetch proxy with SSRF checks, share links in Workers KV
+- **Backend**: Cloudflare Worker (`worker/`): MIDI fetch proxy with SSRF checks, share links in Workers KV, usage events and the top-played chart in D1 (`wario-stats`, schema in `migrations/`)
 - **Deployment**: Cloudflare Workers with static assets (`npm run deploy`). `server/` is the old Express backend, kept for local dev and Vercel rollback
 - **Built with**: Claude Code
 

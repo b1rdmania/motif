@@ -17,7 +17,7 @@
 
 ## Non-scope (avoid for now)
 - Perfect matching/similarity, chord/key analysis, advanced arrangement
-- Big infra (DB/CDN/monitoring/analytics), large refactors
+- Big infra (CDN/monitoring), large refactors. Usage stats exist since 2.1.0 (D1 `wario-stats`); keep them small and anonymous
 - New features unrelated to search/fetch/parse/playback reliability
 
 ## Guidelines (how to work in this repo)
@@ -41,6 +41,9 @@ A change is successful if someone can:
 - select a result
 - hit Play and hear it
 - hit Stop and try another result
+
+## Recent Improvements (2026-11-25)
+- **v2.1.0 — Usage stats + top played chart**: `src/services/stats.ts` sends fire-and-forget events (search, play, save, share, open) to `POST /api/e`; `worker/stats.ts` stores them in D1 (`STATS` binding, `migrations/0001_events.sql`). `GET /api/top` returns the top 10 plays over 30 days (one per visitor per song per day), cached 10 min, shown on the home page when 3+ songs qualify. Visitor key = HMAC(IP + UA) with secret `STATS_SALT` + UTC day; no IPs stored. `npm run stats` reads the numbers. New schema changes: add a numbered file in `migrations/` and run `npx wrangler d1 migrations apply wario-stats --remote`.
 
 ## Recent Improvements (2026-06-16)
 - **Browser-direct MIDI search**: Search now runs entirely client-side against BitMidi's CORS-enabled JSON API (`https://bitmidi.com/api/midi/search`) via `src/services/BitMidiClient.ts`. This fixed the production outage where BitMidi blocked/garbled the old server-side HTML scrape from Vercel's datacenter IPs. Removed the `/api/midi/search` endpoint, the server-side scraper (`BitMidiAdapter.ts`, `MIDISearchService.ts`), and the unused Dongrays/FreeMidi/Mock adapters. The server now only proxies MIDI fetches (non-CORS hosts) and mints share links.

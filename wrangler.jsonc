@@ -22,6 +22,11 @@
     // Short share links (share:<code>), moved from Redis Labs.
     { "binding": "SHARES", "id": "37496a5d13214ddd88a7d464b1d455ac" }
   ],
+  // Usage events and the home page "top played" chart. Schema in migrations/.
+  // Also needs the secret STATS_SALT (wrangler secret put STATS_SALT).
+  "d1_databases": [
+    { "binding": "STATS", "database_name": "wario-stats", "database_id": "cc419aa5-241a-47a9-8a9e-9989b0d844f0", "migrations_dir": "migrations" }
+  ],
   "observability": { "enabled": true },
   // The bare domain goes to the redirect Worker in wrangler.apex.jsonc.
   "routes": [{ "pattern": "www.wario.style", "custom_domain": true }]
