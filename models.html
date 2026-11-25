@@ -57,7 +57,7 @@
     }
     .row { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
     input[type="text"] {
-      flex: 1 1 360px;
+      flex: 1 1 min(360px, 100%);
       padding: 12px 14px;
       background: rgba(0,0,0,0.28);
       border: 1px solid rgba(255,255,255,0.12);
@@ -279,6 +279,7 @@
         .controls { margin: calc(var(--spacing-unit) * 3) 0; text-align: center; }
         input[type="text"] {
             width: min(600px, 100%);
+            box-sizing: border-box;
             padding: 12px 14px;
             background: rgba(0,0,0,0.28);
             border: 1px solid rgba(255,255,255,0.12);

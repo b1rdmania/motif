@@ -9,6 +9,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Guide page links moved from the home page footer into the FAQ under "More".
 
+### Fixed
+- Search box on phones: it was squeezed to about 50px wide. The search row now wraps on its own, so the box takes the full row and the buttons sit below it. Desktop is unchanged.
+- `/models` lab page no longer scrolls sideways on phones.
+
 ## [2.1.0] - 2026-11-25
 
 ### Added

@@ -320,6 +320,19 @@
             width: 100%;
             box-sizing: border-box;
         }
+        /* Search row wraps on its own: the input keeps at least 70% of the row,
+           and when the buttons no longer fit beside it they drop to a second
+           row and share it. No breakpoint. */
+        .controls {
+            flex-wrap: wrap;
+        }
+        .controls input[type="text"] {
+            flex: 999 1 0;
+            min-inline-size: 70%;
+        }
+        .controls button {
+            flex: 1 0 auto;
+        }
         .controls.locked {
             opacity: 0.35;
         }
