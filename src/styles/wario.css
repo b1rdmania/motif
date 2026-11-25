@@ -1255,6 +1255,14 @@
     .footer {
         align-items: center;
     }
+    /* Chart links fill their row; the negative margin cancels the cell
+       padding so the row height stays the same. */
+    .top-table td a {
+        display: flex;
+        align-items: center;
+        min-block-size: 44px;
+        margin-block: -10px;
+    }
 }
 
 /* Press feedback for links and rows: touch screens get no hover cue. */
