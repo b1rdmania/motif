@@ -123,21 +123,28 @@ export async function topSongs(env: Env, sinceTs: number): Promise<TopSong[]> {
 export async function topPlayed(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const cache = caches.default;
   const cacheKey = new Request(new URL('/api/top', request.url).href, { method: 'GET' });
+  // The edge copy lives 10 minutes. Browsers get no-store, because the zone's
+  // Browser Cache TTL (4 hours) would otherwise replace a short max-age.
+  const toBrowser = (body: BodyInit | null) =>
+    new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+
   const hit = await cache.match(cacheKey);
-  if (hit) return hit;
+  if (hit) return toBrowser(hit.body);
 
   let songs: TopSong[] = [];
   try {
     songs = await topSongs(env, Math.floor(Date.now() / 1000) - TOP_WINDOW_SEC);
   } catch (error) {
     console.error('top query failed:', error);
-    return Response.json({ songs: [] }, { headers: { 'Cache-Control': 'no-store' } });
+    return toBrowser(JSON.stringify({ songs: [] }));
   }
 
-  const res = Response.json(
-    { songs, window: '30d' },
-    { headers: { 'Cache-Control': `public, max-age=${TOP_CACHE_SEC}` } },
+  const body = JSON.stringify({ songs, window: '30d' });
+  ctx.waitUntil(
+    cache.put(
+      cacheKey,
+      new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${TOP_CACHE_SEC}` } }),
+    ),
   );
-  ctx.waitUntil(cache.put(cacheKey, res.clone()));
-  return res;
+  return toBrowser(body);
 }
